@@ -1,0 +1,50 @@
+name: Propose receiving update
+on:
+  workflow_dispatch:
+    inputs:
+      recipient:
+        description: 'Opted-in target: owner/repository (without github: prefix)'
+        required: true
+        type: string
+      publish:
+        description: 'Explicitly publish a draft PR using CM_TESTSUITE_TOKEN'
+        default: false
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: receive-${{ inputs.recipient }}
+  cancel-in-progress: false
+jobs:
+  receive:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ inputs.recipient }}
+          token: ${{ secrets.CM_TESTSUITE_TOKEN || github.token }}
+          path: recipient-checkout
+          persist-credentials: false
+      - name: Bootstrap
+        run: |
+          bash scripts/bootstrap.sh
+          echo "$PWD/.tools" >> "$GITHUB_PATH"
+      - name: Plan against the target default branch
+        env:
+          RECIPIENT: github:${{ inputs.recipient }}
+        run: ./just xtask --root "$PWD/recipient-checkout" plan-receive --catalog-root "$PWD" --recipient "$RECIPIENT" --out "$RUNNER_TEMP/receive-plan.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: receive-plan
+          path: ${{ runner.temp }}/receive-plan.json
+      - name: Publish draft PR
+        if: inputs.publish
+        env:
+          RECIPIENT: github:${{ inputs.recipient }}
+          GITHUB_TOKEN: ${{ secrets.CM_TESTSUITE_TOKEN }}
+        run: ./just xtask publish --repository "$RECIPIENT" --plan "$RUNNER_TEMP/receive-plan.json"

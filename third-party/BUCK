@@ -1,0 +1,2 @@
+load(":crates.bzl", "pinned_crates")
+pinned_crates()

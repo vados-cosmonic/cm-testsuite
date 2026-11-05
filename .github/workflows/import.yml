@@ -1,0 +1,59 @@
+name: Propose source import
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Opted-in source identity: github:owner/repository'
+        required: true
+        type: string
+      reference:
+        description: 'Source branch or immutable commit'
+        default: main
+        required: true
+        type: string
+      manifest:
+        description: 'Tracked source manifest path'
+        default: .cm-testsuite.toml
+        required: true
+        type: string
+      publish:
+        description: 'Explicitly publish a draft PR using CM_TESTSUITE_TOKEN'
+        default: false
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: import-${{ inputs.source }}
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Bootstrap
+        run: |
+          bash scripts/bootstrap.sh
+          echo "$PWD/.tools" >> "$GITHUB_PATH"
+      - name: Acquire and plan
+        env:
+          SOURCE: ${{ inputs.source }}
+          REFERENCE: ${{ inputs.reference }}
+          MANIFEST: ${{ inputs.manifest }}
+          GITHUB_TOKEN: ${{ secrets.CM_TESTSUITE_TOKEN }}
+        run: |
+          ./just xtask acquire --source "$SOURCE" --reference "$REFERENCE" --manifest "$MANIFEST" --out "$RUNNER_TEMP/snapshot.json"
+          ./just xtask plan-import --snapshot "$RUNNER_TEMP/snapshot.json" --out "$RUNNER_TEMP/import-plan.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: import-plan
+          path: ${{ runner.temp }}/import-plan.json
+      - name: Publish draft PR
+        if: inputs.publish
+        env:
+          TARGET: github:${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.CM_TESTSUITE_TOKEN }}
+        run: ./just xtask publish --repository "$TARGET" --plan "$RUNNER_TEMP/import-plan.json"

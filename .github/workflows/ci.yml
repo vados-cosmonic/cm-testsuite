@@ -1,0 +1,37 @@
+name: Check
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Bootstrap pinned tools
+        run: |
+          bash scripts/bootstrap.sh
+          echo "$PWD/.tools" >> "$GITHUB_PATH"
+      - name: Format, test, and lint through the downloaded Rust toolchain
+        run: ./just check
+      - name: Build the task entrypoint
+        run: ./just build
+      - name: Verify Cargo/Buck inputs and the local flow
+        run: |
+          ./just xtask buck-lock --check
+          ./just demo
+          ./just xtask validate
+      - name: Build documentation and submitted-results site
+        run: ./just site
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: site-preview
+          path: site-out/

@@ -1,0 +1,31 @@
+name: Propose a hand-written WAST test
+description: Suggest an original WAST test or an opted-in authoritative source.
+title: '[WAST] '
+body:
+  - type: textarea
+    id: intent
+    attributes:
+      label: Test intent and specification reference
+      description: Explain the behavior or regression and the expected assertions.
+    validations:
+      required: true
+  - type: textarea
+    id: test
+    attributes:
+      label: WAST or authoritative source link
+      description: Include a proposed stable name and meaningful intent comments. Only checked-in WAST is in scope.
+      render: wast
+    validations:
+      required: true
+  - type: textarea
+    id: features
+    attributes:
+      label: Required features and negative-test behavior
+      description: Explain deliberately invalid/malformed content or expected traps.
+  - type: textarea
+    id: attribution
+    attributes:
+      label: Origin, license, and attribution
+      description: Identify the authoritative source and permission to redistribute the test.
+    validations:
+      required: true

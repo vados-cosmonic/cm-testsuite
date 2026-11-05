@@ -1,0 +1,21 @@
+[package]
+name = "cm-delivery"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+cm-catalog.workspace = true
+cm-github.workspace = true
+cm-exchange-plan.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+cm-acquisition.workspace = true
+cm-results.workspace = true
+base64.workspace = true

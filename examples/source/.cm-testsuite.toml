@@ -1,0 +1,7 @@
+schema = 1
+[[test]]
+name = "core/add"
+path = "file://add.wast"
+summary = "Check integer addition through a WAST assertion"
+requires = []
+covers = ["arithmetic"]

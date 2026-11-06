@@ -67,13 +67,26 @@ The tag workflow explicitly calls the reusable release workflow. It does not
 rely on `GITHUB_TOKEN` pushes triggering another workflow. Tags pushed by a
 maintainer can also trigger the release workflow directly.
 
-Enable Actions' permission to create pull requests in repository settings.
 The default `GITHUB_TOKEN` is sufficient for tagging, release publication, and
-notifications. An optional `RELEASE_PAT` is used only to create the release PR
-when automatic checks need a caller identity. With `GITHUB_TOKEN`, GitHub may
-require a maintainer to approve workflow runs created by that PR. No token is
-passed to the release build job; publishing and notification permissions are
-scoped to their own jobs. No GitHub App is required.
+notifications. No token is passed to the release build job; publishing and
+notification permissions are scoped to their own jobs.
+
+**create-release-pr** opens the release PR with a short-lived
+[Octo-STS](https://github.com/octo-sts/app) token rather than `GITHUB_TOKEN`.
+PRs opened with `GITHUB_TOKEN` start no `pull_request` workflows,
+so required checks would never run on them.
+To set this up:
+
+- Install the [Octo-STS GitHub App](https://github.com/apps/octo-sts/installations/new)
+  on this repository.
+- Keep `.github/chainguard/create-release-pr.sts.yaml` in sync with the repository.
+  It trusts only `create-release-pr.yml` dispatched on `main`,
+  and grants `contents`, `pull_requests`, and `issues` write.
+  Its subject uses the repository's immutable owner and repository IDs;
+  a fork or transferred copy needs its own subject from the repository's
+  **Settings → Actions → OIDC** page.
+
+The workflow mints the token only after the release checks have run.
 
 For recovery, rerun **tag-release** with a version and a ref reachable from main,
 or **release** with an existing full tag. Tagging is idempotent when the tag

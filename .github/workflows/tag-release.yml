@@ -1,0 +1,73 @@
+name: tag-release
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Workspace SemVer, without v'
+        type: string
+        required: true
+      ref:
+        description: 'Commit or ref reachable from main to tag'
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: tag-release
+  cancel-in-progress: false
+jobs:
+  tag:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged &&
+       startsWith(github.event.pull_request.title, 'release:') &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    outputs:
+      proceed: ${{ steps.event.outputs.proceed || steps.manual.outputs.proceed }}
+      tag: ${{ steps.event.outputs.tag || steps.manual.outputs.tag }}
+    steps:
+      # Run the trusted main tooling; the xtask validates the target's committed files.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Bootstrap pinned tools
+        run: |
+          bash scripts/bootstrap.sh
+          echo "$PWD/.tools" >> "$GITHUB_PATH"
+      - name: Validate merged release PR
+        if: github.event_name == 'pull_request'
+        id: event
+        run: ./just xtask release from-event --event "$GITHUB_EVENT_PATH" --repository "$GITHUB_REPOSITORY" --github-output "$GITHUB_OUTPUT"
+      - name: Validate manual release version
+        if: github.event_name == 'workflow_dispatch'
+        id: manual
+        env:
+          VERSION: ${{ inputs.version }}
+        run: ./just xtask release metadata --version "$VERSION" --github-output "$GITHUB_OUTPUT"
+      - name: Create tag without moving an existing tag
+        if: steps.event.outputs.proceed == 'true' || steps.manual.outputs.proceed == 'true'
+        env:
+          VERSION: ${{ steps.event.outputs.version || steps.manual.outputs.version }}
+          TARGET_REF: ${{ steps.event.outputs.ref || inputs.ref }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./just xtask release tag --repository "$GITHUB_REPOSITORY" --version "$VERSION" --reference "$TARGET_REF" --apply
+  release:
+    needs: tag
+    if: needs.tag.outputs.proceed == 'true'
+    # GITHUB_TOKEN tag pushes do not trigger push workflows. Call explicitly.
+    uses: ./.github/workflows/release.yml # zizmor: ignore[self-repository] -- job-level reuse is pinned to the caller commit; actionlint 1.7.12 does not yet support $/
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: read
+    with:
+      tag: ${{ needs.tag.outputs.tag }}

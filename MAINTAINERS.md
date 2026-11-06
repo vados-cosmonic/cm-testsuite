@@ -93,3 +93,8 @@ This mode prints each retained repository URL on success or failure and never
 deletes repositories. It does not require the classic token's `delete_repo` scope.
 All three repositories share the same `cm-testsuite-e2e-<run-suffix>-` prefix,
 followed by `source`, `catalog`, or `recipient`.
+
+## Releases
+
+See the [release guide](docs/src/releases.md) for release preparation, exact-commit
+tagging, GitHub artifacts, and post-release notifications.

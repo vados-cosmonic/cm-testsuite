@@ -15,5 +15,7 @@ export default {
         ]],
         'scope-case': [2, 'always', 'lower-case'],
         'body-max-line-length': [1, 'always', 100],
+        // Squash and merge-queue bodies after a Signed-off-by trailer parse as footer.
+        'footer-max-line-length': [1, 'always', 100],
     },
 };

@@ -6,6 +6,23 @@ use serde_json::Value;
 use std::time::Duration;
 use tokio::runtime::Runtime;
 
+/// A non-success response with its status preserved for moved/deleted targets.
+/// Response bodies and credentials are deliberately excluded from diagnostics.
+#[derive(Debug)]
+pub struct HttpStatus {
+    pub method: String,
+    pub path: String,
+    pub status: u16,
+}
+
+impl std::fmt::Display for HttpStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "GitHub {} {} returned HTTP {}; check token permissions, rate limits, and branch state", self.method, self.path, self.status)
+    }
+}
+
+impl std::error::Error for HttpStatus {}
+
 /// Minimal exchange-facing interface, also implemented by offline test fixtures.
 pub trait Api {
     /// Return `None` for an absent resource; propagate transport and permission errors.
@@ -59,11 +76,18 @@ impl Api for Client {
                 .await.context("GitHub request exceeded 60 seconds")?;
             match response {
                 Ok(value) => Ok(Some(value)),
-                Err(error) if error.downcast_ref::<octocrab::Error>().is_some_and(|error| {
-                    matches!(error, octocrab::Error::GitHub { source, .. } if source.status_code.as_u16() == 404)
-                }) => Ok(None),
-                // Avoid including response bodies or caller credentials in errors.
-                Err(_) => bail!("GitHub {method} {path} failed; check connectivity, token permissions, rate limits, and branch state"),
+                Err(error) => {
+                    // Release notifications distinguish moved/deleted targets from
+                    // authentication and transport failures without parsing messages.
+                    if let Some(octocrab::Error::GitHub { source, .. }) = error.downcast_ref::<octocrab::Error>() {
+                        let status = source.status_code.as_u16();
+                        if status == 404 {
+                            return Ok(None);
+                        }
+                        return Err(HttpStatus { method: method.into(), path: path.into(), status }.into());
+                    }
+                    bail!("GitHub {method} {path} failed; check connectivity, token permissions, rate limits, and branch state")
+                },
             }
         })
     }

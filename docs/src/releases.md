@@ -55,7 +55,8 @@ archives are available through GitHub Releases. The crates remain
 3. **tag-release** validates the merged PR's repository, branch, label, version,
    and exact merge commit. It refuses to tag a commit outside `origin/main`,
    mismatched workspace/lockfile/changelog versions, or move an existing tag.
-4. **release** checks out the exact tag, runs checks, packages the Linux binary,
+4. **release** checks out the exact tag, refuses tags outside `origin/main`
+   (including maintainer-pushed tags), runs checks, packages the Linux binary,
    uploads assets to a draft, publishes the GitHub release, then updates related
    issues or PRs. Published assets are never overwritten by reruns. Prereleases
    are marked as such. Releases do not change GitHub's Latest designation
@@ -130,6 +131,16 @@ forms include `Fixes #123`, `Closes OWNER/REPO#123`, and
 `Resolves https://github.com/OWNER/REPO/issues/123`. Cross-repository references,
 code fences, and inline code are ignored. A PR without recognized issue
 references receives the notification itself. Issues are not closed or reopened.
+A linked reference that is a PR is described as a PR.
+
+Some references are skipped with a warning instead of failing the run:
+
+- references that do not exist (HTTP 404), such as typos
+- issues that were transferred (HTTP 301) or deleted (HTTP 410)
+
+The first release has no previous tag,
+so its range would be the repository's entire history;
+it sends no notifications.
 
 Pagination and duplicate references are handled. Only marker comments authored
 by `github-actions[bot]` are updated; for a caller-owned token, set

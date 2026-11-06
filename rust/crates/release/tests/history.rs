@@ -59,10 +59,12 @@ fn stable_history_includes_rc_changes_but_excludes_later_commits() {
     let later = commit(root, "feat(catalog): later change");
     git(root, &["update-ref", "refs/remotes/origin/main", &later]);
     let h = history::release_history(root, "cm-testsuite-v0.2.0").unwrap();
+    assert_eq!(h.previous.as_deref(), Some("cm-testsuite-v0.1.0"));
     assert!(h.commits.contains(&alpha) && h.commits.contains(&beta));
     assert!(!h.commits.contains(&later));
     assert!(!h.commits.contains(&stable));
     let rc = history::release_history(root, "cm-testsuite-v0.2.0-rc.1").unwrap();
+    assert_eq!(rc.previous.as_deref(), Some("cm-testsuite-v0.1.0"));
     assert_eq!(rc.commits, vec![alpha]);
     assert_eq!(
         history::tag_target(root, &Metadata::new("0.2.0").unwrap(), &stable).unwrap(),
@@ -80,12 +82,12 @@ fn first_release_and_detached_non_main_target() {
     git(root, &["init", "-b", "main"]);
     let first = commit(root, "feat: initial feature");
     release(root, "0.1.0");
-    assert_eq!(
-        history::release_history(root, "cm-testsuite-v0.1.0")
-            .unwrap()
-            .commits,
-        vec![first.clone()]
-    );
+    let h = history::release_history(root, "cm-testsuite-v0.1.0").unwrap();
+    assert_eq!(h.commits, vec![first.clone()]);
+    assert!(h.previous.is_none());
     git(root, &["update-ref", "refs/remotes/origin/main", &first]);
     assert!(history::tag_target(root, &Metadata::new("0.1.0").unwrap(), "HEAD").is_err());
+    // A maintainer-pushed tag outside main must not be released either.
+    git(root, &["checkout", "--detach", "cm-testsuite-v0.1.0"]);
+    assert!(history::validate_checkout(root, "cm-testsuite-v0.1.0").is_err());
 }

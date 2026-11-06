@@ -173,6 +173,12 @@ pub fn notifications(
             && release["prerelease"] == meta.prerelease,
         "release must already be published with matching version metadata"
     );
+    if history.previous.is_none() {
+        // The first release's range is the entire history; announcing it on
+        // every past PR and issue would be noise and exhaust the API budget.
+        eprintln!("warning: {tag} is the first release; skipping notifications");
+        return Ok(Vec::new());
+    }
     let mut seen = BTreeSet::new();
     let mut targets = BTreeMap::new();
     for sha in &history.commits {

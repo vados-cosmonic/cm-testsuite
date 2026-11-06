@@ -140,6 +140,7 @@ impl Api for Mock {
 }
 fn history() -> ReleaseHistory {
     ReleaseHistory {
+        previous: Some("cm-testsuite-v0.1.0".into()),
         commits: vec!["a".repeat(40), "b".repeat(40)],
         ancestors: BTreeSet::from(["a".repeat(40), "b".repeat(40)]),
     }
@@ -265,7 +266,11 @@ fn tagging_is_explicit_idempotent_and_never_moves_existing_tags() {
 #[test]
 fn skips_missing_moved_and_deleted_targets_and_names_linked_prs() {
     let api = Mock::new();
-    api.add_pr(1, &"a".repeat(40), "Fixes #7, fixes #8, fixes #9, fixes #10, fixes #2");
+    api.add_pr(
+        1,
+        &"a".repeat(40),
+        "Fixes #7, fixes #8, fixes #9, fixes #10, fixes #2",
+    );
     // #2 is a PR outside this release, so it is only a linked target.
     api.add_pr(2, &"c".repeat(40), "");
     api.0
@@ -279,9 +284,27 @@ fn skips_missing_moved_and_deleted_targets_and_names_linked_prs() {
         vec![2, 10]
     );
     assert!(edits[0].body.starts_with("The changes linked to this PR"));
-    assert!(edits[1].body.starts_with("The changes linked to this issue"));
+    assert!(
+        edits[1]
+            .body
+            .starts_with("The changes linked to this issue")
+    );
     api.0.borrow_mut().unavailable.insert(10, 500);
     assert!(
         github::notifications(&api, REPO, "cm-testsuite-v0.2.0-rc.1", &history(), AUTHOR).is_err()
+    );
+}
+#[test]
+fn first_release_skips_notifications() {
+    let api = Mock::new();
+    api.add_pr(1, &"a".repeat(40), "Fixes #7");
+    let first = ReleaseHistory {
+        previous: None,
+        ..history()
+    };
+    assert!(
+        github::notifications(&api, REPO, "cm-testsuite-v0.2.0-rc.1", &first, AUTHOR)
+            .unwrap()
+            .is_empty()
     );
 }

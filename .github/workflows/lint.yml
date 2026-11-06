@@ -51,8 +51,10 @@ jobs:
           tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint" -color
       - name: Audit workflow permissions and injection boundaries
-        uses: zizmorcore/zizmor-action@85b2b9fb8e3325e7a23d7d0a9d7ba5ae0f999e3e # v0.7.1
-        with:
-          version: '1.32.0'
-          advanced-security: false
-          online-audits: false
+        run: |
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            https://github.com/zizmorcore/zizmor/releases/download/v1.32.0/zizmor-x86_64-unknown-linux-gnu.tar.gz \
+            --output "$RUNNER_TEMP/zizmor.tar.gz"
+          printf '%s  %s\n' bb110cc765eca9cd7efb2e284a956be5974c60027b0970f16397d86208a9957b "$RUNNER_TEMP/zizmor.tar.gz" | sha256sum --check --status
+          tar -xzf "$RUNNER_TEMP/zizmor.tar.gz" -C "$RUNNER_TEMP" zizmor
+          "$RUNNER_TEMP/zizmor" --offline .github

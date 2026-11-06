@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/octo-sts/app/refs/heads/main/pkg/octosts/octosts.TrustPolicy.json
+# Only create-release-pr.yml running on main may open release preparation PRs.
+# The subject uses this repository's immutable owner and repository IDs.
+issuer: https://token.actions.githubusercontent.com
+subject: repo:vados-cosmonic@123968127/cm-testsuite@1447064737:ref:refs/heads/main
+claim_pattern:
+  event_name: workflow_dispatch
+  job_workflow_ref: vados-cosmonic/cm-testsuite/\.github/workflows/create-release-pr\.yml@refs/heads/main
+
+permissions:
+  contents: write
+  pull_requests: write
+  issues: write

@@ -8,3 +8,5 @@
 /.cm-testsuite-write-lock
 /.cm-testsuite-stage-*/
 /recipient-checkout/
+
+/node_modules/

@@ -78,18 +78,23 @@ pub fn validate_commit(root: &Path, meta: &Metadata, sha: &str) -> Result<()> {
     let manifest = git(root, &["show", &format!("{sha}:rust/Cargo.toml")])?;
     let doc: toml::Value = toml::from_str(&manifest)?;
     ensure!(
-        doc["workspace"]["package"]["version"].as_str() == Some(meta.version.as_str()),
+        doc.get("workspace")
+            .and_then(|w| w.get("package"))
+            .and_then(|p| p.get("version"))
+            .and_then(toml::Value::as_str)
+            == Some(meta.version.as_str()),
         "release version differs from tagged workspace"
     );
     let lock: toml::Value =
         toml::from_str(&git(root, &["show", &format!("{sha}:rust/Cargo.lock")])?)?;
-    for package in lock["package"]
-        .as_array()
+    for package in lock
+        .get("package")
+        .and_then(toml::Value::as_array)
         .context("missing locked packages")?
     {
         if package.get("source").is_none() {
             ensure!(
-                package["version"].as_str() == Some(meta.version.as_str()),
+                package.get("version").and_then(toml::Value::as_str) == Some(meta.version.as_str()),
                 "release lockfile has stale workspace versions"
             );
         }
@@ -104,13 +109,19 @@ pub fn validate_commit(root: &Path, meta: &Metadata, sha: &str) -> Result<()> {
 pub fn tag_target(root: &Path, meta: &Metadata, reference: &str) -> Result<String> {
     let sha = resolve(root, reference)?;
     validate_commit(root, meta, &sha)?;
+    ensure_on_main(root, &sha)?;
+    Ok(sha)
+}
+
+/// Releases are cut only from main, whether tagged by automation or a maintainer.
+fn ensure_on_main(root: &Path, sha: &str) -> Result<()> {
     let status = Command::new("git")
         .arg("-C")
         .arg(root)
         .args([
             "merge-base",
             "--is-ancestor",
-            &sha,
+            sha,
             "refs/remotes/origin/main",
         ])
         .status()?;
@@ -118,11 +129,13 @@ pub fn tag_target(root: &Path, meta: &Metadata, reference: &str) -> Result<Strin
         status.success(),
         "release commit must be reachable from origin/main; fetch main first"
     );
-    Ok(sha)
+    Ok(())
 }
 
 #[derive(Debug)]
 pub struct ReleaseHistory {
+    /// The release this range starts after; `None` for the first release.
+    pub previous: Option<String>,
     pub commits: Vec<String>,
     pub ancestors: BTreeSet<String>,
 }
@@ -151,8 +164,10 @@ pub fn release_history(root: &Path, tag: &str) -> Result<ReleaseHistory> {
             previous = Some((v, tag.to_owned()));
         }
     }
+    let previous = previous.map(|(_, tag)| tag);
     let range = previous
-        .map(|(_, tag)| format!("refs/tags/{tag}..{sha}"))
+        .as_ref()
+        .map(|tag| format!("refs/tags/{tag}..{sha}"))
         .unwrap_or_else(|| sha.clone());
     let commits = git(root, &["log", "--format=%H%x00%s", &range])?
         .lines()
@@ -164,7 +179,11 @@ pub fn release_history(root: &Path, tag: &str) -> Result<ReleaseHistory> {
         .lines()
         .map(str::to_owned)
         .collect();
-    Ok(ReleaseHistory { commits, ancestors })
+    Ok(ReleaseHistory {
+        previous,
+        commits,
+        ancestors,
+    })
 }
 
 pub fn validate_checkout(root: &Path, tag: &str) -> Result<Metadata> {
@@ -175,6 +194,7 @@ pub fn validate_checkout(root: &Path, tag: &str) -> Result<Metadata> {
         "checkout must match the release tag exactly"
     );
     validate_commit(root, &meta, &sha)?;
+    ensure_on_main(root, &sha)?;
     let notes = release_notes(
         &fs::read_to_string(root.join("CHANGELOG.md"))?,
         &meta.version,

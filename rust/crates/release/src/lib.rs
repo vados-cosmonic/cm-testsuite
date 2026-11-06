@@ -95,8 +95,10 @@ pub fn merged_release(event: &Value, repository: &str) -> Result<Option<(Metadat
 pub fn workspace_version(root: &Path) -> Result<Version> {
     let doc: toml::Value = toml::from_str(&fs::read_to_string(root.join("rust/Cargo.toml"))?)?;
     version(
-        doc["workspace"]["package"]["version"]
-            .as_str()
+        doc.get("workspace")
+            .and_then(|w| w.get("package"))
+            .and_then(|p| p.get("version"))
+            .and_then(toml::Value::as_str)
             .context("missing workspace version")?,
     )
 }
@@ -105,8 +107,10 @@ pub fn workspace_version(root: &Path) -> Result<Version> {
 pub fn bumped_manifests(manifest: &str, lock: &str, next: &str) -> Result<(String, String)> {
     let mut doc = manifest.parse::<DocumentMut>()?;
     let current = version(
-        doc["workspace"]["package"]["version"]
-            .as_str()
+        doc.get("workspace")
+            .and_then(|w| w.get("package"))
+            .and_then(|p| p.get("version"))
+            .and_then(toml_edit::Item::as_str)
             .context("missing workspace version")?,
     )?;
     let next_version = version(next)?;
@@ -122,7 +126,8 @@ pub fn bumped_manifests(manifest: &str, lock: &str, next: &str) -> Result<(Strin
     for package in packages.iter_mut() {
         if package.get("source").is_none() {
             ensure!(
-                package["version"].as_str() == Some(current.to_string().as_str()),
+                package.get("version").and_then(toml_edit::Item::as_str)
+                    == Some(current.to_string().as_str()),
                 "local package versions must match the workspace"
             );
             package["version"] = value(next);
@@ -172,6 +177,20 @@ pub fn release_notes(changelog: &str, expected: &str) -> Result<String> {
     Ok(section.join("\n").trim_end().to_owned() + "\n")
 }
 
+/// Prepend generated notes (which carry the heading) to the existing sections,
+/// separated by a blank line.
+fn combine_changelogs(generated: &str, previous: &str) -> Result<String> {
+    let older = previous
+        .strip_prefix("# Changelog\n")
+        .context("missing changelog heading")?
+        .trim();
+    Ok(if older.is_empty() {
+        format!("{}\n", generated.trim_end())
+    } else {
+        format!("{}\n\n{older}\n", generated.trim_end())
+    })
+}
+
 pub fn prepare(root: &Path, next: &str) -> Result<Metadata> {
     let meta = Metadata::new(next)?;
     ensure!(
@@ -197,15 +216,7 @@ pub fn prepare(root: &Path, next: &str) -> Result<Metadata> {
     release_notes(&generated, next)?;
     let changelog_path = root.join("CHANGELOG.md");
     let previous = fs::read_to_string(&changelog_path)?;
-    ensure!(
-        previous.starts_with("# Changelog\n"),
-        "missing changelog heading"
-    );
-    let combined = format!(
-        "{}\n{}",
-        generated.trim_end(),
-        previous.strip_prefix("# Changelog\n").unwrap().trim_start()
-    );
+    let combined = combine_changelogs(&generated, &previous)?;
     // Complete validation and changelog generation before changing tracked files.
     fs::write(manifest_path, manifest)?;
     fs::write(lock_path, lock)?;
@@ -245,6 +256,41 @@ mod tests {
         for next in ["0.1.0", "0.1.0+build", "0.0.9"] {
             assert!(bumped_manifests(manifest, lock, next).is_err());
         }
+    }
+    #[test]
+    fn malformed_manifests_are_errors_not_panics() {
+        let lock = "version = 4\n[[package]]\nname='xtask'\nversion='0.1.0'\n";
+        assert!(bumped_manifests("[workspace]\n", lock, "0.2.0").is_err());
+        let manifest = "[workspace.package]\nversion = \"0.1.0\"\n";
+        assert!(
+            bumped_manifests(
+                manifest,
+                "version = 4\n[[package]]\nname='xtask'\n",
+                "0.2.0"
+            )
+            .is_err()
+        );
+        let dir = tempfile::tempdir().unwrap();
+        fs::create_dir_all(dir.path().join("rust")).unwrap();
+        fs::write(dir.path().join("rust/Cargo.toml"), "[workspace]\n").unwrap();
+        assert!(workspace_version(dir.path()).is_err());
+    }
+    #[test]
+    fn changelog_sections_are_separated_by_a_blank_line() {
+        let generated = "# Changelog\n\n## [0.2.0] - 2026-11-06\n\n- new\n";
+        assert_eq!(
+            combine_changelogs(generated, "# Changelog\n").unwrap(),
+            generated
+        );
+        assert_eq!(
+            combine_changelogs(
+                generated,
+                "# Changelog\n\n## [0.1.0] - 2026-10-01\n\n- old\n"
+            )
+            .unwrap(),
+            "# Changelog\n\n## [0.2.0] - 2026-11-06\n\n- new\n\n## [0.1.0] - 2026-10-01\n\n- old\n"
+        );
+        assert!(combine_changelogs(generated, "no heading\n").is_err());
     }
     #[test]
     fn changelog_checks_version_and_handles_eof() {

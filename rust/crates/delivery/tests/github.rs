@@ -313,6 +313,10 @@ fn no_diff_does_not_create_a_pr() {
 fn withdrawn_changes_close_the_owned_proposal() {
     let api = Mock::new();
     let mut p = plan("(module)");
+    p.guards.push(cm_exchange_plan::Guard {
+        path: "README".into(),
+        sha256: Some(sha256(b"unrelated source context")),
+    });
     publish(&api, "github:example/target", &p).unwrap();
     p.edits.clear();
     assert!(matches!(
@@ -324,4 +328,68 @@ fn withdrawn_changes_close_the_owned_proposal() {
         publish(&api, "github:example/target", &p).unwrap(),
         Publication::NoChanges
     );
+}
+
+#[test]
+fn stale_empty_plan_must_not_withdraw_current_proposal() {
+    let api = Mock::new();
+    let p = plan("(module)");
+    publish(&api, "github:example/target", &p).unwrap();
+    let mut stale = p.clone();
+    stale.edits.clear();
+    stale.guards.push(cm_exchange_plan::Guard {
+        path: "README".into(),
+        sha256: Some(sha256(b"obsolete policy")),
+    });
+    let result = publish(&api, "github:example/target", &stale);
+    assert!(
+        result.is_err(),
+        "Stale empty plan bypassed its guard and returned {result:?}"
+    );
+    assert_eq!(api.0.borrow().prs[0]["state"], "open");
+}
+
+#[test]
+fn republishing_applied_plan_must_not_close_newer_proposal() {
+    let api = Mock::new();
+    let a = plan("(module)");
+    publish(&api, "github:example/target", &a).unwrap();
+    {
+        let mut s = api.0.borrow_mut();
+        let head = s.refs[&branch_for(&a)].clone();
+        s.refs.insert("main".into(), head);
+        s.prs[0]["state"] = json!("closed");
+        s.prs[0]["merged_at"] = json!("2026-11-06T00:00:00Z");
+    }
+    let mut b = plan("(component)");
+    b.edits[0].before = Some(sha256(b"(module)"));
+    publish(&api, "github:example/target", &b).unwrap();
+    assert_eq!(api.0.borrow().prs[1]["state"], "open");
+    publish(&api, "github:example/target", &a).unwrap();
+    assert_eq!(
+        api.0.borrow().prs[1]["state"],
+        "open",
+        "Retry of applied plan A closed newer proposal B"
+    );
+}
+
+#[test]
+fn applied_plan_closes_only_its_own_proposal_despite_old_guards() {
+    let api = Mock::new();
+    let mut p = plan("(module)");
+    p.guards.push(cm_exchange_plan::Guard {
+        path: p.edits[0].path.clone(),
+        sha256: None,
+    });
+    publish(&api, "github:example/target", &p).unwrap();
+    {
+        let mut s = api.0.borrow_mut();
+        let head = s.refs[&branch_for(&p)].clone();
+        s.refs.insert("main".into(), head);
+    }
+    assert!(matches!(
+        publish(&api, "github:example/target", &p).unwrap(),
+        Publication::Closed(_)
+    ));
+    assert_eq!(api.0.borrow().prs[0]["state"], "closed");
 }

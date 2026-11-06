@@ -38,6 +38,8 @@ Names are unique within a source and use portable ASCII letters, digits, `-`, `_
 
 A route requires all author-declared `requires` capabilities to be present in `supports`. An empty `covers_any` accepts any category. Global exclusions override all routes. Multiple matching routes are an error; destinations include the source owner/repository and test name to avoid basename collisions. A path declared as an authoritative test cannot be overwritten by delivery, and tests inside receiving destinations cannot be exported as new originals.
 
+Route exclusions also preserve previously received files when their source retires them. Receipts remember the receiving route by name, so keep that name when moving its destination. Older receipts, or renamed routes, are matched by the delivered path; if that cannot identify a route, any route exclusion for the test conservatively prevents retirement.
+
 The first analyzer reports syntax evidence and **always marks inference incomplete**. It does not claim that syntax inside expected-rejection assertions must be enabled. Default routes therefore withhold uncertain tests. Set `allow_unknown = true` only when you intentionally accept review of those tests; the plan will include warnings. This is metadata selection, not evidence of engine support.
 
 Add a meaningful intent comment at the top of each WAST and explain subtle assertions nearby. The draft emits review warnings, not proof that a comment is correct or sufficient.

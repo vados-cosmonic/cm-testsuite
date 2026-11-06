@@ -15,9 +15,6 @@ on:
         required: true
 permissions:
   contents: read
-concurrency:
-  group: tag-release
-  cancel-in-progress: false
 jobs:
   tag:
     if: >-
@@ -25,6 +22,11 @@ jobs:
       (github.event.pull_request.merged &&
        startsWith(github.event.pull_request.title, 'release:') &&
        github.event.pull_request.head.repo.full_name == github.repository)
+    # Job-level, so skipped runs for unrelated closed PRs never queue here and
+    # cannot replace a pending release run.
+    concurrency:
+      group: tag-release
+      cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
@@ -68,6 +70,6 @@ jobs:
     permissions:
       contents: write
       issues: write
-      pull-requests: read
+      pull-requests: write
     with:
       tag: ${{ needs.tag.outputs.tag }}

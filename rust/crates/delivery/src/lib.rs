@@ -188,6 +188,28 @@ fn withdraw(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publication>
     let base_name = info["default_branch"]
         .as_str()
         .context("missing default branch")?;
+    let base = resolve(api, repository, base_name)?;
+    // An empty plan supersedes the current proposal only while its policy and
+    // catalog baselines remain current. Applied plans have different baselines;
+    // those may withdraw only the exact proposal they originally published.
+    if plan.edits.is_empty() {
+        for guard in &plan.guards {
+            ensure!(
+                remote_hash(api, repository, &base, &guard.path)? == guard.sha256,
+                "remote plan baseline changed: {}",
+                guard.path
+            );
+        }
+    } else {
+        for edit in &plan.edits {
+            ensure!(
+                remote_hash(api, repository, &base, &edit.path)?
+                    == edit.after.as_ref().map(|s| sha256(s.as_bytes())),
+                "applied plan contents changed before withdrawal: {}",
+                edit.path
+            );
+        }
+    }
     let branch = branch_for(plan);
     let owner = repository
         .strip_prefix("github:")
@@ -217,11 +239,23 @@ fn withdraw(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publication>
             .contains("<!-- cm-testsuite -->"),
         "existing PR is not owned by cm-testsuite"
     );
+    if !plan.edits.is_empty()
+        && !pr["body"]
+            .as_str()
+            .unwrap_or_default()
+            .contains(&format!("Plan SHA-256: `{}`", plan.key()?))
+    {
+        return Ok(Publication::NoChanges);
+    }
     let reference = required(api, "GET", &format!("{repo}/git/ref/heads/{branch}"), None)?;
     let head = reference["object"]["sha"]
         .as_str()
         .context("missing proposal head")?;
     verify_owned_branch(api, repository, head, &branch)?;
+    ensure!(
+        resolve(api, repository, base_name)? == base,
+        "default branch moved during withdrawal; retry with a fresh plan"
+    );
     let closed = required(
         api,
         "PATCH",

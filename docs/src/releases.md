@@ -32,8 +32,7 @@ printf '%s\n' 'fix(catalog): preserve identity' | npm exec --no -- commitlint
 
 The hygiene workflow checks every proposed commit and the PR title (which may
 become a squash commit), including merge-queue ranges. Existing history outside
-the proposed range is not re-linted. It also runs actionlint and zizmor on the
-workflows. Dependabot groups weekly GitHub Actions and commitlint updates.
+the proposed range is not re-linted. It also audits the workflows with zizmor. Dependabot groups weekly GitHub Actions and commitlint updates.
 Branch protection can require `commits`, `workflows`, and the existing `check`
 job; installing these workflows does not change repository protection settings.
 

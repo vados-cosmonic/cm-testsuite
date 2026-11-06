@@ -3,5 +3,5 @@
 mod client;
 mod repository;
 
-pub use client::{Api, Client, required};
+pub use client::{Api, Client, HttpStatus, required};
 pub use repository::{encode, read_file, repo_path, resolve, tree_sha};

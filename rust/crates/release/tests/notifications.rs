@@ -1,5 +1,5 @@
 use anyhow::{Result, bail};
-use cm_github::Api;
+use cm_github::{Api, HttpStatus};
 use cm_release::{
     Metadata,
     github::{self, COMMENT_MARKER},
@@ -17,6 +17,8 @@ struct State {
     prs: BTreeMap<u64, Value>,
     associated: BTreeMap<String, Vec<Value>>,
     comments: BTreeMap<u64, Vec<Value>>,
+    // Issue numbers that respond with this status instead of the issue.
+    unavailable: BTreeMap<u64, u16>,
     writes: usize,
     tag: Option<String>,
 }
@@ -28,6 +30,7 @@ impl Mock {
             prs: BTreeMap::new(),
             associated: BTreeMap::new(),
             comments: BTreeMap::new(),
+            unavailable: BTreeMap::new(),
             writes: 0,
             tag: None,
         }))
@@ -65,6 +68,24 @@ impl Api for Mock {
                     .collect::<Vec<_>>()
             ),
             ("GET", ["pulls", number]) => s.prs[&number.parse::<u64>()?].clone(),
+            ("GET", ["issues", number]) => {
+                let number = number.parse::<u64>()?;
+                match s.unavailable.get(&number) {
+                    Some(404) => return Ok(None),
+                    Some(&status) => {
+                        return Err(HttpStatus {
+                            method: method.into(),
+                            path: path.into(),
+                            status,
+                        }
+                        .into());
+                    }
+                    None if s.prs.contains_key(&number) => {
+                        json!({"number":number,"pull_request":{}})
+                    }
+                    None => json!({"number":number}),
+                }
+            }
             ("GET", ["issues", number, "comments"]) => json!(
                 s.comments
                     .get(&number.parse::<u64>()?)
@@ -240,4 +261,27 @@ fn tagging_is_explicit_idempotent_and_never_moves_existing_tags() {
     assert!(!github::create_tag(&api, REPO, &meta, &"a".repeat(40), true).unwrap());
     assert!(github::create_tag(&api, REPO, &meta, &"b".repeat(40), true).is_err());
     assert_eq!(api.0.borrow().writes, 1);
+}
+#[test]
+fn skips_missing_moved_and_deleted_targets_and_names_linked_prs() {
+    let api = Mock::new();
+    api.add_pr(1, &"a".repeat(40), "Fixes #7, fixes #8, fixes #9, fixes #10, fixes #2");
+    // #2 is a PR outside this release, so it is only a linked target.
+    api.add_pr(2, &"c".repeat(40), "");
+    api.0
+        .borrow_mut()
+        .unavailable
+        .extend([(7, 404), (8, 301), (9, 410)]);
+    let edits =
+        github::notifications(&api, REPO, "cm-testsuite-v0.2.0-rc.1", &history(), AUTHOR).unwrap();
+    assert_eq!(
+        edits.iter().map(|e| e.number).collect::<Vec<_>>(),
+        vec![2, 10]
+    );
+    assert!(edits[0].body.starts_with("The changes linked to this PR"));
+    assert!(edits[1].body.starts_with("The changes linked to this issue"));
+    api.0.borrow_mut().unavailable.insert(10, 500);
+    assert!(
+        github::notifications(&api, REPO, "cm-testsuite-v0.2.0-rc.1", &history(), AUTHOR).is_err()
+    );
 }

@@ -2,7 +2,7 @@
 use crate::{Metadata, history::ReleaseHistory};
 use anyhow::{Context, Result, ensure};
 use cm_catalog::validate_revision;
-use cm_github::{Api, encode, repo_path, required, resolve};
+use cm_github::{Api, HttpStatus, encode, repo_path, required, resolve};
 use serde::Serialize;
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
@@ -207,7 +207,24 @@ pub fn notifications(
         encode(tag)
     );
     let mut edits = Vec::new();
-    for (number, is_issue) in targets {
+    for (number, linked) in targets {
+        // A typo, transferred, or deleted reference must not block every other
+        // notification, including on reruns.
+        let target = match api.request("GET", &format!("{repo}/issues/{number}"), None) {
+            Ok(Some(target)) => target,
+            Ok(None) => {
+                eprintln!("warning: skipping #{number}: not found");
+                continue;
+            }
+            Err(error) => match error.downcast_ref::<HttpStatus>() {
+                Some(HttpStatus { status, .. }) if matches!(*status, 301 | 410) => {
+                    eprintln!("warning: skipping #{number}: moved or deleted (HTTP {status})");
+                    continue;
+                }
+                _ => return Err(error),
+            },
+        };
+        let is_pr = target.get("pull_request").is_some_and(|v| !v.is_null());
         let comments = pages(api, &format!("{repo}/issues/{number}/comments"))?;
         let existing = owned_comment(&comments, author)?;
         let (comment_id, before, body) = if let Some(comment) = existing {
@@ -228,10 +245,10 @@ pub fn notifications(
                 updated,
             )
         } else {
-            let subject = if is_issue {
-                "The changes linked to this issue"
-            } else {
-                "The changes in this PR"
+            let subject = match (linked, is_pr) {
+                (false, _) => "The changes in this PR",
+                (true, false) => "The changes linked to this issue",
+                (true, true) => "The changes linked to this PR",
             };
             (
                 None,

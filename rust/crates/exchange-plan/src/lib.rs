@@ -250,6 +250,8 @@ pub struct Delivered {
     pub path: String,
     pub sha256: String,
     pub revision: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub route: Option<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -269,10 +271,48 @@ impl Receipt {
             ensure!(t.path.ends_with(".wast"), "receipt path must be WAST");
             validate_sha(&t.sha256)?;
             validate_revision(&t.revision)?;
+            if let Some(route) = &t.route {
+                validate_name(route)?;
+            }
             ensure!(paths.insert(&t.path), "duplicate receipt path");
         }
         Ok(())
     }
+}
+fn retirement_excluded(
+    id: &str,
+    prior: &Delivered,
+    manifest: &Manifest,
+    manifest_path: &str,
+) -> Result<bool> {
+    let routes = &manifest.receive.route;
+    if let Some(name) = &prior.route
+        && let Some(route) = routes.iter().find(|r| &r.name == name)
+    {
+        return Ok(route.exclude.contains(id));
+    }
+    // Older receipts did not record route names. Infer the route from the
+    // delivered path, retaining the file conservatively if a move makes that
+    // ambiguous and any route explicitly excludes this identity.
+    let mut matched = false;
+    let mut excluded = false;
+    for route in routes {
+        let destination = format!(
+            "{}/{}.wast",
+            resolve_path(manifest_path, &route.destination)?,
+            id.strip_prefix("github:")
+                .context("invalid receipt identity")?
+        );
+        if prior.path == destination {
+            matched = true;
+            excluded |= route.exclude.contains(id);
+        }
+    }
+    Ok(if matched {
+        excluded
+    } else {
+        routes.iter().any(|r| r.exclude.contains(id))
+    })
 }
 pub fn receive(
     root: &Path,
@@ -399,6 +439,7 @@ pub fn receive(
             path: destination,
             sha256: test.sha256.clone(),
             revision: test.revision.clone(),
+            route: Some(route.name.clone()),
         };
         if previous != Some(&delivered) {
             plan.provenance.insert(id.clone(), test.clone());
@@ -418,6 +459,7 @@ pub fn receive(
             && !catalog.tests.contains_key(id)
             && !manifest.receive.exclude.contains(id)
             && manifest.receive.deletions == Policy::PullRequest
+            && !retirement_excluded(id, prior, &manifest, manifest_path)?
         {
             if let Some(e) = edit(root, &prior.path, Some(&prior.sha256), None)? {
                 ensure!(

@@ -316,3 +316,108 @@ fn snapshot_tampering_is_rejected() {
     assert!(s.validate().is_err());
     assert!(json(&s).is_ok());
 }
+
+#[test]
+fn route_exclusion_must_preserve_retired_file() {
+    let hub = tempfile::tempdir().unwrap();
+    let target = tempfile::tempdir().unwrap();
+    let mut a = snapshot("a", "x.wast", "(module)");
+    setup(hub.path(), &a);
+    policy(target.path(), "deletions='pull-request'");
+    apply(target.path(), &received(target.path(), hub.path())).unwrap();
+    let path = target.path().join(".cm-testsuite.toml");
+    let text = fs::read_to_string(&path).unwrap();
+    fs::write(&path, text + "exclude=['github:example/a/stable-name']\n").unwrap();
+    a.tests.clear();
+    a.files.clear();
+    setup(hub.path(), &a);
+    let p = received(target.path(), hub.path());
+    assert!(
+        p.edits.is_empty(),
+        "Route-excluded test was scheduled for deletion: {:?}",
+        p.edits
+    );
+}
+
+#[test]
+fn retirement_exclusion_follows_route_after_destination_moves() {
+    let hub = tempfile::tempdir().unwrap();
+    let target = tempfile::tempdir().unwrap();
+    let mut a = snapshot("a", "x.wast", "(module)");
+    setup(hub.path(), &a);
+    policy(target.path(), "deletions='pull-request'");
+    apply(target.path(), &received(target.path(), hub.path())).unwrap();
+    let path = target.path().join(".cm-testsuite.toml");
+    let text = fs::read_to_string(&path)
+        .unwrap()
+        .replace("tests/shared", "tests/moved");
+    fs::write(&path, text + "exclude=['github:example/a/stable-name']\n").unwrap();
+    a.tests.clear();
+    a.files.clear();
+    setup(hub.path(), &a);
+    assert!(received(target.path(), hub.path()).edits.is_empty());
+}
+
+#[test]
+fn legacy_receipts_honor_exclusions_before_and_after_route_moves() {
+    for moved in [false, true] {
+        let hub = tempfile::tempdir().unwrap();
+        let target = tempfile::tempdir().unwrap();
+        let mut a = snapshot("a", "x.wast", "(module)");
+        setup(hub.path(), &a);
+        policy(target.path(), "deletions='pull-request'");
+        apply(target.path(), &received(target.path(), hub.path())).unwrap();
+        let receipt_path = target.path().join(".cm-testsuite-lock.json");
+        let mut receipt: serde_json::Value =
+            serde_json::from_slice(&fs::read(&receipt_path).unwrap()).unwrap();
+        for test in receipt["tests"].as_object_mut().unwrap().values_mut() {
+            test.as_object_mut().unwrap().remove("route");
+        }
+        fs::write(&receipt_path, json(&receipt).unwrap()).unwrap();
+        let path = target.path().join(".cm-testsuite.toml");
+        let mut text = fs::read_to_string(&path).unwrap();
+        if moved {
+            text = text.replace("tests/shared", "tests/moved");
+        }
+        fs::write(&path, text + "exclude=['github:example/a/stable-name']\n").unwrap();
+        a.tests.clear();
+        a.files.clear();
+        setup(hub.path(), &a);
+        assert!(received(target.path(), hub.path()).edits.is_empty());
+    }
+}
+
+#[test]
+fn unrelated_route_exclusion_does_not_block_retirement() {
+    for legacy in [false, true] {
+        let hub = tempfile::tempdir().unwrap();
+        let target = tempfile::tempdir().unwrap();
+        let mut a = snapshot("a", "x.wast", "(module)");
+        setup(hub.path(), &a);
+        policy(target.path(), "deletions='pull-request'");
+        apply(target.path(), &received(target.path(), hub.path())).unwrap();
+        if legacy {
+            let path = target.path().join(".cm-testsuite-lock.json");
+            let mut receipt: serde_json::Value =
+                serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+            for test in receipt["tests"].as_object_mut().unwrap().values_mut() {
+                test.as_object_mut().unwrap().remove("route");
+            }
+            fs::write(&path, json(&receipt).unwrap()).unwrap();
+        }
+        let path = target.path().join(".cm-testsuite.toml");
+        let text = fs::read_to_string(&path).unwrap();
+        fs::write(&path, text + "\n[[receive.route]]\nname='other'\ndestination='file:///tests/other'\nexclude=['github:example/a/stable-name']\n").unwrap();
+        a.tests.clear();
+        a.files.clear();
+        setup(hub.path(), &a);
+        let p = received(target.path(), hub.path());
+        assert!(
+            p.edits
+                .iter()
+                .any(|e| e.path.ends_with(".wast") && e.after.is_none())
+        );
+        apply(target.path(), &p).unwrap();
+        assert!(received(target.path(), hub.path()).edits.is_empty());
+    }
+}

@@ -44,4 +44,6 @@ The token's origin is up to the caller; no GitHub App is required. Reading priva
 
 Publication uses the target's default branch, verifies plan guards against its committed state, and creates or updates one stable **draft** PR branch for the plan subject. It preserves unrelated files through the base tree. It does not auto-merge. A declined identical plan is suppressed; permanent exclusions remain the durable way to decline future versions. When the proposed changes disappear, publication closes the owned PR after checking its branch, retaining the branch for inspection. Unexpected branch edits and non-fast-forward races fail without force-pushing.
 
+Automatic withdrawals are marked separately from maintainer declines, so a withdrawn proposal can be offered again if it becomes relevant. Empty plans must still match their policy/catalog guards before withdrawing a PR. Retrying an already-applied plan can close only that exact proposal, leaving newer proposals for the same subject open.
+
 The first draft supports same-repository branches, not forks, and caps proposals at 200 file edits. Its API behavior is tested with an in-memory GitHub model. A live consumer-repository integration pilot remains to be done. Manual exchange workflows prepare artifacts first and publish only when their boolean input is enabled. No source or recipient is enrolled automatically.

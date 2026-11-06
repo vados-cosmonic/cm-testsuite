@@ -122,6 +122,14 @@ pub fn branch_for(plan: &Plan) -> String {
     )
 }
 const MARKER: &str = "\n\nCM-TESTSUITE-PLAN\n";
+fn published_plan_key(body: &str) -> Option<&str> {
+    body.lines()
+        .find_map(|line| line.strip_prefix("Plan SHA-256: `")?.strip_suffix('`'))
+        .filter(|key| validate_sha(key).is_ok())
+}
+fn withdrawal_marker(key: &str) -> String {
+    format!("<!-- cm-testsuite-withdrawn: {key} -->")
+}
 fn verify_owned_branch(api: &dyn Api, source: &str, head: &str, branch: &str) -> Result<()> {
     let repo = repo_path(source)?;
     let commit = required(api, "GET", &format!("{repo}/git/commits/{head}"), None)?;
@@ -232,19 +240,13 @@ fn withdraw(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publication>
     let Some(pr) = prs.first() else {
         return Ok(Publication::NoChanges);
     };
+    let pr_body = pr["body"].as_str().unwrap_or_default();
     ensure!(
-        pr["body"]
-            .as_str()
-            .unwrap_or_default()
-            .contains("<!-- cm-testsuite -->"),
+        pr_body.contains("<!-- cm-testsuite -->"),
         "existing PR is not owned by cm-testsuite"
     );
-    if !plan.edits.is_empty()
-        && !pr["body"]
-            .as_str()
-            .unwrap_or_default()
-            .contains(&format!("Plan SHA-256: `{}`", plan.key()?))
-    {
+    let previous_key = published_plan_key(pr_body).context("missing proposal plan digest")?;
+    if !plan.edits.is_empty() && previous_key != plan.key()? {
         return Ok(Publication::NoChanges);
     }
     let reference = required(api, "GET", &format!("{repo}/git/ref/heads/{branch}"), None)?;
@@ -263,7 +265,10 @@ fn withdraw(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publication>
             "{repo}/pulls/{}",
             pr["number"].as_u64().context("missing PR number")?
         ),
-        Some(json!({"state":"closed"})),
+        Some(json!({
+            "state":"closed",
+            "body":format!("{pr_body}\n{}", withdrawal_marker(previous_key)),
+        })),
     )?;
     Ok(Publication::Closed(
         closed["html_url"]
@@ -355,7 +360,9 @@ pub fn publish(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publicati
                 );
                 ensure!(open.is_none(), "multiple open proposals for one branch");
                 open = Some(pr.clone());
-            } else if pr["merged_at"].is_null() && body.contains(&format!("Plan SHA-256: `{key}`"))
+            } else if pr["merged_at"].is_null()
+                && published_plan_key(body) == Some(key.as_str())
+                && !body.trim_end().ends_with(&withdrawal_marker(&key))
             {
                 return Ok(Publication::Declined);
             }

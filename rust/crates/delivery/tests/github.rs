@@ -393,3 +393,30 @@ fn applied_plan_closes_only_its_own_proposal_despite_old_guards() {
     ));
     assert_eq!(api.0.borrow().prs[0]["state"], "closed");
 }
+
+#[test]
+fn automatic_withdrawal_is_not_a_human_decline() {
+    let api = Mock::new();
+    let p = plan("(module)");
+    publish(&api, "github:example/target", &p).unwrap();
+    let mut empty = p.clone();
+    empty.edits.clear();
+    assert!(matches!(
+        publish(&api, "github:example/target", &empty).unwrap(),
+        Publication::Closed(_)
+    ));
+    assert!(
+        matches!(
+            publish(&api, "github:example/target", &p).unwrap(),
+            Publication::PullRequest(_)
+        ),
+        "Tool-withdrawn plan is suppressed as if a maintainer declined it"
+    );
+    assert_eq!(api.0.borrow().prs.len(), 2);
+    api.0.borrow_mut().prs[1]["state"] = json!("closed");
+    assert_eq!(
+        publish(&api, "github:example/target", &p).unwrap(),
+        Publication::Declined
+    );
+    assert_eq!(api.0.borrow().prs.len(), 2);
+}

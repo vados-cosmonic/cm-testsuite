@@ -421,3 +421,83 @@ fn unrelated_route_exclusion_does_not_block_retirement() {
         assert!(received(target.path(), hub.path()).edits.is_empty());
     }
 }
+
+#[test]
+fn retirement_must_protect_authoritative_paths() {
+    let hub = tempfile::tempdir().unwrap();
+    let target = tempfile::tempdir().unwrap();
+    let mut a = snapshot("a", "x.wast", "(module)");
+    setup(hub.path(), &a);
+    policy(target.path(), "deletions='pull-request'");
+    apply(target.path(), &received(target.path(), hub.path())).unwrap();
+    fs::write(target.path().join(".cm-testsuite.toml"),
+        "schema=1\n[[test]]\nname='own-test'\npath='file:///tests/shared/example/a/stable-name.wast'\n[receive]\nenabled=true\ndeletions='pull-request'\n[[receive.route]]\nname='smoke'\ndestination='file:///tests/new'\nsupports=['component-model']\nallow_unknown=true\n"
+    ).unwrap();
+    a.tests.clear();
+    a.files.clear();
+    setup(hub.path(), &a);
+    let c = Catalog::load(hub.path()).unwrap();
+    let result = receive(
+        target.path(),
+        "github:example/recipient",
+        ".cm-testsuite.toml",
+        &c,
+        &BTreeMap::new(),
+    );
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("authoritative test")
+    );
+    assert_eq!(
+        fs::read_to_string(
+            target
+                .path()
+                .join("tests/shared/example/a/stable-name.wast")
+        )
+        .unwrap(),
+        "(module)"
+    );
+}
+
+#[test]
+fn route_move_must_protect_authoritative_paths() {
+    let hub = tempfile::tempdir().unwrap();
+    let target = tempfile::tempdir().unwrap();
+    setup(hub.path(), &snapshot("a", "x.wast", "(module)"));
+    policy(target.path(), "");
+    apply(target.path(), &received(target.path(), hub.path())).unwrap();
+    fs::write(target.path().join(".cm-testsuite.toml"),
+        "schema=1\n[[test]]\nname='own-test'\npath='file:///tests/shared/example/a/stable-name.wast'\n[receive]\nenabled=true\n[[receive.route]]\nname='smoke'\ndestination='file:///tests/new'\nsupports=['component-model']\nallow_unknown=true\n"
+    ).unwrap();
+    let c = Catalog::load(hub.path()).unwrap();
+    let result = receive(
+        target.path(),
+        "github:example/recipient",
+        ".cm-testsuite.toml",
+        &c,
+        &load_catalog_files(hub.path(), &c).unwrap(),
+    );
+    assert!(
+        result
+            .unwrap_err()
+            .to_string()
+            .contains("authoritative test")
+    );
+    assert_eq!(
+        fs::read_to_string(
+            target
+                .path()
+                .join("tests/shared/example/a/stable-name.wast")
+        )
+        .unwrap(),
+        "(module)"
+    );
+    assert!(
+        !target
+            .path()
+            .join("tests/new/example/a/stable-name.wast")
+            .exists()
+    );
+}

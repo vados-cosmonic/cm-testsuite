@@ -329,6 +329,11 @@ pub fn receive(
         manifest.receive.enabled,
         "recipient has not opted into receiving"
     );
+    let authoritative = manifest
+        .test
+        .iter()
+        .map(|test| resolve_path(manifest_path, &test.path))
+        .collect::<Result<BTreeSet<_>>>()?;
     let old = read(root, RECEIPT_PATH)?
         .map(|b| serde_json::from_slice::<Receipt>(&b))
         .transpose()?
@@ -402,12 +407,10 @@ pub fn receive(
             destinations.insert(destination.clone()),
             "receiving destination collision"
         );
-        for spec in &manifest.test {
-            ensure!(
-                resolve_path(manifest_path, &spec.path)? != destination,
-                "delivery would overwrite an authoritative test"
-            );
-        }
+        ensure!(
+            !authoritative.contains(&destination),
+            "delivery would overwrite an authoritative test"
+        );
         ensure!(
             !old.tests
                 .iter()
@@ -479,6 +482,13 @@ pub fn receive(
     }
     next.validate()?;
     plan.edits = edits.into_values().collect();
+    for edit in &plan.edits {
+        ensure!(
+            !authoritative.contains(&edit.path),
+            "delivery would modify or remove an authoritative test: {}",
+            edit.path
+        );
+    }
     plan.validate()?;
     Ok(plan)
 }

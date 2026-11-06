@@ -1,0 +1,68 @@
+# Adapted from bytecodealliance/jco; release logic lives in Rust xtask commands.
+name: create-release-pr
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Next workspace SemVer, without v (for example 0.2.0 or 0.2.0-rc.1)'
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: create-release-pr
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Bootstrap pinned tools
+        run: |
+          bash scripts/bootstrap.sh
+          echo "$PWD/.tools" >> "$GITHUB_PATH"
+      - name: Prepare version, lockfile, and changelog
+        id: release
+        env:
+          NEXT_VERSION: ${{ inputs.version }}
+        run: ./just xtask release prepare --version "$NEXT_VERSION" --github-output "$GITHUB_OUTPUT"
+      - name: Check release changes
+        run: |
+          ./just check
+          ./just xtask buck-lock --check
+          git diff --check
+      - name: Ensure the release label exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh label create release-pr --repo "$GITHUB_REPOSITORY" --color 0E8A16 --description "Reviewed release preparation" --force
+      - name: Open release preparation PR
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.RELEASE_PAT || github.token }}
+          base: main
+          branch: prep-release-${{ steps.release.outputs.tag }}
+          commit-message: 'release: cm-testsuite v${{ steps.release.outputs.version }}'
+          title: 'release: cm-testsuite v${{ steps.release.outputs.version }}'
+          labels: release-pr
+          signoff: true
+          add-paths: |
+            rust/Cargo.toml
+            rust/Cargo.lock
+            CHANGELOG.md
+          body: |
+            Prepare `${{ steps.release.outputs.tag }}`.
+
+            - [ ] Review the version and changelog.
+            - [ ] Confirm checks pass before merging.
+
+            Merging into main tags the exact merge commit, builds the Linux artifact,
+            publishes the GitHub release, and updates related issues or PRs.

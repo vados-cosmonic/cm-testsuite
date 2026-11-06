@@ -1,0 +1,217 @@
+//! CLI adapters for repository hygiene and release automation.
+use anyhow::{Context, Result, ensure};
+use clap::Subcommand;
+use cm_release::{Metadata, github, history};
+use std::{
+    fs,
+    io::Write,
+    path::{Path, PathBuf},
+    process::Command,
+};
+
+#[derive(Subcommand)]
+pub enum Release {
+    /// Validate a version and emit GitHub Actions outputs, without mutation.
+    Metadata {
+        #[arg(long)]
+        version: String,
+        #[arg(long)]
+        github_output: Option<PathBuf>,
+    },
+    /// Validate an automatic merged-PR event and select its exact merge commit.
+    FromEvent {
+        #[arg(long)]
+        event: PathBuf,
+        #[arg(long)]
+        repository: String,
+        #[arg(long)]
+        github_output: Option<PathBuf>,
+    },
+    /// Update the workspace version, Cargo.lock, and changelog in a clean checkout.
+    Prepare {
+        #[arg(long)]
+        version: String,
+        #[arg(long)]
+        github_output: Option<PathBuf>,
+    },
+    /// Check that HEAD, the tag, workspace version, lockfile, and notes agree.
+    Validate {
+        #[arg(long)]
+        tag: String,
+        #[arg(long)]
+        github_output: Option<PathBuf>,
+    },
+    /// Extract the latest changelog section, requiring the expected version.
+    ExtractLatestChangelogSection {
+        #[arg(long)]
+        version: String,
+        #[arg(long)]
+        out: PathBuf,
+    },
+    /// Print whether a version is a prerelease.
+    SemverIsPrerelease { version: String },
+    /// Print the prerelease channel, or an empty string for a stable version.
+    SemverGetPrerelease { version: String },
+    /// Compare two versions using SemVer precedence (ignoring build metadata).
+    SemverLt { current: String, next: String },
+    /// Plan a tag on a validated commit reachable from origin/main; --apply writes it.
+    Tag {
+        #[arg(long)]
+        repository: String,
+        #[arg(long)]
+        version: String,
+        #[arg(long)]
+        reference: String,
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Plan release comments for related issues/PRs; --apply sends them to GitHub.
+    PostReleaseIssueUpdate {
+        #[arg(long)]
+        repository: String,
+        #[arg(long)]
+        tag: String,
+        #[arg(long, default_value = "github-actions[bot]")]
+        comment_author: String,
+        #[arg(long)]
+        apply: bool,
+    },
+}
+fn emit(meta: &Metadata, output: Option<&Path>) -> Result<()> {
+    print!("{}", meta.outputs());
+    if let Some(path) = output {
+        fs::OpenOptions::new()
+            .append(true)
+            .create(true)
+            .open(path)?
+            .write_all(meta.outputs().as_bytes())?;
+    }
+    Ok(())
+}
+fn client(apply: bool) -> Result<cm_github::Client> {
+    let token = std::env::var("GITHUB_TOKEN")
+        .ok()
+        .filter(|s| !s.trim().is_empty());
+    ensure!(!apply || token.is_some(), "--apply requires GITHUB_TOKEN");
+    Ok(cm_github::Client::new(token))
+}
+pub fn run(root: &Path, task: Release) -> Result<()> {
+    match task {
+        Release::Metadata {
+            version,
+            github_output,
+        } => emit(&Metadata::new(&version)?, github_output.as_deref())?,
+        Release::FromEvent {
+            event,
+            repository,
+            github_output,
+        } => {
+            let event = serde_json::from_slice(&fs::read(event)?)?;
+            if let Some((meta, sha)) = cm_release::merged_release(&event, &repository)? {
+                emit(&meta, github_output.as_deref())?;
+                println!("ref={sha}");
+                if let Some(path) = github_output {
+                    writeln!(
+                        fs::OpenOptions::new()
+                            .append(true)
+                            .create(true)
+                            .open(path)?,
+                        "ref={sha}"
+                    )?;
+                }
+            } else {
+                println!("proceed=false");
+                if let Some(path) = github_output {
+                    writeln!(
+                        fs::OpenOptions::new()
+                            .append(true)
+                            .create(true)
+                            .open(path)?,
+                        "proceed=false"
+                    )?;
+                }
+            }
+        }
+        Release::Prepare {
+            version,
+            github_output,
+        } => emit(
+            &cm_release::prepare(root, &version)?,
+            github_output.as_deref(),
+        )?,
+        Release::Validate { tag, github_output } => emit(
+            &history::validate_checkout(root, &tag)?,
+            github_output.as_deref(),
+        )?,
+        Release::ExtractLatestChangelogSection { version, out } => {
+            let notes = cm_release::release_notes(
+                &fs::read_to_string(root.join("CHANGELOG.md"))?,
+                &version,
+            )?;
+            fs::write(out, notes)?;
+        }
+        Release::SemverIsPrerelease { version } => {
+            println!("{}", Metadata::new(&version)?.prerelease)
+        }
+        Release::SemverGetPrerelease { version } => {
+            println!("{}", Metadata::new(&version)?.prerelease_tag)
+        }
+        Release::SemverLt { current, next } => println!(
+            "{}",
+            cm_release::version(&current)?
+                .cmp_precedence(&cm_release::version(&next)?)
+                .is_lt()
+        ),
+        Release::Tag {
+            repository,
+            version,
+            reference,
+            apply,
+        } => {
+            let meta = Metadata::new(&version)?;
+            let sha = history::tag_target(root, &meta, &reference)?;
+            let changed = github::create_tag(&client(apply)?, &repository, &meta, &sha, apply)?;
+            println!(
+                "{}",
+                serde_json::json!({"tag":meta.tag,"sha":sha,"apply":apply,"create":changed})
+            );
+        }
+        Release::PostReleaseIssueUpdate {
+            repository,
+            tag,
+            comment_author,
+            apply,
+        } => {
+            let history = history::release_history(root, &tag)?;
+            let api = client(apply)?;
+            let edits = github::notifications(&api, &repository, &tag, &history, &comment_author)?;
+            println!("{}", cm_catalog::json(&edits)?);
+            if apply {
+                github::apply_notifications(&api, &repository, &comment_author, &edits)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+pub fn lint_commits(root: &Path, from: &str, to: &str) -> Result<()> {
+    let from = history::resolve(root, from)?;
+    let to = history::resolve(root, to)?;
+    let status = Command::new("npm")
+        .current_dir(root)
+        .args([
+            "exec",
+            "--no",
+            "--",
+            "commitlint",
+            "--from",
+            &from,
+            "--to",
+            &to,
+            "--verbose",
+        ])
+        .status()
+        .context("install Node.js and run npm ci before linting commits")?;
+    ensure!(status.success(), "commitlint rejected one or more commits");
+    Ok(())
+}

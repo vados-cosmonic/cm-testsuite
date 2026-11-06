@@ -291,6 +291,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cm-release"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cm-catalog",
+ "cm-github",
+ "semver",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "toml",
+ "toml_edit",
+]
+
+[[package]]
 name = "cm-results"
 version = "0.1.0"
 dependencies = [
@@ -2238,6 +2253,7 @@ dependencies = [
  "cm-delivery",
  "cm-exchange-plan",
  "cm-github",
+ "cm-release",
  "cm-results",
  "cm-wast-analysis",
  "serde",

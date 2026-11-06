@@ -7,3 +7,5 @@ Wasmono is consumed as an external cell at `5cb97a58be3853916a0fcb7f27eeca2524d5
 Buck2, DotSlash, Just, mdBook, Rust, and Cargo retain their upstream licenses. DotSlash descriptors and Rust release metadata record distribution hashes. `rust/Cargo.lock` records dependency versions/checksums; `third-party/crates.bzl` is generated from it. Dependencies retain the licenses supplied in their crate archives.
 
 Tooling licenses do not grant permission to redistribute an upstream test corpus. Review each source's license and preserve its notices before admitting its tests.
+
+The Conventional Commit configuration, release workflow structure, changelog template, and Rust ports of release metadata, SemVer/changelog helpers, and post-release issue/PR notifications are adapted from [bytecodealliance/jco](https://github.com/bytecodealliance/jco/tree/0851dc9bc8bfa0313e16358a8cd937ccc407d7a3), under Apache-2.0. The adaptations use a single Rust workspace release, exact-commit tagging, and idempotent notification planning. git-cliff and commitlint retain their upstream licenses; their distribution or package integrity is pinned.

@@ -10,6 +10,7 @@ license = "Apache-2.0"
 publish = false
 
 [workspace.dependencies]
+semver = { version = "=1.0.28", default-features = false }
 anyhow = { version = "=1.0.103", default-features = false }
 serde = { version = "=1.0.228", default-features = false }
 serde_json = { version = "=1.0.150", default-features = false }
@@ -31,6 +32,7 @@ cm-acquisition = { path = "crates/acquisition", default-features = false }
 cm-exchange-plan = { path = "crates/exchange-plan", default-features = false }
 cm-delivery = { path = "crates/delivery", default-features = false }
 cm-results = { path = "crates/results", default-features = false }
+cm-release = { path = "crates/release", default-features = false }
 
 [profile.dev]
 debug = 0

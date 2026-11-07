@@ -32,6 +32,10 @@ pub enum Release {
     Prepare {
         #[arg(long)]
         version: String,
+        /// Re-prepare the current, untagged workspace version (for example after
+        /// tag-release refused its merge), regenerating its changelog section.
+        #[arg(long)]
+        allow_current_version: bool,
         #[arg(long)]
         github_output: Option<PathBuf>,
     },
@@ -139,9 +143,10 @@ pub fn run(root: &Path, task: Release) -> Result<()> {
         }
         Release::Prepare {
             version,
+            allow_current_version,
             github_output,
         } => emit(
-            &cm_release::prepare(root, &version)?,
+            &cm_release::prepare(root, &version, allow_current_version)?,
             github_output.as_deref(),
         )?,
         Release::Validate { tag, github_output } => emit(

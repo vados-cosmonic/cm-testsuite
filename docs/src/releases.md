@@ -65,9 +65,13 @@ archives are available through GitHub Releases. The crates remain
    main moves while the release PR is open; it regenerates the PR on current
    main. Requiring branches to be up to date before merging in branch protection
    enforces this. Do not use **Update branch**: its merge commit is refused too.
-   After a refusal, main carries the untagged version. Either prepare the next
-   version, whose notes start from the last tag and so include everything, or
-   accept the gap and tag it with a manual **tag-release** run.
+   After a refusal, main carries the untagged version. Rerun
+   **create-release-pr** with the same version and **allow-current-version**
+   checked (`--allow-current-version` locally). It keeps the manifests and
+   replaces that version's changelog section with notes regenerated from the
+   last tag, which include the late commits. Merging that PR lands directly on
+   main, so **tag-release** tags it. The option never permits an older version
+   or a version that is already tagged.
 4. **release** checks out the exact tag, refuses tags outside `origin/main`
    (including maintainer-pushed tags), runs checks, packages the Linux binary,
    uploads assets to a draft, publishes the GitHub release, then updates related

@@ -7,6 +7,10 @@ on:
         description: 'Next workspace SemVer, without v (for example 0.2.0 or 0.2.0-rc.1)'
         type: string
         required: true
+      allow-current-version:
+        description: 'Re-prepare the current, untagged version after tag-release refused its merge'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -34,7 +38,13 @@ jobs:
         id: release
         env:
           NEXT_VERSION: ${{ inputs.version }}
-        run: ./just xtask release prepare --version "$NEXT_VERSION" --github-output "$GITHUB_OUTPUT"
+          ALLOW_CURRENT: ${{ inputs.allow-current-version }}
+        run: |
+          args=(--version "$NEXT_VERSION" --github-output "$GITHUB_OUTPUT")
+          if [[ "$ALLOW_CURRENT" == true ]]; then
+            args+=(--allow-current-version)
+          fi
+          ./just xtask release prepare "${args[@]}"
       - name: Check release changes
         run: |
           ./just check

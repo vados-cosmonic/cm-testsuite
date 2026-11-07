@@ -115,7 +115,14 @@ pub fn workspace_version(root: &Path) -> Result<Version> {
 }
 
 /// Preserve TOML formatting and update only local workspace packages in the lockfile.
-pub fn bumped_manifests(manifest: &str, lock: &str, next: &str) -> Result<(String, String)> {
+/// `allow_current` re-prepares the current, untagged version, for example after
+/// tag-release refused its merge; the manifests are then left unchanged.
+pub fn bumped_manifests(
+    manifest: &str,
+    lock: &str,
+    next: &str,
+    allow_current: bool,
+) -> Result<(String, String)> {
     let mut doc = manifest.parse::<DocumentMut>()?;
     let current = version(
         doc.get("workspace")
@@ -125,10 +132,16 @@ pub fn bumped_manifests(manifest: &str, lock: &str, next: &str) -> Result<(Strin
             .context("missing workspace version")?,
     )?;
     let next_version = version(next)?;
+    let same = current.to_string() == next;
     ensure!(
-        current.cmp_precedence(&next_version).is_lt(),
+        !same || allow_current,
+        "version {current} is already current; pass --allow-current-version to re-prepare it"
+    );
+    ensure!(
+        same || current.cmp_precedence(&next_version).is_lt(),
         "next version must be after current version {current}"
     );
+    let original_lock = lock;
     let mut lock = lock.parse::<DocumentMut>()?;
     let packages = lock["package"]
         .as_array_of_tables_mut()
@@ -141,11 +154,16 @@ pub fn bumped_manifests(manifest: &str, lock: &str, next: &str) -> Result<(Strin
                     == Some(current.to_string().as_str()),
                 "local package versions must match the workspace"
             );
-            package["version"] = value(next);
+            if !same {
+                package["version"] = value(next);
+            }
             changed += 1;
         }
     }
     ensure!(changed > 0, "no workspace packages in lockfile");
+    if same {
+        return Ok((manifest.to_owned(), original_lock.to_owned()));
+    }
     doc["workspace"]["package"]["version"] = value(next);
     Ok((doc.to_string(), lock.to_string()))
 }
@@ -190,11 +208,32 @@ pub fn release_notes(changelog: &str, expected: &str) -> Result<String> {
 
 /// Prepend generated notes (which carry the heading) to the existing sections,
 /// separated by a blank line.
-fn combine_changelogs(generated: &str, previous: &str) -> Result<String> {
-    let older = previous
+fn combine_changelogs(generated: &str, previous: &str, replace: Option<&str>) -> Result<String> {
+    let mut older = previous
         .strip_prefix("# Changelog\n")
         .context("missing changelog heading")?
-        .trim();
+        .trim()
+        .to_owned();
+    if let Some(version) = replace {
+        // Re-preparing replaces the stale notes of the untagged version.
+        release_notes(previous, version)?;
+        let heading = format!("## [{version}]");
+        let mut skipping = false;
+        let mut kept = Vec::new();
+        for line in older.lines() {
+            if line.starts_with(&heading) {
+                skipping = true;
+                continue;
+            }
+            if skipping && line.starts_with("## [") {
+                skipping = false;
+            }
+            if !skipping {
+                kept.push(line);
+            }
+        }
+        older = kept.join("\n").trim().to_owned();
+    }
     Ok(if older.is_empty() {
         format!("{}\n", generated.trim_end())
     } else {
@@ -202,7 +241,7 @@ fn combine_changelogs(generated: &str, previous: &str) -> Result<String> {
     })
 }
 
-pub fn prepare(root: &Path, next: &str) -> Result<Metadata> {
+pub fn prepare(root: &Path, next: &str, allow_current: bool) -> Result<Metadata> {
     let meta = Metadata::new(next)?;
     ensure!(
         history::git(root, &["status", "--porcelain", "--untracked-files=normal"])?
@@ -216,18 +255,20 @@ pub fn prepare(root: &Path, next: &str) -> Result<Metadata> {
             .is_empty(),
         "release tag already exists"
     );
+    let reprepare = workspace_version(root)?.to_string() == next;
     let manifest_path = root.join("rust/Cargo.toml");
     let lock_path = root.join("rust/Cargo.lock");
     let (manifest, lock) = bumped_manifests(
         &fs::read_to_string(&manifest_path)?,
         &fs::read_to_string(&lock_path)?,
         next,
+        allow_current,
     )?;
     let generated = history::changelog(root, &meta)?;
     release_notes(&generated, next)?;
     let changelog_path = root.join("CHANGELOG.md");
     let previous = fs::read_to_string(&changelog_path)?;
-    let combined = combine_changelogs(&generated, &previous)?;
+    let combined = combine_changelogs(&generated, &previous, reprepare.then_some(next))?;
     // Complete validation and changelog generation before changing tracked files.
     fs::write(manifest_path, manifest)?;
     fs::write(lock_path, lock)?;
@@ -259,25 +300,51 @@ mod tests {
     fn workspace_bump_preserves_comments_and_registry_versions() {
         let manifest = "# keep\n[workspace.package]\nversion = \"0.1.0\"\n";
         let lock = "version = 4\n[[package]]\nname='xtask'\nversion='0.1.0'\n[[package]]\nname='dependency'\nversion='0.1.0'\nsource='registry+https://example.test'\n";
-        let (m, l) = bumped_manifests(manifest, lock, "0.2.0-rc.1").unwrap();
+        let (m, l) = bumped_manifests(manifest, lock, "0.2.0-rc.1", false).unwrap();
         assert!(m.starts_with("# keep"));
         let l: toml::Value = toml::from_str(&l).unwrap();
         assert_eq!(l["package"][0]["version"].as_str(), Some("0.2.0-rc.1"));
         assert_eq!(l["package"][1]["version"].as_str(), Some("0.1.0"));
         for next in ["0.1.0", "0.1.0+build", "0.0.9"] {
-            assert!(bumped_manifests(manifest, lock, next).is_err());
+            assert!(bumped_manifests(manifest, lock, next, false).is_err());
         }
+    }
+    #[test]
+    fn current_version_is_reprepared_only_when_allowed() {
+        let manifest = "# keep\n[workspace.package]\nversion  =  \"0.2.0\"\n";
+        let lock = "version = 4\n[[package]]\nname='xtask'\nversion='0.2.0'\n";
+        let err = bumped_manifests(manifest, lock, "0.2.0", false).unwrap_err();
+        assert!(err.to_string().contains("--allow-current-version"));
+        assert_eq!(
+            bumped_manifests(manifest, lock, "0.2.0", true).unwrap(),
+            (manifest.to_owned(), lock.to_owned())
+        );
+        // The option permits the current version, never an older one.
+        assert!(bumped_manifests(manifest, lock, "0.1.0", true).is_err());
+        assert!(bumped_manifests(manifest, lock, "0.3.0", true).is_ok());
+    }
+    #[test]
+    fn reprepared_changelog_replaces_the_stale_section() {
+        let generated = "# Changelog\n\n## [0.2.0] - 2026-11-07\n\n- early\n- late\n";
+        let stale = "# Changelog\n\n## [0.2.0] - 2026-11-06\n\n- early\n\n## [0.1.0] - 2026-10-01\n\n- old\n";
+        assert_eq!(
+            combine_changelogs(generated, stale, Some("0.2.0")).unwrap(),
+            "# Changelog\n\n## [0.2.0] - 2026-11-07\n\n- early\n- late\n\n## [0.1.0] - 2026-10-01\n\n- old\n"
+        );
+        // Only the latest section may be replaced.
+        assert!(combine_changelogs(generated, stale, Some("0.1.0")).is_err());
     }
     #[test]
     fn malformed_manifests_are_errors_not_panics() {
         let lock = "version = 4\n[[package]]\nname='xtask'\nversion='0.1.0'\n";
-        assert!(bumped_manifests("[workspace]\n", lock, "0.2.0").is_err());
+        assert!(bumped_manifests("[workspace]\n", lock, "0.2.0", false).is_err());
         let manifest = "[workspace.package]\nversion = \"0.1.0\"\n";
         assert!(
             bumped_manifests(
                 manifest,
                 "version = 4\n[[package]]\nname='xtask'\n",
-                "0.2.0"
+                "0.2.0",
+                false
             )
             .is_err()
         );
@@ -290,18 +357,19 @@ mod tests {
     fn changelog_sections_are_separated_by_a_blank_line() {
         let generated = "# Changelog\n\n## [0.2.0] - 2026-11-06\n\n- new\n";
         assert_eq!(
-            combine_changelogs(generated, "# Changelog\n").unwrap(),
+            combine_changelogs(generated, "# Changelog\n", None).unwrap(),
             generated
         );
         assert_eq!(
             combine_changelogs(
                 generated,
-                "# Changelog\n\n## [0.1.0] - 2026-10-01\n\n- old\n"
+                "# Changelog\n\n## [0.1.0] - 2026-10-01\n\n- old\n",
+                None
             )
             .unwrap(),
             "# Changelog\n\n## [0.2.0] - 2026-11-06\n\n- new\n\n## [0.1.0] - 2026-10-01\n\n- old\n"
         );
-        assert!(combine_changelogs(generated, "no heading\n").is_err());
+        assert!(combine_changelogs(generated, "no heading\n", None).is_err());
     }
     #[test]
     fn changelog_checks_version_and_handles_eof() {

@@ -55,7 +55,14 @@ impl Metadata {
 }
 
 /// Only same-repository release preparation PRs merged into main may auto-tag.
-pub fn merged_release(event: &Value, repository: &str) -> Result<Option<(Metadata, String)>> {
+#[derive(Debug)]
+pub struct MergedRelease {
+    pub meta: Metadata,
+    pub merge_sha: String,
+    pub number: u64,
+}
+
+pub fn merged_release(event: &Value, repository: &str) -> Result<Option<MergedRelease>> {
     cm_catalog::validate_source(&format!("github:{repository}"))?;
     let pr = &event["pull_request"];
     if pr["merged"] != true || !pr["title"].as_str().unwrap_or("").starts_with("release:") {
@@ -89,7 +96,11 @@ pub fn merged_release(event: &Value, repository: &str) -> Result<Option<(Metadat
         .as_str()
         .context("missing release merge commit")?;
     validate_revision(sha)?;
-    Ok(Some((meta, sha.into())))
+    Ok(Some(MergedRelease {
+        meta,
+        merge_sha: sha.into(),
+        number: pr["number"].as_u64().context("missing release PR number")?,
+    }))
 }
 
 pub fn workspace_version(root: &Path) -> Result<Version> {
@@ -307,9 +318,12 @@ mod tests {
     }
     #[test]
     fn merged_release_requires_trusted_metadata_and_uses_merge_sha() {
-        let mut event = json!({"pull_request":{"merged":true,"title":"release: cm-testsuite v0.2.0","labels":[{"name":"release-pr"}],"head":{"ref":"prep-release-cm-testsuite-v0.2.0","repo":{"full_name":"example/tests"}},"base":{"ref":"main","repo":{"full_name":"example/tests"}},"merge_commit_sha":"a".repeat(40)}});
+        let mut event = json!({"pull_request":{"merged":true,"title":"release: cm-testsuite v0.2.0","labels":[{"name":"release-pr"}],"head":{"ref":"prep-release-cm-testsuite-v0.2.0","repo":{"full_name":"example/tests"}},"base":{"ref":"main","repo":{"full_name":"example/tests"}},"merge_commit_sha":"a".repeat(40),"number":12}});
         assert_eq!(
-            merged_release(&event, "example/tests").unwrap().unwrap().1,
+            merged_release(&event, "example/tests")
+                .unwrap()
+                .unwrap()
+                .merge_sha,
             "a".repeat(40)
         );
         event["pull_request"]["head"]["repo"]["full_name"] = json!("fork/tests");

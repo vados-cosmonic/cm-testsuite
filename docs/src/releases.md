@@ -55,6 +55,19 @@ archives are available through GitHub Releases. The crates remain
 3. **tag-release** validates the merged PR's repository, branch, label, version,
    and exact merge commit. It refuses to tag a commit outside `origin/main`,
    mismatched workspace/lockfile/changelog versions, or move an existing tag.
+   It also refuses a merge that brought in anything besides the release commits:
+   the PR must be only `release:` commits, and its merge must land directly on
+   the main commit the release was prepared from. Otherwise commits merged while
+   the release PR was open would appear in no changelog, since the next release
+   starts after this tag.
+
+   To avoid a refusal, rerun **create-release-pr** with the same version whenever
+   main moves while the release PR is open; it regenerates the PR on current
+   main. Requiring branches to be up to date before merging in branch protection
+   enforces this. Do not use **Update branch**: its merge commit is refused too.
+   After a refusal, main carries the untagged version. Either prepare the next
+   version, whose notes start from the last tag and so include everything, or
+   accept the gap and tag it with a manual **tag-release** run.
 4. **release** checks out the exact tag, refuses tags outside `origin/main`
    (including maintainer-pushed tags), runs checks, packages the Linux binary,
    uploads assets to a draft, publishes the GitHub release, then updates related

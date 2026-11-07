@@ -18,7 +18,8 @@ pub enum Release {
         #[arg(long)]
         github_output: Option<PathBuf>,
     },
-    /// Validate an automatic merged-PR event and select its exact merge commit.
+    /// Validate an automatic merged-PR event and select its exact merge commit,
+    /// refusing merges that also brought in commits not covered by its changelog.
     FromEvent {
         #[arg(long)]
         event: PathBuf,
@@ -107,7 +108,11 @@ pub fn run(root: &Path, task: Release) -> Result<()> {
             github_output,
         } => {
             let event = serde_json::from_slice(&fs::read(event)?)?;
-            if let Some((meta, sha)) = cm_release::merged_release(&event, &repository)? {
+            if let Some(release) = cm_release::merged_release(&event, &repository)? {
+                let (base, count) =
+                    github::release_pr_base(&client(false)?, &repository, release.number)?;
+                history::ensure_merged_onto(root, &release.merge_sha, &base, count)?;
+                let (meta, sha) = (release.meta, release.merge_sha);
                 emit(&meta, github_output.as_deref())?;
                 println!("ref={sha}");
                 if let Some(path) = github_output {

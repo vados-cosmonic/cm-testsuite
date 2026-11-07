@@ -91,3 +91,64 @@ fn first_release_and_detached_non_main_target() {
     git(root, &["checkout", "--detach", "cm-testsuite-v0.1.0"]);
     assert!(history::validate_checkout(root, "cm-testsuite-v0.1.0").is_err());
 }
+#[test]
+fn tags_only_merges_that_land_directly_on_the_prepared_base() {
+    let d = tempfile::tempdir().unwrap();
+    let root = d.path();
+    git(root, &["init", "-b", "main"]);
+    let base = commit(root, "feat: before the release");
+    let at = |sha: &str| git(root, &["checkout", "-q", "--detach", sha]);
+    let ok =
+        |merge: &str, commits| history::ensure_merged_onto(root, merge, &base, commits).is_ok();
+
+    // Squash merges.
+    let squash = commit(root, "release: cm-testsuite v0.2.0 (#5)");
+    assert!(ok(&squash, 1));
+    at(&base);
+    commit(root, "feat: landed after preparation");
+    let late_squash = commit(root, "release: cm-testsuite v0.2.0 (#5)");
+    assert!(!ok(&late_squash, 1));
+    assert!(!ok(&late_squash, 2));
+
+    // Merge commits.
+    at(&base);
+    let release = commit(root, "release: cm-testsuite v0.2.0");
+    at(&base);
+    git(
+        root,
+        &[
+            "merge",
+            "-q",
+            "--no-ff",
+            "-m",
+            "Merge pull request #5",
+            &release,
+        ],
+    );
+    assert!(ok(&git(root, &["rev-parse", "HEAD"]), 1));
+    at(&base);
+    commit(root, "feat: landed after preparation");
+    git(
+        root,
+        &[
+            "merge",
+            "-q",
+            "--no-ff",
+            "-m",
+            "Merge pull request #5",
+            &release,
+        ],
+    );
+    assert!(!ok(&git(root, &["rev-parse", "HEAD"]), 1));
+
+    // Rebase merges of two release commits.
+    at(&base);
+    commit(root, "release: cm-testsuite v0.2.0");
+    let rebased = commit(root, "release: cm-testsuite v0.2.0");
+    assert!(ok(&rebased, 2));
+    at(&base);
+    commit(root, "feat: landed after preparation");
+    commit(root, "release: cm-testsuite v0.2.0");
+    let late_rebased = commit(root, "release: cm-testsuite v0.2.0");
+    assert!(!ok(&late_rebased, 2));
+}

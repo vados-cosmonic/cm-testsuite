@@ -300,3 +300,45 @@ pub fn apply_notifications(
     }
     Ok(())
 }
+
+/// The main commit a release PR was prepared on, and how many commits it has.
+/// The PR must be one unbroken chain of `release:` commits, so maintainer
+/// fixes or "Update branch" merges are refused rather than tagged.
+pub fn release_pr_base(api: &dyn Api, repository: &str, number: u64) -> Result<(String, usize)> {
+    let repo = repo_path(&format!("github:{repository}"))?;
+    let commits = pages(api, &format!("{repo}/pulls/{number}/commits"))?;
+    ensure!(!commits.is_empty(), "release PR has no commits");
+    let mut previous: Option<&str> = None;
+    let mut base = None;
+    for commit in &commits {
+        let sha = commit["sha"].as_str().context("missing commit SHA")?;
+        validate_revision(sha)?;
+        ensure!(
+            commit["commit"]["message"]
+                .as_str()
+                .is_some_and(|m| m.starts_with("release:")),
+            "release PR contains a non-release commit {sha}; rerun create-release-pr"
+        );
+        let parents = commit["parents"]
+            .as_array()
+            .context("missing commit parents")?
+            .iter()
+            .map(|p| p["sha"].as_str().context("missing parent SHA"))
+            .collect::<Result<Vec<_>>>()?;
+        ensure!(
+            parents.len() == 1,
+            "release PR contains merge commit {sha}; rerun create-release-pr"
+        );
+        match previous {
+            Some(previous) => ensure!(
+                parents[0] == previous,
+                "release PR commits are not a single chain"
+            ),
+            None => base = Some(parents[0].to_owned()),
+        }
+        previous = Some(sha);
+    }
+    let base = base.context("missing release PR base")?;
+    validate_revision(&base)?;
+    Ok((base, commits.len()))
+}

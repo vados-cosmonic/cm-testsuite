@@ -202,3 +202,58 @@ pub fn validate_checkout(root: &Path, tag: &str) -> Result<Metadata> {
     ensure!(!notes.trim().is_empty(), "empty release notes");
     Ok(meta)
 }
+
+/// Refuse a release whose merge also brought in commits that landed on main
+/// after the release PR was prepared: its changelog would omit them, and the
+/// next release starts after this tag, so no changelog would ever list them.
+///
+/// `base` is the main commit the PR's `release_commits` were prepared on.
+/// Merge commits must have `base` as their first parent; squash merges must sit
+/// directly on `base`; rebase merges must be `release_commits` release commits
+/// directly on `base`.
+pub fn ensure_merged_onto(
+    root: &Path,
+    merge_sha: &str,
+    base: &str,
+    release_commits: usize,
+) -> Result<()> {
+    validate_revision(merge_sha)?;
+    validate_revision(base)?;
+    ensure!(release_commits > 0, "release PR has no commits");
+    let parents: Vec<String> = git(root, &["rev-list", "--parents", "-n", "1", merge_sha])?
+        .split_whitespace()
+        .skip(1)
+        .map(str::to_owned)
+        .collect();
+    let exact = match parents.as_slice() {
+        [first, _] | [first] if first == base => true,
+        [_] if release_commits > 1 => {
+            let count = (release_commits + 1).to_string();
+            let chain = git(
+                root,
+                &[
+                    "log",
+                    "--first-parent",
+                    "--format=%H %s",
+                    "-n",
+                    &count,
+                    merge_sha,
+                ],
+            )?;
+            let chain: Vec<_> = chain.lines().collect();
+            chain.len() == release_commits + 1
+                && chain[..release_commits].iter().all(|line| {
+                    line.split_once(' ')
+                        .is_some_and(|(_, s)| s.starts_with("release:"))
+                })
+                && chain[release_commits].split_once(' ').map(|(sha, _)| sha) == Some(base)
+        }
+        _ => false,
+    };
+    ensure!(
+        exact,
+        "commits landed on main after the release PR was prepared; \
+         rerun create-release-pr so the changelog covers them"
+    );
+    Ok(())
+}

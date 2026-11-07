@@ -31,6 +31,8 @@ jobs:
     timeout-minutes: 25
     permissions:
       contents: write
+      # Lists the release PR's commits to check nothing else landed with it.
+      pull-requests: read
     outputs:
       proceed: ${{ steps.event.outputs.proceed || steps.manual.outputs.proceed }}
       tag: ${{ steps.event.outputs.tag || steps.manual.outputs.tag }}
@@ -45,9 +47,14 @@ jobs:
         run: |
           bash scripts/bootstrap.sh
           echo "$PWD/.tools" >> "$GITHUB_PATH"
+      # Build before any step receives a token, so dependency build scripts never see it.
+      - name: Build release tooling
+        run: ./just build
       - name: Validate merged release PR
         if: github.event_name == 'pull_request'
         id: event
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: ./just xtask release from-event --event "$GITHUB_EVENT_PATH" --repository "$GITHUB_REPOSITORY" --github-output "$GITHUB_OUTPUT"
       - name: Validate manual release version
         if: github.event_name == 'workflow_dispatch'

@@ -19,6 +19,7 @@ struct State {
     comments: BTreeMap<u64, Vec<Value>>,
     // Issue numbers that respond with this status instead of the issue.
     unavailable: BTreeMap<u64, u16>,
+    pr_commits: BTreeMap<u64, Vec<Value>>,
     writes: usize,
     tag: Option<String>,
 }
@@ -31,6 +32,7 @@ impl Mock {
             associated: BTreeMap::new(),
             comments: BTreeMap::new(),
             unavailable: BTreeMap::new(),
+            pr_commits: BTreeMap::new(),
             writes: 0,
             tag: None,
         }))
@@ -60,6 +62,16 @@ impl Api for Mock {
             ("GET", ["commits", sha, "pulls"]) => json!(
                 s.associated
                     .get(*sha)
+                    .cloned()
+                    .unwrap_or_default()
+                    .into_iter()
+                    .skip((page - 1) * 100)
+                    .take(100)
+                    .collect::<Vec<_>>()
+            ),
+            ("GET", ["pulls", number, "commits"]) => json!(
+                s.pr_commits
+                    .get(&number.parse::<u64>()?)
                     .cloned()
                     .unwrap_or_default()
                     .into_iter()
@@ -307,4 +319,46 @@ fn first_release_skips_notifications() {
             .unwrap()
             .is_empty()
     );
+}
+fn pr_commit(sha: char, parents: &[char], message: &str) -> Value {
+    json!({
+        "sha": sha.to_string().repeat(40),
+        "commit": {"message": message},
+        "parents": parents
+            .iter()
+            .map(|p| json!({"sha": p.to_string().repeat(40)}))
+            .collect::<Vec<_>>(),
+    })
+}
+#[test]
+fn release_pr_base_requires_one_chain_of_release_commits() {
+    let api = Mock::new();
+    let set = |commits: Vec<Value>| {
+        api.0.borrow_mut().pr_commits.insert(5, commits);
+    };
+    set(vec![
+        pr_commit('1', &['0'], "release: cm-testsuite v0.2.0"),
+        pr_commit('2', &['1'], "release: cm-testsuite v0.2.0\n\nRegenerated"),
+    ]);
+    assert_eq!(
+        github::release_pr_base(&api, REPO, 5).unwrap(),
+        ("0".repeat(40), 2)
+    );
+    set(vec![
+        pr_commit('1', &['0'], "release: cm-testsuite v0.2.0"),
+        pr_commit('2', &['1'], "fix(release): tweak notes"),
+    ]);
+    assert!(github::release_pr_base(&api, REPO, 5).is_err());
+    set(vec![
+        pr_commit('1', &['0'], "release: cm-testsuite v0.2.0"),
+        pr_commit('2', &['1', '9'], "release: Merge branch main"),
+    ]);
+    assert!(github::release_pr_base(&api, REPO, 5).is_err());
+    set(vec![
+        pr_commit('1', &['0'], "release: cm-testsuite v0.2.0"),
+        pr_commit('2', &['8'], "release: cm-testsuite v0.2.0"),
+    ]);
+    assert!(github::release_pr_base(&api, REPO, 5).is_err());
+    set(vec![]);
+    assert!(github::release_pr_base(&api, REPO, 5).is_err());
 }

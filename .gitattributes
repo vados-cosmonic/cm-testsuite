@@ -1,0 +1,6 @@
+# Keep scripts and editable records portable across checkout hosts.
+* text=auto eol=lf
+
+# WAT/WAST content digests refer to exact source bytes, including line endings.
+*.wat -text
+*.wast -text

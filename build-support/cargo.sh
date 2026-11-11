@@ -4,12 +4,23 @@
 # Publish either the xtask executable or a check log; discard temporary build state.
 set -euo pipefail
 
+# Convert Windows artifact paths before handing them to POSIX file utilities.
+# On other hosts, retain their spelling so spaces and unusual path names survive.
+as_shell_path() {
+    if command -v cygpath >/dev/null 2>&1; then
+        cygpath -au "$1"
+    else
+        printf '%s\n' "$1"
+    fi
+}
+
 # Resolve Buck's paths before changing directories. The output may not exist yet.
-sdk=$(cd -- "$1" && pwd)
-source=$(cd -- "$2" && pwd)
+sdk=$(cd -- "$(as_shell_path "$1")" && pwd)
+source=$(cd -- "$(as_shell_path "$2")" && pwd)
 mode=$3
-mkdir -p "$(dirname -- "$4")"
-out=$(cd -- "$(dirname -- "$4")" && pwd)/$(basename -- "$4")
+output_path=$(as_shell_path "$4")
+mkdir -p "$(dirname -- "$output_path")"
+out=$(cd -- "$(dirname -- "$output_path")" && pwd)/$(basename -- "$output_path")
 shift 4
 
 # Each action gets its own writable workspace and Cargo state. Dereference Buck's
@@ -24,7 +35,7 @@ cp -LR "$source/." "$work/source/"
 # avoids recomputing per-file checksums for these verified, freshly copied inputs.
 while (($#)); do
     name=$1
-    archive=$2
+    archive=$(as_shell_path "$2")
     checksum=$3
     shift 3
 

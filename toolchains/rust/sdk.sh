@@ -14,6 +14,13 @@ triple=$2
 version=$3
 out=$4
 
+# Buck renders Windows artifacts with backslashes. GNU tar interprets those as
+# escapes in some arguments, so normalize both paths at the MSYS boundary.
+if command -v cygpath >/dev/null 2>&1; then
+    archive=$(cygpath -au "$archive")
+    out=$(cygpath -au "$out")
+fi
+
 # Restrict archive member names to supported host distributions. Buck owns the
 # version/checksum mapping; these checks catch wiring mistakes and unsafe paths.
 case "$triple" in

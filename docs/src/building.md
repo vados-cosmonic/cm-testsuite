@@ -19,7 +19,9 @@ Linux and Windows; the small SDK/build wrappers use Bash on every host.
 On Windows, launch Git Bash from a Visual Studio Developer Command Prompt for
 your architecture so `cl.exe`, `lib.exe`, and the Windows SDK are available.
 Enable Windows Developer Mode (or run with symlink privileges), because Buck
-uses symlinks for declared inputs. WSL is also supported through the Linux path.
+uses symlinks for declared inputs. Just discovers Git Bash and forwards the
+native compiler environment into Buck actions; no repository-specific PATH
+changes are needed. WSL is also supported through the Linux path.
 The Windows ARM64 documentation and audit launchers use upstream x86_64 binaries
 under Windows emulation; the Rust SDK, Buck, and Just run natively.
 

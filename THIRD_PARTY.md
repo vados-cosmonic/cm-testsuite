@@ -4,6 +4,6 @@
 
 Wasmono is consumed as an external cell at `5cb97a58be3853916a0fcb7f27eeca2524d58ea5`, under Apache-2.0. We currently reuse its host-platform helpers. Its Wasm compilation and execution rules are not enabled.
 
-Buck2, DotSlash, Just, mdBook, Rust, and Cargo retain their upstream licenses. DotSlash descriptors and Rust release metadata record distribution hashes. `rust/Cargo.lock` records dependency versions/checksums; `third-party/crates.bzl` is generated from it. Dependencies retain the licenses supplied in their crate archives. No vendir, Copybara, Josh, or WPT/Test262 implementation is copied into the workspace.
+Buck2, DotSlash, Just, mdBook, Rust, and Cargo retain their upstream licenses. DotSlash descriptors and Rust release metadata record distribution hashes. `rust/Cargo.lock` records dependency versions/checksums; `third-party/crates.bzl` is generated from it. Dependencies retain the licenses supplied in their crate archives.
 
-Tooling licenses do not grant permission to redistribute an upstream test corpus. Review each source's license and preserve its notices before admitting its tests. This draft does not automate license-policy decisions.
+Tooling licenses do not grant permission to redistribute an upstream test corpus. Review each source's license and preserve its notices before admitting its tests.

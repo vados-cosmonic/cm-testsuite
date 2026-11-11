@@ -11,8 +11,15 @@ requirements; running a build or test does not publish a proposal.
 ## Admitting results
 
 Approve publisher identifiers through review in `registry/publishers.toml`.
-Review submitted report provenance and use the admission command described in
-[the results guide](docs/src/results.md#submitting-a-report) before merging reports.
+Review submitted report provenance before merging reports. To run admission
+checks against the current catalog and publisher allowlist, then rebuild the site:
+
+```sh
+dotslash bins/just xtask results-import --report /path/to/report.toml
+dotslash bins/just site
+```
+
+See [the results guide](docs/src/results.md) for the report format.
 Publisher approval is an admission policy, not proof of the identity of a file's
 submitter.
 
@@ -21,7 +28,13 @@ submitter.
 Workflows start with empty permissions and grant each job only its required
 access. Use Zizmor to audit changes to workflows and shared actions. Keep tool
 installation and caching in `.github/actions/setup-tools` so improvements apply
-to every consumer, and update cache keys when tool pins change.
+to every consumer, and update cache keys when tool pins change. The action caches
+Just and DotSlash by operating system, architecture, and version. On a cache miss,
+cargo-binstall installs upstream prebuilt binaries, selecting DotSlash's release
+filename for each host. Workflows invoke the installed `just` directly.
+
+CI runs Zizmor with its read-only GitHub token. For a local audit, run
+`dotslash bins/just zizmor --offline`, or set `GH_TOKEN` to include online checks.
 
 When changing Rust or a DotSlash launcher, verify the published checksums and
 update the [pinned-tools table](docs/src/building.md#pinned-tools). Exercise the

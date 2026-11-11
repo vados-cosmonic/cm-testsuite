@@ -1,6 +1,11 @@
 # Participant manifest
 
-The default location is `.cm-testsuite.toml` at the source repository root. Unknown fields and unsupported schema versions are errors. The manifest and every listed file must be committed; local uncommitted files are not acquisition inputs.
+The default location is `.cm-testsuite.toml` at the source repository root.
+Unknown fields and unsupported schema versions are errors.
+A repository can share its own tests, receive tests from other repositories,
+or do both.
+
+## Example
 
 ```toml
 schema = 1
@@ -32,14 +37,85 @@ covers = ["resource-lifetime"]
 # sha256 = "..."
 ```
 
-`file://tests/a.wast` is relative to the manifest directory; `file:///tests/a.wast` is relative to the tracked repository root. This is project notation, not a standard file URL or access to the importing host's root. Percent encoding is decoded once. Traversal, malformed encodings, backslashes, Git metadata paths, and symlinks are rejected.
+## Shared path rules
 
-Names are unique within a source and use portable ASCII letters, digits, `-`, `_`, `.`, and `/`. `github:owner/repo/name` is the stable identity. Version changes and source-path moves do not change that identity. Source/repository renames and test-name aliases are not automated yet.
+`file://tests/a.wast` is relative to the manifest directory.
+`file:///tests/a.wast` is relative to the tracked repository root.
+This is project notation, not a standard file URL or access to the importing
+host's root.
 
-A route requires all author-declared `requires` capabilities to be present in `supports`. An empty `covers_any` accepts any category. Global exclusions override all routes. Multiple matching routes are an error; destinations include the source owner/repository and test name to avoid basename collisions. A path declared as an authoritative test cannot be overwritten by delivery, and tests inside receiving destinations cannot be exported as new originals.
+Percent encoding is decoded once.
+Traversal, malformed encodings, backslashes, Git metadata paths, and symlinks
+are rejected.
+These rules apply to both exported test paths and receiving destinations.
 
-Route exclusions also preserve previously received files when their source retires them. Receipts remember the receiving route by name, so keep that name when moving its destination. Older receipts, or renamed routes, are matched by the delivered path; if that cannot identify a route, any route exclusion for the test conservatively prevents retirement.
+## For authors sharing tests
 
-The first analyzer reports syntax evidence and **always marks inference incomplete**. It does not claim that syntax inside expected-rejection assertions must be enabled. Default routes therefore withhold uncertain tests. Set `allow_unknown = true` only when you intentionally accept review of those tests; the plan will include warnings. This is metadata selection, not evidence of engine support.
+### Committed sources and stable identities
 
-Add a meaningful intent comment at the top of each WAST and explain subtle assertions nearby. The draft emits review warnings, not proof that a comment is correct or sufficient.
+Commit the manifest and every listed WAST file before requesting an import.
+Acquisition reads committed snapshots; uncommitted files are not inputs.
+Use the optional `revision` field to pin a test to a full immutable commit ID,
+and `sha256` to require an exact content digest.
+
+Test names must be unique within a source.
+Use portable ASCII letters, digits, `-`, `_`, `.`, and `/`.
+The combination `github:owner/repo/name` is the test's stable identity.
+Keep the name when moving a source file or updating its contents.
+Repository renames and test-name aliases are not handled automatically.
+
+### Requirements, coverage, and intent
+
+List the capabilities needed by a test in `requires` and its coverage categories
+in `covers`; receiving repositories use these declarations to select tests.
+Do not infer execution requirements solely from syntax in assertions that expect
+rejection of invalid or malformed inputs.
+
+Add a meaningful intent comment at the top of each WAST file and explain subtle
+assertions nearby.
+The analyzer can flag missing explanatory comments, but authors must check that
+the explanations accurately describe the test.
+
+Export original tests from their authoritative locations.
+Tests inside receiving destinations cannot be exported as new originals.
+
+## For repositories receiving tests
+
+### Capabilities and routing
+
+Set `[receive].enabled = true` to opt in and define `[[receive.route]]` entries
+for the destinations and test categories you want.
+Each route must list every author-declared `requires` capability in `supports`.
+An empty `covers_any` accepts any coverage category.
+
+A test must match at most one route; multiple matching routes are an error.
+Destinations include the source owner, repository, and test name to avoid basename
+collisions.
+Delivery cannot overwrite a path declared as an authoritative test in your manifest.
+
+### Exclusions and file lifecycle
+
+Global `[receive].exclude` identities override all routes.
+A route's `exclude` list applies to that route.
+Exclusions also preserve previously received files when their source retires them.
+
+Use `additions`, `updates`, and `deletions` to choose between pull-request proposals
+and manual handling of each kind of change.
+Source retirement does not automatically delete received files;
+deletions require an explicit pull-request policy.
+
+Receipts remember the receiving route by name, so keep that name when moving
+its destination.
+For older receipts or renamed routes, the delivered path is used to identify
+the route.
+If that is ambiguous, an exclusion on any route conservatively prevents retirement.
+
+### Incomplete feature analysis
+
+The analyzer reports syntax evidence and **always marks inference incomplete**.
+Default routes therefore withhold tests whose requirements may be incomplete.
+Set `allow_unknown = true` only when you intend to review those tests despite
+that uncertainty; the plan will include warnings.
+
+Routing selects tests using metadata.
+It does not establish that your engine supports or passes the selected tests.

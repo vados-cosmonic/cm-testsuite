@@ -2241,6 +2241,7 @@ dependencies = [
  "cm-results",
  "cm-wast-analysis",
  "serde",
+ "serde_json",
  "tempfile",
  "toml",
 ]

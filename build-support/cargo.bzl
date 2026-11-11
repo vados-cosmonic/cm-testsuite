@@ -3,7 +3,11 @@ load("@wasmono//:defs.bzl", "host_os")
 
 def _cargo_impl(ctx):
     source = ctx.actions.symlinked_dir("source", ctx.attrs.srcs)
-    output = ctx.actions.declare_output(("xtask.exe" if host_os() == "windows" else "xtask") if ctx.attrs.mode == "build" else ctx.attrs.mode + ".log")
+    executable = ctx.attrs.mode in ["build", "github-test"]
+    name = "xtask" if ctx.attrs.mode == "build" else "github-e2e"
+    output = ctx.actions.declare_output(
+        name + (".exe" if host_os() == "windows" else "") if executable else ctx.attrs.mode + ".log",
+    )
     # Keep the native command below Windows' length limit while retaining every
     # registry archive as a declared, hashed input to the Cargo action.
     crate_lines = []
@@ -26,9 +30,11 @@ def _cargo_impl(ctx):
         manifest,
         hidden = extra_inputs,
     )
-    ctx.actions.run(command, category = "cargo_" + ctx.attrs.mode, local_only = True, env = ctx.attrs.env)
+    ctx.actions.run(command, category = "cargo_" + ctx.attrs.mode.replace("-", "_"), local_only = True, env = ctx.attrs.env)
     providers = [DefaultInfo(default_output = output)]
-    if ctx.attrs.mode == "build":
+    if executable:
+        # The live harness is only executed by an explicit `buck run`. Its build
+        # action never receives credentials or makes GitHub API requests.
         providers.append(RunInfo(args = cmd_args(output)))
     return providers
 
@@ -41,7 +47,7 @@ cargo_workspace = rule(
         "sdk": attrs.exec_dep(default = "toolchains//rust:sdk"),
         "crates": attrs.dict(attrs.string(), attrs.dep()),
         "checksums": attrs.dict(attrs.string(), attrs.string()),
-        "mode": attrs.enum(["build", "test", "lint", "fmt"]),
+        "mode": attrs.enum(["build", "test", "github-test", "lint", "fmt"]),
         "script": attrs.source(default = "//build-support:cargo.sh"),
     },
 )

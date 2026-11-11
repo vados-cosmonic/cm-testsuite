@@ -45,6 +45,19 @@ these projects automatically and checks repeatability, byte preservation, and
 protection of original files. Add focused regression coverage for behavior
 changes, especially file ownership, stale plans, and metadata preservation.
 
+## Test scenarios
+
+Local E2E coverage lives in `rust/xtask/tests/scenarios/`, with repository and CLI
+helpers in `tests/common.rs`. Run it through `dotslash bins/just test`, or use
+`cargo test -p xtask --test local` from `rust/` when developing with local Cargo.
+Each scenario creates isolated temporary directories and real Git history; no
+network credentials are needed. Group new scenarios by behavior and reuse the
+fixtures rather than copying command setup.
+
+The live GitHub scenario is ignored by default. See
+[MAINTAINERS.md](MAINTAINERS.md#live-github-tests) for its opt-in command,
+credentials, temporary repositories, and cleanup behavior.
+
 ## Updating dependencies and documentation
 
 Keep `rust/Cargo.lock` and `third-party/crates.bzl` synchronized using the

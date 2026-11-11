@@ -54,6 +54,12 @@ build: doctor
 test: doctor
     {{buck}} build {{host_config}} //:tests
 
+# Create temporary private GitHub repositories and exercise the live exchange.
+[group('test')]
+test-github: doctor (_require "gh")
+    @if [[ "${CM_TESTSUITE_LIVE_GITHUB:-}" != 1 ]]; then printf '%s\n' 'Set CM_TESTSUITE_LIVE_GITHUB=1 to create and delete private test repositories. See MAINTAINERS.md#live-github-tests.' >&2; exit 1; fi
+    {{buck}} run {{host_config}} //:github-e2e -- --ignored --nocapture
+
 # Run Clippy across every workspace target, treating warnings as errors.
 [group('test')]
 lint: doctor

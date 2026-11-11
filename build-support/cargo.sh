@@ -121,6 +121,25 @@ case "$mode" in
         cp "$CARGO_TARGET_DIR/debug/xtask$suffix" "$out"
         ;;
 
+    github-test)
+        # Compile the ignored live harness without executing it. Buck run starts
+        # the resulting binary later, outside the cached build action.
+        "$sdk/bin/cargo$suffix" test --locked --offline -p xtask --test github_live --no-run
+        candidates=()
+        for candidate in "$CARGO_TARGET_DIR"/debug/deps/github_live-*"$suffix"; do
+            # Cargo also emits .d and .pdb files beside the executable.
+            name=$(basename -- "$candidate")
+            if [[ -f "$candidate" && ( "$name" == *.exe || "$name" != *.* ) ]]; then
+                candidates+=("$candidate")
+            fi
+        done
+        if ((${#candidates[@]} != 1)); then
+            printf 'Expected one live GitHub test executable, found %s\n' "${#candidates[@]}" >&2
+            exit 1
+        fi
+        cp "${candidates[0]}" "$out"
+        ;;
+
     test)
         "$sdk/bin/cargo$suffix" test --locked --offline --workspace > "$out" 2>&1 || {
             cat "$out"

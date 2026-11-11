@@ -11,7 +11,7 @@ runs:
         path: |
           ~/.cargo/bin/just
           ~/.cargo/bin/dotslash
-        key: tools-${{ runner.os }}-${{ runner.arch }}-just-1.59.0-dotslash-0.5.9-v1
+        key: tools-${{ runner.os }}-${{ runner.arch }}-just-1.59.0-dotslash-0.5.7-v1
 
     - name: Install cargo-binstall
       if: steps.tools.outputs.cache-hit != 'true'
@@ -22,10 +22,10 @@ runs:
     - name: Install tool binaries
       if: steps.tools.outputs.cache-hit != 'true'
       shell: bash
-      run: cargo binstall --no-confirm --locked just@1.59.0 dotslash@0.5.9
+      run: cargo binstall --no-confirm --locked just@1.59.0 dotslash@0.5.7
 
     - name: Verify installed versions
       shell: bash
       run: |
         test "$(just --version)" = 'just 1.59.0'
-        test "$(dotslash --version)" = 'DotSlash 0.5.9'
+        test "$(dotslash --version)" = 'DotSlash 0.5.7'

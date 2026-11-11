@@ -39,7 +39,7 @@ DotSlash verifies launcher downloads, and Buck verifies Rust and crate inputs.
 | mdBook | 0.5.4 | Documentation builds |
 | Zizmor | 1.32.0 | Local and CI workflow audits |
 | Wasmono | `5cb97a58be3853916a0fcb7f27eeca2524d58ea5` | Buck build utilities |
-| DotSlash | 0.5.9 | CI; installed separately for local use |
+| DotSlash | 0.5.7 | CI; installed separately for local use |
 | cargo-binstall | 1.27.0 | CI tool installation on cache misses |
 
 The shared `.github/actions/setup-tools` action caches Just and DotSlash binaries

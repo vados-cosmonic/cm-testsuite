@@ -46,16 +46,16 @@ jobs:
       - name: Plan against the target default branch
         env:
           RECIPIENT: github:${{ inputs.recipient }}
-        run: just xtask --root "$PWD/recipient-checkout" plan-receive --catalog-root "$PWD" --recipient "$RECIPIENT" --out "$RUNNER_TEMP/receive-plan.json"
+        run: just xtask --root "$PWD/recipient-checkout" plan-receive --catalog-root "$PWD" --recipient "$RECIPIENT" --out "$RUNNER_TEMP/receive-plan.toml"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: receive-plan
-          path: ${{ runner.temp }}/receive-plan.json
+          path: ${{ runner.temp }}/receive-plan.toml
 
       - name: Publish draft PR
         if: inputs.publish
         env:
           RECIPIENT: github:${{ inputs.recipient }}
           GITHUB_TOKEN: ${{ secrets.CM_TESTSUITE_TOKEN }}
-        run: just xtask publish --repository "$RECIPIENT" --plan "$RUNNER_TEMP/receive-plan.json"
+        run: just xtask publish --repository "$RECIPIENT" --plan "$RUNNER_TEMP/receive-plan.toml"

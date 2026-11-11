@@ -1,5 +1,18 @@
 schema = 1
 
+[receive]
+enabled = true
+deletions = "manual"
+exclude = []
+
+[[receive.route]]
+name = "arithmetic"
+destination = "file:///tests/shared"
+covers_any = ["arithmetic"]
+supports = []
+# Feature inference is incomplete: opt in to reviewing uncertainty explicitly.
+allow_unknown = true
+
 [[test]]
 name = "core/add"
 path = "file://add.wast"

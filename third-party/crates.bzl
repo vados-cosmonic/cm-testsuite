@@ -1,45 +1,75 @@
 # Generated from rust/Cargo.lock by xtask buck-lock. Do not edit.
 
 def pinned_crates():
-    native.http_archive(name = "anstream-1.0.0", urls = ["https://static.crates.io/crates/anstream/1.0.0/download"], sha256 = "824a212faf96e9acacdbd09febd34438f8f711fb84e09a8916013cd7815ca28d", strip_prefix = "anstream-1.0.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "android_system_properties-0.1.6", urls = ["https://static.crates.io/crates/android_system_properties/0.1.6/download"], sha256 = "ae221649c9976a6f6c56ae1facf410f3ddb33cc661c4b7b61020a912d4237fbc", strip_prefix = "android_system_properties-0.1.6", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "anstyle-1.0.14", urls = ["https://static.crates.io/crates/anstyle/1.0.14/download"], sha256 = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000", strip_prefix = "anstyle-1.0.14", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "anstyle-parse-1.0.0", urls = ["https://static.crates.io/crates/anstyle-parse/1.0.0/download"], sha256 = "52ce7f38b242319f7cabaa6813055467063ecdc9d355bbb4ce0c68908cd8130e", strip_prefix = "anstyle-parse-1.0.0", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "anstyle-query-1.1.5", urls = ["https://static.crates.io/crates/anstyle-query/1.1.5/download"], sha256 = "40c48f72fd53cd289104fc64099abca73db4166ad86ea0b4341abe65af83dadc", strip_prefix = "anstyle-query-1.1.5", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "anstyle-wincon-3.0.11", urls = ["https://static.crates.io/crates/anstyle-wincon/3.0.11/download"], sha256 = "291e6a250ff86cd4a820112fb8898808a366d8f9f58ce16d1f538353ad55747d", strip_prefix = "anstyle-wincon-3.0.11", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "anyhow-1.0.103", urls = ["https://static.crates.io/crates/anyhow/1.0.103/download"], sha256 = "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3", strip_prefix = "anyhow-1.0.103", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "arc-swap-1.9.5", urls = ["https://static.crates.io/crates/arc-swap/1.9.5/download"], sha256 = "84a22b5d51209f6de83d37a0b33d320acb8da88823e42a94c075140708f032a5", strip_prefix = "arc-swap-1.9.5", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "atomic-waker-1.1.2", urls = ["https://static.crates.io/crates/atomic-waker/1.1.2/download"], sha256 = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0", strip_prefix = "atomic-waker-1.1.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "autocfg-1.5.1", urls = ["https://static.crates.io/crates/autocfg/1.5.1/download"], sha256 = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53", strip_prefix = "autocfg-1.5.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "aws-lc-rs-1.19.0", urls = ["https://static.crates.io/crates/aws-lc-rs/1.19.0/download"], sha256 = "048006790404103c488e6c5616b3e7e702a71292aadda08e8f7698a9e0d2eb53", strip_prefix = "aws-lc-rs-1.19.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "aws-lc-sys-0.47.0", urls = ["https://static.crates.io/crates/aws-lc-sys/0.47.0/download"], sha256 = "8bfbe32ac36b3c428696ce315464181bc4029d689fd58e3f2a4e58c252242f52", strip_prefix = "aws-lc-sys-0.47.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "base64-0.22.1", urls = ["https://static.crates.io/crates/base64/0.22.1/download"], sha256 = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6", strip_prefix = "base64-0.22.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "base64-0.23.1", urls = ["https://static.crates.io/crates/base64/0.23.1/download"], sha256 = "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5", strip_prefix = "base64-0.23.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "bitflags-2.13.2", urls = ["https://static.crates.io/crates/bitflags/2.13.2/download"], sha256 = "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06", strip_prefix = "bitflags-2.13.2", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "block-buffer-0.10.4", urls = ["https://static.crates.io/crates/block-buffer/0.10.4/download"], sha256 = "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71", strip_prefix = "block-buffer-0.10.4", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "bumpalo-3.20.3", urls = ["https://static.crates.io/crates/bumpalo/3.20.3/download"], sha256 = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649", strip_prefix = "bumpalo-3.20.3", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "bytes-1.12.1", urls = ["https://static.crates.io/crates/bytes/1.12.1/download"], sha256 = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04", strip_prefix = "bytes-1.12.1", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "cc-1.11.0", urls = ["https://static.crates.io/crates/cc/1.11.0/download"], sha256 = "375989decec1a0fa424442bed520fa12ede43a48475ce8c7417d2c69b32b5f6b", strip_prefix = "cc-1.11.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "camino-1.2.6", urls = ["https://static.crates.io/crates/camino/1.2.6/download"], sha256 = "bbbad30e4b4c14a39e3cc8aed085a12a327257c316619c93581e017bc52be591", strip_prefix = "camino-1.2.6", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "cargo-platform-0.3.3", urls = ["https://static.crates.io/crates/cargo-platform/0.3.3/download"], sha256 = "dd0061da739915fae12ea00e16397555ed4371a6bb285431aab930f61b0aa4ba", strip_prefix = "cargo-platform-0.3.3", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "cargo_metadata-0.23.1", urls = ["https://static.crates.io/crates/cargo_metadata/0.23.1/download"], sha256 = "ef987d17b0a113becdd19d3d0022d04d7ef41f9efe4f3fb63ac44ba61df3ade9", strip_prefix = "cargo_metadata-0.23.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "cc-1.11.1", urls = ["https://static.crates.io/crates/cc/1.11.1/download"], sha256 = "4ff2a8126fff0f8c839080d619675a585e61720bb12d2baceae45769fd66f155", strip_prefix = "cc-1.11.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "cfg-if-1.0.5", urls = ["https://static.crates.io/crates/cfg-if/1.0.5/download"], sha256 = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600", strip_prefix = "cfg-if-1.0.5", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "cfg_aliases-0.2.2", urls = ["https://static.crates.io/crates/cfg_aliases/0.2.2/download"], sha256 = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527", strip_prefix = "cfg_aliases-0.2.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "chacha20-0.10.2", urls = ["https://static.crates.io/crates/chacha20/0.10.2/download"], sha256 = "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06", strip_prefix = "chacha20-0.10.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "chrono-0.4.45", urls = ["https://static.crates.io/crates/chrono/0.4.45/download"], sha256 = "1aa79e62e7697b8e29b513a68abacf485adcd1fe8284a4316c5ae868e6633327", strip_prefix = "chrono-0.4.45", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "clap-4.6.7", urls = ["https://static.crates.io/crates/clap/4.6.7/download"], sha256 = "aa8876b300ab35ba921adea3dfd70157a46249b33f95c9084ae5709785478946", strip_prefix = "clap-4.6.7", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "clap_builder-4.6.7", urls = ["https://static.crates.io/crates/clap_builder/4.6.7/download"], sha256 = "ec0797fb7aeb1406c84efac526901f7ec3ead2124f946b494e72879d4b54704d", strip_prefix = "clap_builder-4.6.7", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "clap_derive-4.6.7", urls = ["https://static.crates.io/crates/clap_derive/4.6.7/download"], sha256 = "f9c751b79415d4e559e3d1fcf128e09e720eb673a06d26cf6f392d37d75b66e0", strip_prefix = "clap_derive-4.6.7", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "clap_lex-1.1.1", urls = ["https://static.crates.io/crates/clap_lex/1.1.1/download"], sha256 = "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486", strip_prefix = "clap_lex-1.1.1", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "colorchoice-1.0.5", urls = ["https://static.crates.io/crates/colorchoice/1.0.5/download"], sha256 = "1d07550c9036bf2ae0c684c4297d503f838287c83c53686d05370d0e139ae570", strip_prefix = "colorchoice-1.0.5", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "cookie-0.18.2", urls = ["https://static.crates.io/crates/cookie/0.18.2/download"], sha256 = "1a373e3602691c3cdea496d2f0ee5935151e6168fe87739483c463db1b2f2f87", strip_prefix = "cookie-0.18.2", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "cookie_store-0.22.1", urls = ["https://static.crates.io/crates/cookie_store/0.22.1/download"], sha256 = "15b2c103cf610ec6cae3da84a766285b42fd16aad564758459e6ecf128c75206", strip_prefix = "cookie_store-0.22.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "cmake-0.1.58", urls = ["https://static.crates.io/crates/cmake/0.1.58/download"], sha256 = "c0f78a02292a74a88ac736019ab962ece0bc380e3f977bf72e376c5d78ff0678", strip_prefix = "cmake-0.1.58", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "combine-4.6.9", urls = ["https://static.crates.io/crates/combine/4.6.9/download"], sha256 = "4356eba6976435498d05a311ee9fc486da3bc81c200d3f0d7dd9703b41913f92", strip_prefix = "combine-4.6.9", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "core-foundation-0.10.1", urls = ["https://static.crates.io/crates/core-foundation/0.10.1/download"], sha256 = "b2a6cd9ae233e7f62ba4e9353e81a88df7fc8a5987b8d445b4d90c879bd156f6", strip_prefix = "core-foundation-0.10.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "core-foundation-sys-0.8.7", urls = ["https://static.crates.io/crates/core-foundation-sys/0.8.7/download"], sha256 = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b", strip_prefix = "core-foundation-sys-0.8.7", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "cpufeatures-0.2.17", urls = ["https://static.crates.io/crates/cpufeatures/0.2.17/download"], sha256 = "59ed5838eebb26a2bb2e58f6d5b5316989ae9d08bab10e0e6d103e656d1b0280", strip_prefix = "cpufeatures-0.2.17", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "cpufeatures-0.3.1", urls = ["https://static.crates.io/crates/cpufeatures/0.3.1/download"], sha256 = "5ca28b0ae3115b884660db4118d803791fd6756b6e88f39c0f3f7859060d7566", strip_prefix = "cpufeatures-0.3.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "crypto-common-0.1.7", urls = ["https://static.crates.io/crates/crypto-common/0.1.7/download"], sha256 = "78c8292055d1c1df0cce5d180393dc8cce0abec0a7102adb6c7b1eef6016d60a", strip_prefix = "crypto-common-0.1.7", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "deranged-0.5.9", urls = ["https://static.crates.io/crates/deranged/0.5.9/download"], sha256 = "9e9de72ce2ad1f90dc62fa25f0f430ef85eb4b0d8fa0be4f30373bc40a21d28e", strip_prefix = "deranged-0.5.9", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "digest-0.10.7", urls = ["https://static.crates.io/crates/digest/0.10.7/download"], sha256 = "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292", strip_prefix = "digest-0.10.7", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "displaydoc-0.2.7", urls = ["https://static.crates.io/crates/displaydoc/0.2.7/download"], sha256 = "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8", strip_prefix = "displaydoc-0.2.7", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "document-features-0.2.12", urls = ["https://static.crates.io/crates/document-features/0.2.12/download"], sha256 = "d4b8a88685455ed29a21542a33abd9cb6510b6b129abadabdcef0f4c55bc8f61", strip_prefix = "document-features-0.2.12", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "dunce-1.0.5", urls = ["https://static.crates.io/crates/dunce/1.0.5/download"], sha256 = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813", strip_prefix = "dunce-1.0.5", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "equivalent-1.0.3", urls = ["https://static.crates.io/crates/equivalent/1.0.3/download"], sha256 = "00d174d5400e5e8fd687ad1049e2f578285fa914201b1af7e8b112a4546bd826", strip_prefix = "equivalent-1.0.3", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "errno-0.3.14", urls = ["https://static.crates.io/crates/errno/0.3.14/download"], sha256 = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb", strip_prefix = "errno-0.3.14", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "fastrand-2.5.0", urls = ["https://static.crates.io/crates/fastrand/2.5.0/download"], sha256 = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223", strip_prefix = "fastrand-2.5.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "find-msvc-tools-0.1.15", urls = ["https://static.crates.io/crates/find-msvc-tools/0.1.15/download"], sha256 = "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48", strip_prefix = "find-msvc-tools-0.1.15", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "form_urlencoded-1.2.2", urls = ["https://static.crates.io/crates/form_urlencoded/1.2.2/download"], sha256 = "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf", strip_prefix = "form_urlencoded-1.2.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "fs_extra-1.3.0", urls = ["https://static.crates.io/crates/fs_extra/1.3.0/download"], sha256 = "42703706b716c37f96a77aea830392ad231f44c9e9a67872fa5548707e11b11c", strip_prefix = "fs_extra-1.3.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "futures-0.3.34", urls = ["https://static.crates.io/crates/futures/0.3.34/download"], sha256 = "9a31d2a3fbaaeb2af2368bbdd904aa8e812d3c04a1ee10d3171f52d556e5d0a3", strip_prefix = "futures-0.3.34", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "futures-channel-0.3.34", urls = ["https://static.crates.io/crates/futures-channel/0.3.34/download"], sha256 = "b1f9e3d69d39e4862ffed03ed071a76f9a13ba1d9109d355b0f0aa6b15e393c4", strip_prefix = "futures-channel-0.3.34", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "futures-core-0.3.34", urls = ["https://static.crates.io/crates/futures-core/0.3.34/download"], sha256 = "92d699e522242e69e3003b94ecc1f960f3a5e015aa7c5d7486e65ad01dd94f5e", strip_prefix = "futures-core-0.3.34", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "futures-executor-0.3.34", urls = ["https://static.crates.io/crates/futures-executor/0.3.34/download"], sha256 = "031b47cf1a3c6cc8bc2fc76cd437f521619387907d469316e7c0bc278f1f5432", strip_prefix = "futures-executor-0.3.34", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "futures-io-0.3.34", urls = ["https://static.crates.io/crates/futures-io/0.3.34/download"], sha256 = "53c0fa8157de1303bfffdaa1cc2a673bfffb60102f76b0ef4441659124373fed", strip_prefix = "futures-io-0.3.34", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "futures-macro-0.3.34", urls = ["https://static.crates.io/crates/futures-macro/0.3.34/download"], sha256 = "9fb9654ba8355388abeb8dcb4fc62f511300867002afc858860463bdd9fe0c44", strip_prefix = "futures-macro-0.3.34", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "futures-sink-0.3.34", urls = ["https://static.crates.io/crates/futures-sink/0.3.34/download"], sha256 = "1944426bf7d03f1d14f708785e4b33efd750b36d48a157b836b3efc15ede8e1d", strip_prefix = "futures-sink-0.3.34", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "futures-task-0.3.34", urls = ["https://static.crates.io/crates/futures-task/0.3.34/download"], sha256 = "cd417de3d1d015fc3bfd2b1ea46dfc7bab72ef86f1cc7cc9c78e728b34a6d1fd", strip_prefix = "futures-task-0.3.34", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "futures-util-0.3.34", urls = ["https://static.crates.io/crates/futures-util/0.3.34/download"], sha256 = "0d50a92467f8ba5dd6e3ee5d4bd04d73ab2e4e1c44474a0674821dfce14b79bc", strip_prefix = "futures-util-0.3.34", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "generic-array-0.14.7", urls = ["https://static.crates.io/crates/generic-array/0.14.7/download"], sha256 = "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a", strip_prefix = "generic-array-0.14.7", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "getrandom-0.2.17", urls = ["https://static.crates.io/crates/getrandom/0.2.17/download"], sha256 = "ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0", strip_prefix = "getrandom-0.2.17", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "getrandom-0.4.3", urls = ["https://static.crates.io/crates/getrandom/0.4.3/download"], sha256 = "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099", strip_prefix = "getrandom-0.4.3", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "hashbrown-0.17.1", urls = ["https://static.crates.io/crates/hashbrown/0.17.1/download"], sha256 = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a", strip_prefix = "hashbrown-0.17.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "heck-0.5.0", urls = ["https://static.crates.io/crates/heck/0.5.0/download"], sha256 = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea", strip_prefix = "heck-0.5.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "hex-0.4.3", urls = ["https://static.crates.io/crates/hex/0.4.3/download"], sha256 = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70", strip_prefix = "hex-0.4.3", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "hmac-0.12.1", urls = ["https://static.crates.io/crates/hmac/0.12.1/download"], sha256 = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e", strip_prefix = "hmac-0.12.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "http-1.5.0", urls = ["https://static.crates.io/crates/http/1.5.0/download"], sha256 = "918d3568bebf352712bc2ef3d46a8bcf1a75b373be6539de198e9105cbbf9ce0", strip_prefix = "http-1.5.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "http-body-1.1.0", urls = ["https://static.crates.io/crates/http-body/1.1.0/download"], sha256 = "ca2a8f2913ee65f60facd6a5905613afaa448497a0230cc41ce022d93290bc2c", strip_prefix = "http-body-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "http-body-util-0.1.5", urls = ["https://static.crates.io/crates/http-body-util/0.1.5/download"], sha256 = "23169fe34a5fbcdd3f3862e78fb9b6fccd5f02a6dc6f732547005d45631ce71c", strip_prefix = "http-body-util-0.1.5", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "http-serde-2.1.1", urls = ["https://static.crates.io/crates/http-serde/2.1.1/download"], sha256 = "0f056c8559e3757392c8d091e796416e4649d8e49e88b8d76df6c002f05027fd", strip_prefix = "http-serde-2.1.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "httparse-1.10.1", urls = ["https://static.crates.io/crates/httparse/1.10.1/download"], sha256 = "6dbf3de79e51f3d586ab4cb9d5c3e2c14aa28ed23d180cf89b4df0454a69cc87", strip_prefix = "httparse-1.10.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "hyper-1.12.0", urls = ["https://static.crates.io/crates/hyper/1.12.0/download"], sha256 = "2c3e324da4c95177d6291d4c8730197c0d1822f8a9766814a4a44fa5ab797c9c", strip_prefix = "hyper-1.12.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "hyper-rustls-0.27.10", urls = ["https://static.crates.io/crates/hyper-rustls/0.27.10/download"], sha256 = "dfa8e654703247911e29c23fbeaa261834bd9bb74efba2f9acddc37bfb127f53", strip_prefix = "hyper-rustls-0.27.10", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "hyper-timeout-0.5.2", urls = ["https://static.crates.io/crates/hyper-timeout/0.5.2/download"], sha256 = "2b90d566bffbce6a75bd8b09a05aa8c2cb1fabb6cb348f8840c9e4c90a0d83b0", strip_prefix = "hyper-timeout-0.5.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "hyper-util-0.1.21", urls = ["https://static.crates.io/crates/hyper-util/0.1.21/download"], sha256 = "ddc03d96684f9226b8a787cdb71488417b53ab5ea8fdb1dac946cb9431cc8bff", strip_prefix = "hyper-util-0.1.21", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "iana-time-zone-0.1.65", urls = ["https://static.crates.io/crates/iana-time-zone/0.1.65/download"], sha256 = "e31bc9ad994ba00e440a8aa5c9ef0ec67d5cb5e5cb0cc7f8b744a35b389cc470", strip_prefix = "iana-time-zone-0.1.65", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "iana-time-zone-haiku-0.1.2", urls = ["https://static.crates.io/crates/iana-time-zone-haiku/0.1.2/download"], sha256 = "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f", strip_prefix = "iana-time-zone-haiku-0.1.2", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "icu_collections-2.4.0", urls = ["https://static.crates.io/crates/icu_collections/2.4.0/download"], sha256 = "fe090a42a0d3140fed8c63263ed1fecc02422cb2f4bfe55cd8de2de1b8e105dd", strip_prefix = "icu_collections-2.4.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "icu_locale_core-2.4.0", urls = ["https://static.crates.io/crates/icu_locale_core/2.4.0/download"], sha256 = "25d29b57c17c6528d0dc4c2141cfa2d08200465acb537a3909c8b9b8a4a984c0", strip_prefix = "icu_locale_core-2.4.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "icu_normalizer-2.4.0", urls = ["https://static.crates.io/crates/icu_normalizer/2.4.0/download"], sha256 = "404a3b8c486f205c87fe7f23ab6894d84a4ad76d6e4671ae1981ba7def87c599", strip_prefix = "icu_normalizer-2.4.0", type = "tar.gz", visibility = ["PUBLIC"])
@@ -50,71 +80,132 @@ def pinned_crates():
     native.http_archive(name = "idna-1.1.0", urls = ["https://static.crates.io/crates/idna/1.1.0/download"], sha256 = "3b0875f23caa03898994f6ddc501886a45c7d3d62d04d2d90788d47be1b1e4de", strip_prefix = "idna-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "idna_adapter-1.2.2", urls = ["https://static.crates.io/crates/idna_adapter/1.2.2/download"], sha256 = "cb68373c0d6620ef8105e855e7745e18b0d00d3bdb07fb532e434244cdb9a714", strip_prefix = "idna_adapter-1.2.2", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "indexmap-2.14.2", urls = ["https://static.crates.io/crates/indexmap/2.14.2/download"], sha256 = "cc4e190f5d26ca7051642629da2c52fc03bde85a03197c99408dcd291734c855", strip_prefix = "indexmap-2.14.2", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "is_terminal_polyfill-1.70.2", urls = ["https://static.crates.io/crates/is_terminal_polyfill/1.70.2/download"], sha256 = "a6cb138bb79a146c1bd460005623e142ef0181e3d0219cb493e02f7d08a35695", strip_prefix = "is_terminal_polyfill-1.70.2", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "itoa-1.0.18", urls = ["https://static.crates.io/crates/itoa/1.0.18/download"], sha256 = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682", strip_prefix = "itoa-1.0.18", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "ipnet-2.12.2", urls = ["https://static.crates.io/crates/ipnet/2.12.2/download"], sha256 = "791930b43c0d5973160d90a8f3894509f2b273430f5c5c73b668636d0287c5c0", strip_prefix = "ipnet-2.12.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "itoa-1.0.19", urls = ["https://static.crates.io/crates/itoa/1.0.19/download"], sha256 = "3bd1574e617a9a6c1f8f8181bd7e841e1f20e4277607ef28945765188d6284d4", strip_prefix = "itoa-1.0.19", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "jni-0.22.4", urls = ["https://static.crates.io/crates/jni/0.22.4/download"], sha256 = "5efd9a482cf3a427f00d6b35f14332adc7902ce91efb778580e180ff90fa3498", strip_prefix = "jni-0.22.4", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "jni-macros-0.22.4", urls = ["https://static.crates.io/crates/jni-macros/0.22.4/download"], sha256 = "a00109accc170f0bdb141fed3e393c565b6f5e072365c3bd58f5b062591560a3", strip_prefix = "jni-macros-0.22.4", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "jni-sys-0.4.1", urls = ["https://static.crates.io/crates/jni-sys/0.4.1/download"], sha256 = "c6377a88cb3910bee9b0fa88d4f42e1d2da8e79915598f65fb0c7ee14c878af2", strip_prefix = "jni-sys-0.4.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "jni-sys-macros-0.4.1", urls = ["https://static.crates.io/crates/jni-sys-macros/0.4.1/download"], sha256 = "38c0b942f458fe50cdac086d2f946512305e5631e720728f2a61aabcd47a6264", strip_prefix = "jni-sys-macros-0.4.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "jobserver-0.1.35", urls = ["https://static.crates.io/crates/jobserver/0.1.35/download"], sha256 = "1c00acbd29eabad4a2392fa0e921c874934dbbf4194312ad20f04a0ed67a3cb3", strip_prefix = "jobserver-0.1.35", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "js-sys-0.3.107", urls = ["https://static.crates.io/crates/js-sys/0.3.107/download"], sha256 = "8dc09d2154098bbf4ef54eab6b117a3c24cbbffe94046b16ee6d6d4510584d3a", strip_prefix = "js-sys-0.3.107", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "leb128fmt-0.1.0", urls = ["https://static.crates.io/crates/leb128fmt/0.1.0/download"], sha256 = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2", strip_prefix = "leb128fmt-0.1.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "libc-0.2.191", urls = ["https://static.crates.io/crates/libc/0.2.191/download"], sha256 = "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a", strip_prefix = "libc-0.2.191", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "linux-raw-sys-0.12.1", urls = ["https://static.crates.io/crates/linux-raw-sys/0.12.1/download"], sha256 = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53", strip_prefix = "linux-raw-sys-0.12.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "litemap-0.8.3", urls = ["https://static.crates.io/crates/litemap/0.8.3/download"], sha256 = "47d9d19d1d6efa0109d2f65ff4c85cddd50bd572e5a00127ab10987290bcefae", strip_prefix = "litemap-0.8.3", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "litrs-1.0.1", urls = ["https://static.crates.io/crates/litrs/1.0.1/download"], sha256 = "4744e383959f0db86ede514b809b1c53251889093803c05267acc7d4e7030d70", strip_prefix = "litrs-1.0.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "log-0.4.35", urls = ["https://static.crates.io/crates/log/0.4.35/download"], sha256 = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c", strip_prefix = "log-0.4.35", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "lru-slab-0.1.3", urls = ["https://static.crates.io/crates/lru-slab/0.1.3/download"], sha256 = "4050469837a6ff301cd14c1f8f24f88549e6d548f24f64e2148eb0f72cebc51f", strip_prefix = "lru-slab-0.1.3", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "memchr-2.8.3", urls = ["https://static.crates.io/crates/memchr/2.8.3/download"], sha256 = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98", strip_prefix = "memchr-2.8.3", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "num-conv-0.2.2", urls = ["https://static.crates.io/crates/num-conv/0.2.2/download"], sha256 = "521739c6d2bac4aa25192232afe6841231376b2b26d4d9fae5ecf8ca5772e441", strip_prefix = "num-conv-0.2.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "mio-1.2.4", urls = ["https://static.crates.io/crates/mio/1.2.4/download"], sha256 = "1788edb87fdc09c7e26304471e2f5be8cdefb1b6930d6e3985fc02ff53bf86ee", strip_prefix = "mio-1.2.4", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "num-traits-0.2.19", urls = ["https://static.crates.io/crates/num-traits/0.2.19/download"], sha256 = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841", strip_prefix = "num-traits-0.2.19", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "octocrab-0.54.9", urls = ["https://static.crates.io/crates/octocrab/0.54.9/download"], sha256 = "319b72643e8fa16dc3278f66439534513b2b65d47ec9cf2b26e7316c0c8ef24a", strip_prefix = "octocrab-0.54.9", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "once_cell-1.21.4", urls = ["https://static.crates.io/crates/once_cell/1.21.4/download"], sha256 = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50", strip_prefix = "once_cell-1.21.4", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "once_cell_polyfill-1.70.2", urls = ["https://static.crates.io/crates/once_cell_polyfill/1.70.2/download"], sha256 = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe", strip_prefix = "once_cell_polyfill-1.70.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "openssl-probe-0.2.2", urls = ["https://static.crates.io/crates/openssl-probe/0.2.2/download"], sha256 = "7e036b411754132fd6b74e94b74e9a13c5cf606fa93d1885c35860d3060820b1", strip_prefix = "openssl-probe-0.2.2", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "percent-encoding-2.3.2", urls = ["https://static.crates.io/crates/percent-encoding/2.3.2/download"], sha256 = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220", strip_prefix = "percent-encoding-2.3.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "pin-project-1.1.13", urls = ["https://static.crates.io/crates/pin-project/1.1.13/download"], sha256 = "2466b2336ed02bcdca6b294417127b90ec92038d1d5c4fbeac971a922e0e0924", strip_prefix = "pin-project-1.1.13", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "pin-project-internal-1.1.13", urls = ["https://static.crates.io/crates/pin-project-internal/1.1.13/download"], sha256 = "c96395f0a926bc13b1c17622aaddda1ecb55d49c8f1bf9777e4d877800a43f8b", strip_prefix = "pin-project-internal-1.1.13", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "pin-project-lite-0.2.17", urls = ["https://static.crates.io/crates/pin-project-lite/0.2.17/download"], sha256 = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd", strip_prefix = "pin-project-lite-0.2.17", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "pkg-config-0.3.34", urls = ["https://static.crates.io/crates/pkg-config/0.3.34/download"], sha256 = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548", strip_prefix = "pkg-config-0.3.34", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "potential_utf-0.1.6", urls = ["https://static.crates.io/crates/potential_utf/0.1.6/download"], sha256 = "d83eb9bc6d8e5cf568e7a1101d60ee05e81ed50ea106026f3d18deeb046d7661", strip_prefix = "potential_utf-0.1.6", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "powerfmt-0.2.1", urls = ["https://static.crates.io/crates/powerfmt/0.2.1/download"], sha256 = "4a6394b9e965e73d0a289ee54f589087e2c676aedf60885baf52c76b771e4958", strip_prefix = "powerfmt-0.2.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "proc-macro2-1.0.107", urls = ["https://static.crates.io/crates/proc-macro2/1.0.107/download"], sha256 = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9", strip_prefix = "proc-macro2-1.0.107", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "quinn-0.11.12", urls = ["https://static.crates.io/crates/quinn/0.11.12/download"], sha256 = "4051e23e9185c255a7e33ef59cdbca87a22d359052eecd22fc6b901fb37d9d11", strip_prefix = "quinn-0.11.12", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "quinn-proto-0.11.19", urls = ["https://static.crates.io/crates/quinn-proto/0.11.19/download"], sha256 = "0e750cca55fe4f0439a15d0bb529da9651e79993e8e72c61a899a36d462befbe", strip_prefix = "quinn-proto-0.11.19", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "quinn-udp-0.5.16", urls = ["https://static.crates.io/crates/quinn-udp/0.5.16/download"], sha256 = "af66907df18639dcf4db56ca65490cabc4b27a97dbadd96f2926cca73298f016", strip_prefix = "quinn-udp-0.5.16", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "quote-1.0.47", urls = ["https://static.crates.io/crates/quote/1.0.47/download"], sha256 = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001", strip_prefix = "quote-1.0.47", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "r-efi-6.0.0", urls = ["https://static.crates.io/crates/r-efi/6.0.0/download"], sha256 = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf", strip_prefix = "r-efi-6.0.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "rand-0.10.3", urls = ["https://static.crates.io/crates/rand/0.10.3/download"], sha256 = "65c9fb96cbc91e3478eaae79a69fcd3f1ae4ad052e471fe6732fff548984b4af", strip_prefix = "rand-0.10.3", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "rand_core-0.10.1", urls = ["https://static.crates.io/crates/rand_core/0.10.1/download"], sha256 = "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69", strip_prefix = "rand_core-0.10.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "rand_pcg-0.10.2", urls = ["https://static.crates.io/crates/rand_pcg/0.10.2/download"], sha256 = "caa0f4137e1c0a72f4c651489402276c8e8e1cf081f3b0ba156d2cbeef09e86a", strip_prefix = "rand_pcg-0.10.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "reqwest-0.13.5", urls = ["https://static.crates.io/crates/reqwest/0.13.5/download"], sha256 = "16a1cfa75cc186dd73d5818e510e042e40927bccc9c236b061cea97e1eb08029", strip_prefix = "reqwest-0.13.5", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "ring-0.17.14", urls = ["https://static.crates.io/crates/ring/0.17.14/download"], sha256 = "a4689e6c2294d81e88dc6261c768b63bc4fcdb852be6d1352498b114f61383b7", strip_prefix = "ring-0.17.14", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "rustc-hash-2.1.3", urls = ["https://static.crates.io/crates/rustc-hash/2.1.3/download"], sha256 = "6b1e7f9a428571be2dc5bc0505c13fb6bf936822b894ec87abf8a08a4e51742d", strip_prefix = "rustc-hash-2.1.3", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "rustc_version-0.4.1", urls = ["https://static.crates.io/crates/rustc_version/0.4.1/download"], sha256 = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92", strip_prefix = "rustc_version-0.4.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "rustix-1.1.6", urls = ["https://static.crates.io/crates/rustix/1.1.6/download"], sha256 = "e5e76742e5294153d4dde1207dbec5bdd81eef6fabdc0d2118babadabfd858aa", strip_prefix = "rustix-1.1.6", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "rustls-0.23.46", urls = ["https://static.crates.io/crates/rustls/0.23.46/download"], sha256 = "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf", strip_prefix = "rustls-0.23.46", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "rustls-pki-types-1.15.1", urls = ["https://static.crates.io/crates/rustls-pki-types/1.15.1/download"], sha256 = "2f4925028c7eb5d1fcdaf196971378ed9d2c1c4efc7dc5d011256f76c99c0a96", strip_prefix = "rustls-pki-types-1.15.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "rustls-native-certs-0.8.5", urls = ["https://static.crates.io/crates/rustls-native-certs/0.8.5/download"], sha256 = "4a073f5dc7469f984c52ad2752b63b0807745133b6de880b7b64c1ac4c48aec4", strip_prefix = "rustls-native-certs-0.8.5", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "rustls-pki-types-1.16.0", urls = ["https://static.crates.io/crates/rustls-pki-types/1.16.0/download"], sha256 = "102f35f7de7b06d8c61f1cff6592f5253e0dea431c74867aad5dfd70f44663fb", strip_prefix = "rustls-pki-types-1.16.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "rustls-platform-verifier-0.7.1", urls = ["https://static.crates.io/crates/rustls-platform-verifier/0.7.1/download"], sha256 = "1167586491e2b18b8bfbb293e8180ec17c201c4f076d7cb3070ca964e7598f98", strip_prefix = "rustls-platform-verifier-0.7.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "rustls-platform-verifier-android-0.2.0", urls = ["https://static.crates.io/crates/rustls-platform-verifier-android/0.2.0/download"], sha256 = "eec689c0bc40ff2458a5977b6619cb718087084a18e02a131c599b62d05e1a5f", strip_prefix = "rustls-platform-verifier-android-0.2.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "rustls-webpki-0.103.16", urls = ["https://static.crates.io/crates/rustls-webpki/0.103.16/download"], sha256 = "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281", strip_prefix = "rustls-webpki-0.103.16", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "rustversion-1.0.23", urls = ["https://static.crates.io/crates/rustversion/1.0.23/download"], sha256 = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f", strip_prefix = "rustversion-1.0.23", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "ryu-1.0.23", urls = ["https://static.crates.io/crates/ryu/1.0.23/download"], sha256 = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f", strip_prefix = "ryu-1.0.23", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "same-file-1.0.6", urls = ["https://static.crates.io/crates/same-file/1.0.6/download"], sha256 = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502", strip_prefix = "same-file-1.0.6", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "schannel-0.1.30", urls = ["https://static.crates.io/crates/schannel/0.1.30/download"], sha256 = "9cb23c424d8ee841bb4d813677ca237e2a610067d594fec130f87d6093495ab5", strip_prefix = "schannel-0.1.30", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "secrecy-0.10.3", urls = ["https://static.crates.io/crates/secrecy/0.10.3/download"], sha256 = "e891af845473308773346dc847b2c23ee78fe442e0472ac50e22a18a93d3ae5a", strip_prefix = "secrecy-0.10.3", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "security-framework-3.7.0", urls = ["https://static.crates.io/crates/security-framework/3.7.0/download"], sha256 = "b7f4bc775c73d9a02cde8bf7b2ec4c9d12743edf609006c7facc23998404cd1d", strip_prefix = "security-framework-3.7.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "security-framework-sys-2.17.0", urls = ["https://static.crates.io/crates/security-framework-sys/2.17.0/download"], sha256 = "6ce2691df843ecc5d231c0b14ece2acc3efb62c0a398c7e1d875f3983ce020e3", strip_prefix = "security-framework-sys-2.17.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "semver-1.0.28", urls = ["https://static.crates.io/crates/semver/1.0.28/download"], sha256 = "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd", strip_prefix = "semver-1.0.28", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "serde-1.0.228", urls = ["https://static.crates.io/crates/serde/1.0.228/download"], sha256 = "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e", strip_prefix = "serde-1.0.228", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "serde_core-1.0.228", urls = ["https://static.crates.io/crates/serde_core/1.0.228/download"], sha256 = "41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad", strip_prefix = "serde_core-1.0.228", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "serde_derive-1.0.228", urls = ["https://static.crates.io/crates/serde_derive/1.0.228/download"], sha256 = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79", strip_prefix = "serde_derive-1.0.228", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "serde_json-1.0.150", urls = ["https://static.crates.io/crates/serde_json/1.0.150/download"], sha256 = "e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9", strip_prefix = "serde_json-1.0.150", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "serde_spanned-0.6.9", urls = ["https://static.crates.io/crates/serde_spanned/0.6.9/download"], sha256 = "bf41e0cfaf7226dca15e8197172c295a782857fcb97fad1808a166870dee75a3", strip_prefix = "serde_spanned-0.6.9", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "serde_path_to_error-0.1.20", urls = ["https://static.crates.io/crates/serde_path_to_error/0.1.20/download"], sha256 = "10a9ff822e371bb5403e391ecd83e182e0e77ba7f6fe0160b795797109d1b457", strip_prefix = "serde_path_to_error-0.1.20", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "serde_spanned-1.1.3", urls = ["https://static.crates.io/crates/serde_spanned/1.1.3/download"], sha256 = "9c187e0a369471c550af028cba56d4f4fa2a489ad28151ae95a4d340a2a8b782", strip_prefix = "serde_spanned-1.1.3", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "serde_urlencoded-0.7.1", urls = ["https://static.crates.io/crates/serde_urlencoded/0.7.1/download"], sha256 = "d3491c14715ca2294c4d6a88f15e84739788c1d030eed8c110436aafdaa2f3fd", strip_prefix = "serde_urlencoded-0.7.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "sha2-0.10.9", urls = ["https://static.crates.io/crates/sha2/0.10.9/download"], sha256 = "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283", strip_prefix = "sha2-0.10.9", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "shlex-2.0.1", urls = ["https://static.crates.io/crates/shlex/2.0.1/download"], sha256 = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba", strip_prefix = "shlex-2.0.1", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "smallvec-1.16.4", urls = ["https://static.crates.io/crates/smallvec/1.16.4/download"], sha256 = "d0d5d4b1981b8bbbb7aed204cae5726d683d5d6ac7e74ec54122ea28f315e7c8", strip_prefix = "smallvec-1.16.4", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "simd_cesu8-1.2.0", urls = ["https://static.crates.io/crates/simd_cesu8/1.2.0/download"], sha256 = "11031e251abf8611c80f460e19dbdeb54a66db918e49c65a7065b46ac7aec520", strip_prefix = "simd_cesu8-1.2.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "simdutf8-0.1.5", urls = ["https://static.crates.io/crates/simdutf8/0.1.5/download"], sha256 = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e", strip_prefix = "simdutf8-0.1.5", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "slab-0.4.12", urls = ["https://static.crates.io/crates/slab/0.4.12/download"], sha256 = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5", strip_prefix = "slab-0.4.12", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "smallvec-1.16.5", urls = ["https://static.crates.io/crates/smallvec/1.16.5/download"], sha256 = "149309498a5f7334b12ddae0cad8aba81ce785fe91755068867e017cf98fee46", strip_prefix = "smallvec-1.16.5", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "snafu-0.8.9", urls = ["https://static.crates.io/crates/snafu/0.8.9/download"], sha256 = "6e84b3f4eacbf3a1ce05eac6763b4d629d60cbc94d632e4092c54ade71f1e1a2", strip_prefix = "snafu-0.8.9", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "snafu-derive-0.8.9", urls = ["https://static.crates.io/crates/snafu-derive/0.8.9/download"], sha256 = "c1c97747dbf44bb1ca44a561ece23508e99cb592e862f22222dcf42f51d1e451", strip_prefix = "snafu-derive-0.8.9", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "socket2-0.6.5", urls = ["https://static.crates.io/crates/socket2/0.6.5/download"], sha256 = "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4", strip_prefix = "socket2-0.6.5", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "stable_deref_trait-1.2.1", urls = ["https://static.crates.io/crates/stable_deref_trait/1.2.1/download"], sha256 = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596", strip_prefix = "stable_deref_trait-1.2.1", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "strsim-0.11.1", urls = ["https://static.crates.io/crates/strsim/0.11.1/download"], sha256 = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f", strip_prefix = "strsim-0.11.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "subtle-2.6.1", urls = ["https://static.crates.io/crates/subtle/2.6.1/download"], sha256 = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292", strip_prefix = "subtle-2.6.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "syn-2.0.119", urls = ["https://static.crates.io/crates/syn/2.0.119/download"], sha256 = "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297", strip_prefix = "syn-2.0.119", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "syn-3.0.9", urls = ["https://static.crates.io/crates/syn/3.0.9/download"], sha256 = "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b", strip_prefix = "syn-3.0.9", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "syn-3.0.10", urls = ["https://static.crates.io/crates/syn/3.0.10/download"], sha256 = "4ae9ccbea3a7b0b09443036490c8f34a8b1b760fd345e5c0dae0aac718faea79", strip_prefix = "syn-3.0.10", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "sync_wrapper-1.0.2", urls = ["https://static.crates.io/crates/sync_wrapper/1.0.2/download"], sha256 = "0bf256ce5efdfa370213c1dabab5935a12e49f2c58d15e9eac2870d3b4f27263", strip_prefix = "sync_wrapper-1.0.2", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "synstructure-0.14.0", urls = ["https://static.crates.io/crates/synstructure/0.14.0/download"], sha256 = "901704edd0dfe137f1987838ee4f259e4e063c31371bdb423f7ae38ec6f77f02", strip_prefix = "synstructure-0.14.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "tempfile-3.27.0", urls = ["https://static.crates.io/crates/tempfile/3.27.0/download"], sha256 = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd", strip_prefix = "tempfile-3.27.0", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "time-0.3.55", urls = ["https://static.crates.io/crates/time/0.3.55/download"], sha256 = "cdb87b95ec50ddfa440816d227a17b2ccbdda963a316a727fda0fc4334f7d134", strip_prefix = "time-0.3.55", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "time-core-0.1.9", urls = ["https://static.crates.io/crates/time-core/0.1.9/download"], sha256 = "9e1c906769ad99c88eaa54e728060edef082f8e358ff32030cb7c7d315e81109", strip_prefix = "time-core-0.1.9", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "time-macros-0.2.32", urls = ["https://static.crates.io/crates/time-macros/0.2.32/download"], sha256 = "7e689342a48d2ea927c87ea50cabf8594854bf940e9310208848d680d668ed85", strip_prefix = "time-macros-0.2.32", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "thiserror-2.0.21", urls = ["https://static.crates.io/crates/thiserror/2.0.21/download"], sha256 = "09e52cb86a36cede5cb101bf8908837b3e4c6e5e59fe7fd85c23fb56200d189e", strip_prefix = "thiserror-2.0.21", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "thiserror-impl-2.0.21", urls = ["https://static.crates.io/crates/thiserror-impl/2.0.21/download"], sha256 = "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524", strip_prefix = "thiserror-impl-2.0.21", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "tinystr-0.8.5", urls = ["https://static.crates.io/crates/tinystr/0.8.5/download"], sha256 = "abc840c238154d58f9e86b2792261edfde565a17696e1cda1a449de27979801a", strip_prefix = "tinystr-0.8.5", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "toml-0.8.23", urls = ["https://static.crates.io/crates/toml/0.8.23/download"], sha256 = "dc1beb996b9d83529a9e75c17a1686767d148d70663143c7854d8b4a09ced362", strip_prefix = "toml-0.8.23", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "toml_datetime-0.6.11", urls = ["https://static.crates.io/crates/toml_datetime/0.6.11/download"], sha256 = "22cddaf88f4fbc13c51aebbf5f8eceb5c7c5a9da2ac40a13519eb5b0a0e8f11c", strip_prefix = "toml_datetime-0.6.11", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "toml_edit-0.22.27", urls = ["https://static.crates.io/crates/toml_edit/0.22.27/download"], sha256 = "41fe8c660ae4257887cf66394862d21dbca4a6ddd26f04a3560410406a2f819a", strip_prefix = "toml_edit-0.22.27", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "toml_write-0.1.2", urls = ["https://static.crates.io/crates/toml_write/0.1.2/download"], sha256 = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801", strip_prefix = "toml_write-0.1.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tinyvec-1.13.3", urls = ["https://static.crates.io/crates/tinyvec/1.13.3/download"], sha256 = "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee", strip_prefix = "tinyvec-1.13.3", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tokio-1.48.0", urls = ["https://static.crates.io/crates/tokio/1.48.0/download"], sha256 = "ff360e02eab121e0bc37a2d3b4d4dc622e6eda3a8e5253d5435ecf5bd4c68408", strip_prefix = "tokio-1.48.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tokio-rustls-0.26.6", urls = ["https://static.crates.io/crates/tokio-rustls/0.26.6/download"], sha256 = "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db", strip_prefix = "tokio-rustls-0.26.6", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tokio-util-0.7.19", urls = ["https://static.crates.io/crates/tokio-util/0.7.19/download"], sha256 = "494815d09bf52b5548659851081238f0ca39ff638363907596da739561c62c52", strip_prefix = "tokio-util-0.7.19", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "toml-1.2.1_spec-1.1.0", urls = ["https://static.crates.io/crates/toml/1.2.1+spec-1.1.0/download"], sha256 = "d5755c51863cdac711f1956baf8eb9588e060755f7d3c4c979e70ea1e1f32cd7", strip_prefix = "toml-1.2.1+spec-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "toml_datetime-1.1.3_spec-1.1.0", urls = ["https://static.crates.io/crates/toml_datetime/1.1.3+spec-1.1.0/download"], sha256 = "173f25c883cd2176a2d8212155638c0a60d484a9d84546d270866f40f56b6e49", strip_prefix = "toml_datetime-1.1.3+spec-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "toml_edit-0.25.19_spec-1.1.0", urls = ["https://static.crates.io/crates/toml_edit/0.25.19+spec-1.1.0/download"], sha256 = "dd43688c4858d7264ae1cf9a9f874a67c3feb74a883b1cd7bebd6a4ea8307218", strip_prefix = "toml_edit-0.25.19+spec-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "toml_parser-1.1.5_spec-1.1.0", urls = ["https://static.crates.io/crates/toml_parser/1.1.5+spec-1.1.0/download"], sha256 = "baa693a8032d7e1cada7d0041e96126df243179ff061456783ac7f12bda4744c", strip_prefix = "toml_parser-1.1.5+spec-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "toml_writer-1.2.0_spec-1.1.0", urls = ["https://static.crates.io/crates/toml_writer/1.2.0+spec-1.1.0/download"], sha256 = "009dbb7700f11c55ef83aebbe4c0e9cf1f1ac0844bd8d6f00dc38f302026e13a", strip_prefix = "toml_writer-1.2.0+spec-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tower-0.5.3", urls = ["https://static.crates.io/crates/tower/0.5.3/download"], sha256 = "ebe5ef63511595f1344e2d5cfa636d973292adc0eec1f0ad45fae9f0851ab1d4", strip_prefix = "tower-0.5.3", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tower-http-0.6.11", urls = ["https://static.crates.io/crates/tower-http/0.6.11/download"], sha256 = "4cfcf7e2740e6fc6d4d688b4ef00650406bb94adf4731e43c096c3a19fe40840", strip_prefix = "tower-http-0.6.11", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tower-layer-0.3.3", urls = ["https://static.crates.io/crates/tower-layer/0.3.3/download"], sha256 = "121c2a6cda46980bb0fcd1647ffaf6cd3fc79a013de288782836f6df9c48780e", strip_prefix = "tower-layer-0.3.3", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tower-service-0.3.3", urls = ["https://static.crates.io/crates/tower-service/0.3.3/download"], sha256 = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3", strip_prefix = "tower-service-0.3.3", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tracing-0.1.44", urls = ["https://static.crates.io/crates/tracing/0.1.44/download"], sha256 = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100", strip_prefix = "tracing-0.1.44", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tracing-core-0.1.36", urls = ["https://static.crates.io/crates/tracing-core/0.1.36/download"], sha256 = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a", strip_prefix = "tracing-core-0.1.36", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "try-lock-0.2.5", urls = ["https://static.crates.io/crates/try-lock/0.2.5/download"], sha256 = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b", strip_prefix = "try-lock-0.2.5", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "typenum-1.20.1", urls = ["https://static.crates.io/crates/typenum/1.20.1/download"], sha256 = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20", strip_prefix = "typenum-1.20.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "unicode-ident-1.0.27", urls = ["https://static.crates.io/crates/unicode-ident/1.0.27/download"], sha256 = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563", strip_prefix = "unicode-ident-1.0.27", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "unicode-width-0.2.3", urls = ["https://static.crates.io/crates/unicode-width/0.2.3/download"], sha256 = "ca718471876992059f251e33aafc334346ada08042b7661dd1fe313a9bced557", strip_prefix = "unicode-width-0.2.3", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "untrusted-0.9.0", urls = ["https://static.crates.io/crates/untrusted/0.9.0/download"], sha256 = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1", strip_prefix = "untrusted-0.9.0", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "ureq-3.3.0", urls = ["https://static.crates.io/crates/ureq/3.3.0/download"], sha256 = "dea7109cdcd5864d4eeb1b58a1648dc9bf520360d7af16ec26d0a9354bafcfc0", strip_prefix = "ureq-3.3.0", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "ureq-proto-0.6.5", urls = ["https://static.crates.io/crates/ureq-proto/0.6.5/download"], sha256 = "841583fc36089d7d59419568ae157f43a5a03a2e5a81ba87c77d1596ef46e922", strip_prefix = "ureq-proto-0.6.5", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "url-2.5.8", urls = ["https://static.crates.io/crates/url/2.5.8/download"], sha256 = "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed", strip_prefix = "url-2.5.8", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "utf8-zero-0.8.1", urls = ["https://static.crates.io/crates/utf8-zero/0.8.1/download"], sha256 = "b8c0a043c9540bae7c578c88f91dda8bd82e59ae27c21baca69c8b191aaf5a6e", strip_prefix = "utf8-zero-0.8.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "utf8_iter-1.1.0", urls = ["https://static.crates.io/crates/utf8_iter/1.1.0/download"], sha256 = "af3bd9d3e571c26fcce9d033b87ea5ab061b8d2ffe9b7a5675d810d68f03edf0", strip_prefix = "utf8_iter-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "utf8parse-0.2.2", urls = ["https://static.crates.io/crates/utf8parse/0.2.2/download"], sha256 = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821", strip_prefix = "utf8parse-0.2.2", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "utf_types-1.0.0", urls = ["https://static.crates.io/crates/utf_types/1.0.0/download"], sha256 = "3a3b425286980a367278453f3b6d28cdcb134b574e5a35824a6ff5eebad50bb6", strip_prefix = "utf_types-1.0.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "version_check-0.9.5", urls = ["https://static.crates.io/crates/version_check/0.9.5/download"], sha256 = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a", strip_prefix = "version_check-0.9.5", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "walkdir-2.5.0", urls = ["https://static.crates.io/crates/walkdir/2.5.0/download"], sha256 = "29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b", strip_prefix = "walkdir-2.5.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "want-0.3.2", urls = ["https://static.crates.io/crates/want/0.3.2/download"], sha256 = "ec4cdd0dd910afe868b7ef477227d8d538b46b3075031afee8a9f2acb0a2ed0b", strip_prefix = "want-0.3.2", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "wasi-0.11.1_wasi-snapshot-preview1", urls = ["https://static.crates.io/crates/wasi/0.11.1+wasi-snapshot-preview1/download"], sha256 = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b", strip_prefix = "wasi-0.11.1+wasi-snapshot-preview1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "wasm-bindgen-0.2.130", urls = ["https://static.crates.io/crates/wasm-bindgen/0.2.130/download"], sha256 = "a0181c14ddd6c7b8b0b0132a5f1ea2f32be0d893cd3ea97b6e3b28886b8a3d1c", strip_prefix = "wasm-bindgen-0.2.130", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "wasm-bindgen-futures-0.4.80", urls = ["https://static.crates.io/crates/wasm-bindgen-futures/0.4.80/download"], sha256 = "5e14e0327cb5368ad60ccb22d04a9827a693c95a926d8d125e9fa39e0baec501", strip_prefix = "wasm-bindgen-futures-0.4.80", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "wasm-bindgen-macro-0.2.130", urls = ["https://static.crates.io/crates/wasm-bindgen-macro/0.2.130/download"], sha256 = "6e931a02a39abdbf66966fc35902b5ed58344750a70885bed4ebb3d8eaf28ed9", strip_prefix = "wasm-bindgen-macro-0.2.130", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "wasm-bindgen-macro-support-0.2.130", urls = ["https://static.crates.io/crates/wasm-bindgen-macro-support/0.2.130/download"], sha256 = "2ca4b54280e455bd831e33a6b8e734baf432fe63fbc35c42ac14ce67a043a53a", strip_prefix = "wasm-bindgen-macro-support-0.2.130", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "wasm-bindgen-shared-0.2.130", urls = ["https://static.crates.io/crates/wasm-bindgen-shared/0.2.130/download"], sha256 = "3b1f9c3798725016c6ee5f2f57869ec0831e8bbc0ab0310a86e787e97f41389e", strip_prefix = "wasm-bindgen-shared-0.2.130", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "wasm-encoder-0.263.0", urls = ["https://static.crates.io/crates/wasm-encoder/0.263.0/download"], sha256 = "0b883a26aea02eaabe2d2c3fba7eb039ef5cdcb5d5201ae5551e73d5e251a81f", strip_prefix = "wasm-encoder-0.263.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "wasmparser-0.263.0", urls = ["https://static.crates.io/crates/wasmparser/0.263.0/download"], sha256 = "4f5fa0a054ae153606df820eb0a84213e28cda41bbe04ba2628e71b6ba100fcb", strip_prefix = "wasmparser-0.263.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "wast-263.0.0", urls = ["https://static.crates.io/crates/wast/263.0.0/download"], sha256 = "69d90bcf581b501aa1c358bc5dc0faa979cd375796908860ebcb6d1d70b907c7", strip_prefix = "wast-263.0.0", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "webpki-roots-1.0.11", urls = ["https://static.crates.io/crates/webpki-roots/1.0.11/download"], sha256 = "f5f280bbb2b287bc8e7de7e3852945a0ff50d1bbcb5ed42b6c7a568c546df171", strip_prefix = "webpki-roots-1.0.11", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "web-sys-0.3.107", urls = ["https://static.crates.io/crates/web-sys/0.3.107/download"], sha256 = "d7d179596ff5ec0f6de4db64d54011bde6289cc49603d3a6e4ce3f329207ab88", strip_prefix = "web-sys-0.3.107", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "web-time-1.1.0", urls = ["https://static.crates.io/crates/web-time/1.1.0/download"], sha256 = "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb", strip_prefix = "web-time-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "webpki-root-certs-1.0.12", urls = ["https://static.crates.io/crates/webpki-root-certs/1.0.12/download"], sha256 = "293198dcebfb821155b5092ab94b5a82ff180eddd7241df3bd6e66a4ffd1a585", strip_prefix = "webpki-root-certs-1.0.12", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "webpki-roots-1.0.12", urls = ["https://static.crates.io/crates/webpki-roots/1.0.12/download"], sha256 = "7265c9301c16a8711c992c2d8da90ee77ef54b1ed51482d6dfeb00dc756b1297", strip_prefix = "webpki-roots-1.0.12", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "winapi-util-0.1.11", urls = ["https://static.crates.io/crates/winapi-util/0.1.11/download"], sha256 = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22", strip_prefix = "winapi-util-0.1.11", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "windows-core-0.62.2", urls = ["https://static.crates.io/crates/windows-core/0.62.2/download"], sha256 = "b8e83a14d34d0623b51dce9581199302a221863196a1dde71a7663a4c2be9deb", strip_prefix = "windows-core-0.62.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "windows-implement-0.60.2", urls = ["https://static.crates.io/crates/windows-implement/0.60.2/download"], sha256 = "053e2e040ab57b9dc951b72c264860db7eb3b0200ba345b4e4c3b14f67855ddf", strip_prefix = "windows-implement-0.60.2", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "windows-interface-0.59.3", urls = ["https://static.crates.io/crates/windows-interface/0.59.3/download"], sha256 = "3f316c4a2570ba26bbec722032c4099d8c8bc095efccdc15688708623367e358", strip_prefix = "windows-interface-0.59.3", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "windows-link-0.2.1", urls = ["https://static.crates.io/crates/windows-link/0.2.1/download"], sha256 = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5", strip_prefix = "windows-link-0.2.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "windows-result-0.4.1", urls = ["https://static.crates.io/crates/windows-result/0.4.1/download"], sha256 = "7781fa89eaf60850ac3d2da7af8e5242a5ea78d1a11c49bf2910bb5a73853eb5", strip_prefix = "windows-result-0.4.1", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "windows-strings-0.5.1", urls = ["https://static.crates.io/crates/windows-strings/0.5.1/download"], sha256 = "7837d08f69c77cf6b07689544538e017c1bfcf57e34b4c0ff58e6c2cd3b37091", strip_prefix = "windows-strings-0.5.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "windows-sys-0.52.0", urls = ["https://static.crates.io/crates/windows-sys/0.52.0/download"], sha256 = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d", strip_prefix = "windows-sys-0.52.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "windows-sys-0.61.2", urls = ["https://static.crates.io/crates/windows-sys/0.61.2/download"], sha256 = "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc", strip_prefix = "windows-sys-0.61.2", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "windows-targets-0.52.6", urls = ["https://static.crates.io/crates/windows-targets/0.52.6/download"], sha256 = "9b724f72796e036ab90c1021d4780d4d3d648aca59e491e6b98e725b84e99973", strip_prefix = "windows-targets-0.52.6", type = "tar.gz", visibility = ["PUBLIC"])
@@ -126,7 +217,7 @@ def pinned_crates():
     native.http_archive(name = "windows_x86_64_gnu-0.52.6", urls = ["https://static.crates.io/crates/windows_x86_64_gnu/0.52.6/download"], sha256 = "147a5c80aabfbf0c7d901cb5895d1de30ef2907eb21fbbab29ca94c5b08b1a78", strip_prefix = "windows_x86_64_gnu-0.52.6", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "windows_x86_64_gnullvm-0.52.6", urls = ["https://static.crates.io/crates/windows_x86_64_gnullvm/0.52.6/download"], sha256 = "24d5b23dc417412679681396f2b49f3de8c1473deb516bd34410872eff51ed0d", strip_prefix = "windows_x86_64_gnullvm-0.52.6", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "windows_x86_64_msvc-0.52.6", urls = ["https://static.crates.io/crates/windows_x86_64_msvc/0.52.6/download"], sha256 = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec", strip_prefix = "windows_x86_64_msvc-0.52.6", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "winnow-0.7.15", urls = ["https://static.crates.io/crates/winnow/0.7.15/download"], sha256 = "df79d97927682d2fd8adb29682d1140b343be4ac0f08fd68b7765d9c059d3945", strip_prefix = "winnow-0.7.15", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "winnow-1.0.5", urls = ["https://static.crates.io/crates/winnow/1.0.5/download"], sha256 = "8c3b93199df0ab874cdf0c6a94f0a0dc3423fe41f1cafb62b8bd7b1deb277aef", strip_prefix = "winnow-1.0.5", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "writeable-0.6.4", urls = ["https://static.crates.io/crates/writeable/0.6.4/download"], sha256 = "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc", strip_prefix = "writeable-0.6.4", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "yoke-0.8.4", urls = ["https://static.crates.io/crates/yoke/0.8.4/download"], sha256 = "417ef3fcf6c300b7dbd25c85531a746931c02ad536f3cf4786ed1e88223340b3", strip_prefix = "yoke-0.8.4", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "yoke-derive-0.8.4", urls = ["https://static.crates.io/crates/yoke-derive/0.8.4/download"], sha256 = "ec8ebde2db3681e8c9980cc27822030e68752690ddfa9473e739aeb4dbde6d71", strip_prefix = "yoke-derive-0.8.4", type = "tar.gz", visibility = ["PUBLIC"])
@@ -139,45 +230,75 @@ def pinned_crates():
     native.http_archive(name = "zmij-1.0.23", urls = ["https://static.crates.io/crates/zmij/1.0.23/download"], sha256 = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b", strip_prefix = "zmij-1.0.23", type = "tar.gz", visibility = ["PUBLIC"])
 
 CRATES = {
-    "anstream-1.0.0": "//third-party:anstream-1.0.0",
+    "android_system_properties-0.1.6": "//third-party:android_system_properties-0.1.6",
     "anstyle-1.0.14": "//third-party:anstyle-1.0.14",
-    "anstyle-parse-1.0.0": "//third-party:anstyle-parse-1.0.0",
-    "anstyle-query-1.1.5": "//third-party:anstyle-query-1.1.5",
-    "anstyle-wincon-3.0.11": "//third-party:anstyle-wincon-3.0.11",
     "anyhow-1.0.103": "//third-party:anyhow-1.0.103",
+    "arc-swap-1.9.5": "//third-party:arc-swap-1.9.5",
+    "atomic-waker-1.1.2": "//third-party:atomic-waker-1.1.2",
+    "autocfg-1.5.1": "//third-party:autocfg-1.5.1",
+    "aws-lc-rs-1.19.0": "//third-party:aws-lc-rs-1.19.0",
+    "aws-lc-sys-0.47.0": "//third-party:aws-lc-sys-0.47.0",
     "base64-0.22.1": "//third-party:base64-0.22.1",
     "base64-0.23.1": "//third-party:base64-0.23.1",
     "bitflags-2.13.2": "//third-party:bitflags-2.13.2",
     "block-buffer-0.10.4": "//third-party:block-buffer-0.10.4",
     "bumpalo-3.20.3": "//third-party:bumpalo-3.20.3",
     "bytes-1.12.1": "//third-party:bytes-1.12.1",
-    "cc-1.11.0": "//third-party:cc-1.11.0",
+    "camino-1.2.6": "//third-party:camino-1.2.6",
+    "cargo-platform-0.3.3": "//third-party:cargo-platform-0.3.3",
+    "cargo_metadata-0.23.1": "//third-party:cargo_metadata-0.23.1",
+    "cc-1.11.1": "//third-party:cc-1.11.1",
     "cfg-if-1.0.5": "//third-party:cfg-if-1.0.5",
+    "cfg_aliases-0.2.2": "//third-party:cfg_aliases-0.2.2",
+    "chacha20-0.10.2": "//third-party:chacha20-0.10.2",
+    "chrono-0.4.45": "//third-party:chrono-0.4.45",
     "clap-4.6.7": "//third-party:clap-4.6.7",
     "clap_builder-4.6.7": "//third-party:clap_builder-4.6.7",
     "clap_derive-4.6.7": "//third-party:clap_derive-4.6.7",
     "clap_lex-1.1.1": "//third-party:clap_lex-1.1.1",
-    "colorchoice-1.0.5": "//third-party:colorchoice-1.0.5",
-    "cookie-0.18.2": "//third-party:cookie-0.18.2",
-    "cookie_store-0.22.1": "//third-party:cookie_store-0.22.1",
+    "cmake-0.1.58": "//third-party:cmake-0.1.58",
+    "combine-4.6.9": "//third-party:combine-4.6.9",
+    "core-foundation-0.10.1": "//third-party:core-foundation-0.10.1",
+    "core-foundation-sys-0.8.7": "//third-party:core-foundation-sys-0.8.7",
     "cpufeatures-0.2.17": "//third-party:cpufeatures-0.2.17",
+    "cpufeatures-0.3.1": "//third-party:cpufeatures-0.3.1",
     "crypto-common-0.1.7": "//third-party:crypto-common-0.1.7",
-    "deranged-0.5.9": "//third-party:deranged-0.5.9",
     "digest-0.10.7": "//third-party:digest-0.10.7",
     "displaydoc-0.2.7": "//third-party:displaydoc-0.2.7",
-    "document-features-0.2.12": "//third-party:document-features-0.2.12",
+    "dunce-1.0.5": "//third-party:dunce-1.0.5",
     "equivalent-1.0.3": "//third-party:equivalent-1.0.3",
     "errno-0.3.14": "//third-party:errno-0.3.14",
     "fastrand-2.5.0": "//third-party:fastrand-2.5.0",
     "find-msvc-tools-0.1.15": "//third-party:find-msvc-tools-0.1.15",
     "form_urlencoded-1.2.2": "//third-party:form_urlencoded-1.2.2",
+    "fs_extra-1.3.0": "//third-party:fs_extra-1.3.0",
+    "futures-0.3.34": "//third-party:futures-0.3.34",
+    "futures-channel-0.3.34": "//third-party:futures-channel-0.3.34",
+    "futures-core-0.3.34": "//third-party:futures-core-0.3.34",
+    "futures-executor-0.3.34": "//third-party:futures-executor-0.3.34",
+    "futures-io-0.3.34": "//third-party:futures-io-0.3.34",
+    "futures-macro-0.3.34": "//third-party:futures-macro-0.3.34",
+    "futures-sink-0.3.34": "//third-party:futures-sink-0.3.34",
+    "futures-task-0.3.34": "//third-party:futures-task-0.3.34",
+    "futures-util-0.3.34": "//third-party:futures-util-0.3.34",
     "generic-array-0.14.7": "//third-party:generic-array-0.14.7",
     "getrandom-0.2.17": "//third-party:getrandom-0.2.17",
     "getrandom-0.4.3": "//third-party:getrandom-0.4.3",
     "hashbrown-0.17.1": "//third-party:hashbrown-0.17.1",
     "heck-0.5.0": "//third-party:heck-0.5.0",
+    "hex-0.4.3": "//third-party:hex-0.4.3",
+    "hmac-0.12.1": "//third-party:hmac-0.12.1",
     "http-1.5.0": "//third-party:http-1.5.0",
+    "http-body-1.1.0": "//third-party:http-body-1.1.0",
+    "http-body-util-0.1.5": "//third-party:http-body-util-0.1.5",
+    "http-serde-2.1.1": "//third-party:http-serde-2.1.1",
     "httparse-1.10.1": "//third-party:httparse-1.10.1",
+    "hyper-1.12.0": "//third-party:hyper-1.12.0",
+    "hyper-rustls-0.27.10": "//third-party:hyper-rustls-0.27.10",
+    "hyper-timeout-0.5.2": "//third-party:hyper-timeout-0.5.2",
+    "hyper-util-0.1.21": "//third-party:hyper-util-0.1.21",
+    "iana-time-zone-0.1.65": "//third-party:iana-time-zone-0.1.65",
+    "iana-time-zone-haiku-0.1.2": "//third-party:iana-time-zone-haiku-0.1.2",
     "icu_collections-2.4.0": "//third-party:icu_collections-2.4.0",
     "icu_locale_core-2.4.0": "//third-party:icu_locale_core-2.4.0",
     "icu_normalizer-2.4.0": "//third-party:icu_normalizer-2.4.0",
@@ -188,71 +309,132 @@ CRATES = {
     "idna-1.1.0": "//third-party:idna-1.1.0",
     "idna_adapter-1.2.2": "//third-party:idna_adapter-1.2.2",
     "indexmap-2.14.2": "//third-party:indexmap-2.14.2",
-    "is_terminal_polyfill-1.70.2": "//third-party:is_terminal_polyfill-1.70.2",
-    "itoa-1.0.18": "//third-party:itoa-1.0.18",
+    "ipnet-2.12.2": "//third-party:ipnet-2.12.2",
+    "itoa-1.0.19": "//third-party:itoa-1.0.19",
+    "jni-0.22.4": "//third-party:jni-0.22.4",
+    "jni-macros-0.22.4": "//third-party:jni-macros-0.22.4",
+    "jni-sys-0.4.1": "//third-party:jni-sys-0.4.1",
+    "jni-sys-macros-0.4.1": "//third-party:jni-sys-macros-0.4.1",
+    "jobserver-0.1.35": "//third-party:jobserver-0.1.35",
+    "js-sys-0.3.107": "//third-party:js-sys-0.3.107",
     "leb128fmt-0.1.0": "//third-party:leb128fmt-0.1.0",
     "libc-0.2.191": "//third-party:libc-0.2.191",
     "linux-raw-sys-0.12.1": "//third-party:linux-raw-sys-0.12.1",
     "litemap-0.8.3": "//third-party:litemap-0.8.3",
-    "litrs-1.0.1": "//third-party:litrs-1.0.1",
     "log-0.4.35": "//third-party:log-0.4.35",
+    "lru-slab-0.1.3": "//third-party:lru-slab-0.1.3",
     "memchr-2.8.3": "//third-party:memchr-2.8.3",
-    "num-conv-0.2.2": "//third-party:num-conv-0.2.2",
+    "mio-1.2.4": "//third-party:mio-1.2.4",
+    "num-traits-0.2.19": "//third-party:num-traits-0.2.19",
+    "octocrab-0.54.9": "//third-party:octocrab-0.54.9",
     "once_cell-1.21.4": "//third-party:once_cell-1.21.4",
-    "once_cell_polyfill-1.70.2": "//third-party:once_cell_polyfill-1.70.2",
+    "openssl-probe-0.2.2": "//third-party:openssl-probe-0.2.2",
     "percent-encoding-2.3.2": "//third-party:percent-encoding-2.3.2",
+    "pin-project-1.1.13": "//third-party:pin-project-1.1.13",
+    "pin-project-internal-1.1.13": "//third-party:pin-project-internal-1.1.13",
+    "pin-project-lite-0.2.17": "//third-party:pin-project-lite-0.2.17",
+    "pkg-config-0.3.34": "//third-party:pkg-config-0.3.34",
     "potential_utf-0.1.6": "//third-party:potential_utf-0.1.6",
-    "powerfmt-0.2.1": "//third-party:powerfmt-0.2.1",
     "proc-macro2-1.0.107": "//third-party:proc-macro2-1.0.107",
+    "quinn-0.11.12": "//third-party:quinn-0.11.12",
+    "quinn-proto-0.11.19": "//third-party:quinn-proto-0.11.19",
+    "quinn-udp-0.5.16": "//third-party:quinn-udp-0.5.16",
     "quote-1.0.47": "//third-party:quote-1.0.47",
     "r-efi-6.0.0": "//third-party:r-efi-6.0.0",
+    "rand-0.10.3": "//third-party:rand-0.10.3",
+    "rand_core-0.10.1": "//third-party:rand_core-0.10.1",
+    "rand_pcg-0.10.2": "//third-party:rand_pcg-0.10.2",
+    "reqwest-0.13.5": "//third-party:reqwest-0.13.5",
     "ring-0.17.14": "//third-party:ring-0.17.14",
+    "rustc-hash-2.1.3": "//third-party:rustc-hash-2.1.3",
+    "rustc_version-0.4.1": "//third-party:rustc_version-0.4.1",
     "rustix-1.1.6": "//third-party:rustix-1.1.6",
     "rustls-0.23.46": "//third-party:rustls-0.23.46",
-    "rustls-pki-types-1.15.1": "//third-party:rustls-pki-types-1.15.1",
+    "rustls-native-certs-0.8.5": "//third-party:rustls-native-certs-0.8.5",
+    "rustls-pki-types-1.16.0": "//third-party:rustls-pki-types-1.16.0",
+    "rustls-platform-verifier-0.7.1": "//third-party:rustls-platform-verifier-0.7.1",
+    "rustls-platform-verifier-android-0.2.0": "//third-party:rustls-platform-verifier-android-0.2.0",
     "rustls-webpki-0.103.16": "//third-party:rustls-webpki-0.103.16",
+    "rustversion-1.0.23": "//third-party:rustversion-1.0.23",
+    "ryu-1.0.23": "//third-party:ryu-1.0.23",
+    "same-file-1.0.6": "//third-party:same-file-1.0.6",
+    "schannel-0.1.30": "//third-party:schannel-0.1.30",
+    "secrecy-0.10.3": "//third-party:secrecy-0.10.3",
+    "security-framework-3.7.0": "//third-party:security-framework-3.7.0",
+    "security-framework-sys-2.17.0": "//third-party:security-framework-sys-2.17.0",
     "semver-1.0.28": "//third-party:semver-1.0.28",
     "serde-1.0.228": "//third-party:serde-1.0.228",
     "serde_core-1.0.228": "//third-party:serde_core-1.0.228",
     "serde_derive-1.0.228": "//third-party:serde_derive-1.0.228",
     "serde_json-1.0.150": "//third-party:serde_json-1.0.150",
-    "serde_spanned-0.6.9": "//third-party:serde_spanned-0.6.9",
+    "serde_path_to_error-0.1.20": "//third-party:serde_path_to_error-0.1.20",
+    "serde_spanned-1.1.3": "//third-party:serde_spanned-1.1.3",
+    "serde_urlencoded-0.7.1": "//third-party:serde_urlencoded-0.7.1",
     "sha2-0.10.9": "//third-party:sha2-0.10.9",
     "shlex-2.0.1": "//third-party:shlex-2.0.1",
-    "smallvec-1.16.4": "//third-party:smallvec-1.16.4",
+    "simd_cesu8-1.2.0": "//third-party:simd_cesu8-1.2.0",
+    "simdutf8-0.1.5": "//third-party:simdutf8-0.1.5",
+    "slab-0.4.12": "//third-party:slab-0.4.12",
+    "smallvec-1.16.5": "//third-party:smallvec-1.16.5",
+    "snafu-0.8.9": "//third-party:snafu-0.8.9",
+    "snafu-derive-0.8.9": "//third-party:snafu-derive-0.8.9",
+    "socket2-0.6.5": "//third-party:socket2-0.6.5",
     "stable_deref_trait-1.2.1": "//third-party:stable_deref_trait-1.2.1",
-    "strsim-0.11.1": "//third-party:strsim-0.11.1",
     "subtle-2.6.1": "//third-party:subtle-2.6.1",
     "syn-2.0.119": "//third-party:syn-2.0.119",
-    "syn-3.0.9": "//third-party:syn-3.0.9",
+    "syn-3.0.10": "//third-party:syn-3.0.10",
+    "sync_wrapper-1.0.2": "//third-party:sync_wrapper-1.0.2",
     "synstructure-0.14.0": "//third-party:synstructure-0.14.0",
     "tempfile-3.27.0": "//third-party:tempfile-3.27.0",
-    "time-0.3.55": "//third-party:time-0.3.55",
-    "time-core-0.1.9": "//third-party:time-core-0.1.9",
-    "time-macros-0.2.32": "//third-party:time-macros-0.2.32",
+    "thiserror-2.0.21": "//third-party:thiserror-2.0.21",
+    "thiserror-impl-2.0.21": "//third-party:thiserror-impl-2.0.21",
     "tinystr-0.8.5": "//third-party:tinystr-0.8.5",
-    "toml-0.8.23": "//third-party:toml-0.8.23",
-    "toml_datetime-0.6.11": "//third-party:toml_datetime-0.6.11",
-    "toml_edit-0.22.27": "//third-party:toml_edit-0.22.27",
-    "toml_write-0.1.2": "//third-party:toml_write-0.1.2",
+    "tinyvec-1.13.3": "//third-party:tinyvec-1.13.3",
+    "tokio-1.48.0": "//third-party:tokio-1.48.0",
+    "tokio-rustls-0.26.6": "//third-party:tokio-rustls-0.26.6",
+    "tokio-util-0.7.19": "//third-party:tokio-util-0.7.19",
+    "toml-1.2.1+spec-1.1.0": "//third-party:toml-1.2.1_spec-1.1.0",
+    "toml_datetime-1.1.3+spec-1.1.0": "//third-party:toml_datetime-1.1.3_spec-1.1.0",
+    "toml_edit-0.25.19+spec-1.1.0": "//third-party:toml_edit-0.25.19_spec-1.1.0",
+    "toml_parser-1.1.5+spec-1.1.0": "//third-party:toml_parser-1.1.5_spec-1.1.0",
+    "toml_writer-1.2.0+spec-1.1.0": "//third-party:toml_writer-1.2.0_spec-1.1.0",
+    "tower-0.5.3": "//third-party:tower-0.5.3",
+    "tower-http-0.6.11": "//third-party:tower-http-0.6.11",
+    "tower-layer-0.3.3": "//third-party:tower-layer-0.3.3",
+    "tower-service-0.3.3": "//third-party:tower-service-0.3.3",
+    "tracing-0.1.44": "//third-party:tracing-0.1.44",
+    "tracing-core-0.1.36": "//third-party:tracing-core-0.1.36",
+    "try-lock-0.2.5": "//third-party:try-lock-0.2.5",
     "typenum-1.20.1": "//third-party:typenum-1.20.1",
     "unicode-ident-1.0.27": "//third-party:unicode-ident-1.0.27",
     "unicode-width-0.2.3": "//third-party:unicode-width-0.2.3",
     "untrusted-0.9.0": "//third-party:untrusted-0.9.0",
-    "ureq-3.3.0": "//third-party:ureq-3.3.0",
-    "ureq-proto-0.6.5": "//third-party:ureq-proto-0.6.5",
     "url-2.5.8": "//third-party:url-2.5.8",
-    "utf8-zero-0.8.1": "//third-party:utf8-zero-0.8.1",
     "utf8_iter-1.1.0": "//third-party:utf8_iter-1.1.0",
-    "utf8parse-0.2.2": "//third-party:utf8parse-0.2.2",
     "utf_types-1.0.0": "//third-party:utf_types-1.0.0",
     "version_check-0.9.5": "//third-party:version_check-0.9.5",
+    "walkdir-2.5.0": "//third-party:walkdir-2.5.0",
+    "want-0.3.2": "//third-party:want-0.3.2",
     "wasi-0.11.1+wasi-snapshot-preview1": "//third-party:wasi-0.11.1_wasi-snapshot-preview1",
+    "wasm-bindgen-0.2.130": "//third-party:wasm-bindgen-0.2.130",
+    "wasm-bindgen-futures-0.4.80": "//third-party:wasm-bindgen-futures-0.4.80",
+    "wasm-bindgen-macro-0.2.130": "//third-party:wasm-bindgen-macro-0.2.130",
+    "wasm-bindgen-macro-support-0.2.130": "//third-party:wasm-bindgen-macro-support-0.2.130",
+    "wasm-bindgen-shared-0.2.130": "//third-party:wasm-bindgen-shared-0.2.130",
     "wasm-encoder-0.263.0": "//third-party:wasm-encoder-0.263.0",
     "wasmparser-0.263.0": "//third-party:wasmparser-0.263.0",
     "wast-263.0.0": "//third-party:wast-263.0.0",
-    "webpki-roots-1.0.11": "//third-party:webpki-roots-1.0.11",
+    "web-sys-0.3.107": "//third-party:web-sys-0.3.107",
+    "web-time-1.1.0": "//third-party:web-time-1.1.0",
+    "webpki-root-certs-1.0.12": "//third-party:webpki-root-certs-1.0.12",
+    "webpki-roots-1.0.12": "//third-party:webpki-roots-1.0.12",
+    "winapi-util-0.1.11": "//third-party:winapi-util-0.1.11",
+    "windows-core-0.62.2": "//third-party:windows-core-0.62.2",
+    "windows-implement-0.60.2": "//third-party:windows-implement-0.60.2",
+    "windows-interface-0.59.3": "//third-party:windows-interface-0.59.3",
     "windows-link-0.2.1": "//third-party:windows-link-0.2.1",
+    "windows-result-0.4.1": "//third-party:windows-result-0.4.1",
+    "windows-strings-0.5.1": "//third-party:windows-strings-0.5.1",
     "windows-sys-0.52.0": "//third-party:windows-sys-0.52.0",
     "windows-sys-0.61.2": "//third-party:windows-sys-0.61.2",
     "windows-targets-0.52.6": "//third-party:windows-targets-0.52.6",
@@ -264,7 +446,7 @@ CRATES = {
     "windows_x86_64_gnu-0.52.6": "//third-party:windows_x86_64_gnu-0.52.6",
     "windows_x86_64_gnullvm-0.52.6": "//third-party:windows_x86_64_gnullvm-0.52.6",
     "windows_x86_64_msvc-0.52.6": "//third-party:windows_x86_64_msvc-0.52.6",
-    "winnow-0.7.15": "//third-party:winnow-0.7.15",
+    "winnow-1.0.5": "//third-party:winnow-1.0.5",
     "writeable-0.6.4": "//third-party:writeable-0.6.4",
     "yoke-0.8.4": "//third-party:yoke-0.8.4",
     "yoke-derive-0.8.4": "//third-party:yoke-derive-0.8.4",
@@ -278,45 +460,75 @@ CRATES = {
 }
 
 CHECKSUMS = {
-    "anstream-1.0.0": "824a212faf96e9acacdbd09febd34438f8f711fb84e09a8916013cd7815ca28d",
+    "android_system_properties-0.1.6": "ae221649c9976a6f6c56ae1facf410f3ddb33cc661c4b7b61020a912d4237fbc",
     "anstyle-1.0.14": "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000",
-    "anstyle-parse-1.0.0": "52ce7f38b242319f7cabaa6813055467063ecdc9d355bbb4ce0c68908cd8130e",
-    "anstyle-query-1.1.5": "40c48f72fd53cd289104fc64099abca73db4166ad86ea0b4341abe65af83dadc",
-    "anstyle-wincon-3.0.11": "291e6a250ff86cd4a820112fb8898808a366d8f9f58ce16d1f538353ad55747d",
     "anyhow-1.0.103": "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3",
+    "arc-swap-1.9.5": "84a22b5d51209f6de83d37a0b33d320acb8da88823e42a94c075140708f032a5",
+    "atomic-waker-1.1.2": "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0",
+    "autocfg-1.5.1": "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53",
+    "aws-lc-rs-1.19.0": "048006790404103c488e6c5616b3e7e702a71292aadda08e8f7698a9e0d2eb53",
+    "aws-lc-sys-0.47.0": "8bfbe32ac36b3c428696ce315464181bc4029d689fd58e3f2a4e58c252242f52",
     "base64-0.22.1": "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6",
     "base64-0.23.1": "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5",
     "bitflags-2.13.2": "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06",
     "block-buffer-0.10.4": "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71",
     "bumpalo-3.20.3": "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649",
     "bytes-1.12.1": "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04",
-    "cc-1.11.0": "375989decec1a0fa424442bed520fa12ede43a48475ce8c7417d2c69b32b5f6b",
+    "camino-1.2.6": "bbbad30e4b4c14a39e3cc8aed085a12a327257c316619c93581e017bc52be591",
+    "cargo-platform-0.3.3": "dd0061da739915fae12ea00e16397555ed4371a6bb285431aab930f61b0aa4ba",
+    "cargo_metadata-0.23.1": "ef987d17b0a113becdd19d3d0022d04d7ef41f9efe4f3fb63ac44ba61df3ade9",
+    "cc-1.11.1": "4ff2a8126fff0f8c839080d619675a585e61720bb12d2baceae45769fd66f155",
     "cfg-if-1.0.5": "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600",
+    "cfg_aliases-0.2.2": "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527",
+    "chacha20-0.10.2": "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06",
+    "chrono-0.4.45": "1aa79e62e7697b8e29b513a68abacf485adcd1fe8284a4316c5ae868e6633327",
     "clap-4.6.7": "aa8876b300ab35ba921adea3dfd70157a46249b33f95c9084ae5709785478946",
     "clap_builder-4.6.7": "ec0797fb7aeb1406c84efac526901f7ec3ead2124f946b494e72879d4b54704d",
     "clap_derive-4.6.7": "f9c751b79415d4e559e3d1fcf128e09e720eb673a06d26cf6f392d37d75b66e0",
     "clap_lex-1.1.1": "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486",
-    "colorchoice-1.0.5": "1d07550c9036bf2ae0c684c4297d503f838287c83c53686d05370d0e139ae570",
-    "cookie-0.18.2": "1a373e3602691c3cdea496d2f0ee5935151e6168fe87739483c463db1b2f2f87",
-    "cookie_store-0.22.1": "15b2c103cf610ec6cae3da84a766285b42fd16aad564758459e6ecf128c75206",
+    "cmake-0.1.58": "c0f78a02292a74a88ac736019ab962ece0bc380e3f977bf72e376c5d78ff0678",
+    "combine-4.6.9": "4356eba6976435498d05a311ee9fc486da3bc81c200d3f0d7dd9703b41913f92",
+    "core-foundation-0.10.1": "b2a6cd9ae233e7f62ba4e9353e81a88df7fc8a5987b8d445b4d90c879bd156f6",
+    "core-foundation-sys-0.8.7": "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b",
     "cpufeatures-0.2.17": "59ed5838eebb26a2bb2e58f6d5b5316989ae9d08bab10e0e6d103e656d1b0280",
+    "cpufeatures-0.3.1": "5ca28b0ae3115b884660db4118d803791fd6756b6e88f39c0f3f7859060d7566",
     "crypto-common-0.1.7": "78c8292055d1c1df0cce5d180393dc8cce0abec0a7102adb6c7b1eef6016d60a",
-    "deranged-0.5.9": "9e9de72ce2ad1f90dc62fa25f0f430ef85eb4b0d8fa0be4f30373bc40a21d28e",
     "digest-0.10.7": "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292",
     "displaydoc-0.2.7": "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8",
-    "document-features-0.2.12": "d4b8a88685455ed29a21542a33abd9cb6510b6b129abadabdcef0f4c55bc8f61",
+    "dunce-1.0.5": "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813",
     "equivalent-1.0.3": "00d174d5400e5e8fd687ad1049e2f578285fa914201b1af7e8b112a4546bd826",
     "errno-0.3.14": "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb",
     "fastrand-2.5.0": "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223",
     "find-msvc-tools-0.1.15": "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48",
     "form_urlencoded-1.2.2": "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf",
+    "fs_extra-1.3.0": "42703706b716c37f96a77aea830392ad231f44c9e9a67872fa5548707e11b11c",
+    "futures-0.3.34": "9a31d2a3fbaaeb2af2368bbdd904aa8e812d3c04a1ee10d3171f52d556e5d0a3",
+    "futures-channel-0.3.34": "b1f9e3d69d39e4862ffed03ed071a76f9a13ba1d9109d355b0f0aa6b15e393c4",
+    "futures-core-0.3.34": "92d699e522242e69e3003b94ecc1f960f3a5e015aa7c5d7486e65ad01dd94f5e",
+    "futures-executor-0.3.34": "031b47cf1a3c6cc8bc2fc76cd437f521619387907d469316e7c0bc278f1f5432",
+    "futures-io-0.3.34": "53c0fa8157de1303bfffdaa1cc2a673bfffb60102f76b0ef4441659124373fed",
+    "futures-macro-0.3.34": "9fb9654ba8355388abeb8dcb4fc62f511300867002afc858860463bdd9fe0c44",
+    "futures-sink-0.3.34": "1944426bf7d03f1d14f708785e4b33efd750b36d48a157b836b3efc15ede8e1d",
+    "futures-task-0.3.34": "cd417de3d1d015fc3bfd2b1ea46dfc7bab72ef86f1cc7cc9c78e728b34a6d1fd",
+    "futures-util-0.3.34": "0d50a92467f8ba5dd6e3ee5d4bd04d73ab2e4e1c44474a0674821dfce14b79bc",
     "generic-array-0.14.7": "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a",
     "getrandom-0.2.17": "ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0",
     "getrandom-0.4.3": "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099",
     "hashbrown-0.17.1": "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a",
     "heck-0.5.0": "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea",
+    "hex-0.4.3": "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70",
+    "hmac-0.12.1": "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e",
     "http-1.5.0": "918d3568bebf352712bc2ef3d46a8bcf1a75b373be6539de198e9105cbbf9ce0",
+    "http-body-1.1.0": "ca2a8f2913ee65f60facd6a5905613afaa448497a0230cc41ce022d93290bc2c",
+    "http-body-util-0.1.5": "23169fe34a5fbcdd3f3862e78fb9b6fccd5f02a6dc6f732547005d45631ce71c",
+    "http-serde-2.1.1": "0f056c8559e3757392c8d091e796416e4649d8e49e88b8d76df6c002f05027fd",
     "httparse-1.10.1": "6dbf3de79e51f3d586ab4cb9d5c3e2c14aa28ed23d180cf89b4df0454a69cc87",
+    "hyper-1.12.0": "2c3e324da4c95177d6291d4c8730197c0d1822f8a9766814a4a44fa5ab797c9c",
+    "hyper-rustls-0.27.10": "dfa8e654703247911e29c23fbeaa261834bd9bb74efba2f9acddc37bfb127f53",
+    "hyper-timeout-0.5.2": "2b90d566bffbce6a75bd8b09a05aa8c2cb1fabb6cb348f8840c9e4c90a0d83b0",
+    "hyper-util-0.1.21": "ddc03d96684f9226b8a787cdb71488417b53ab5ea8fdb1dac946cb9431cc8bff",
+    "iana-time-zone-0.1.65": "e31bc9ad994ba00e440a8aa5c9ef0ec67d5cb5e5cb0cc7f8b744a35b389cc470",
+    "iana-time-zone-haiku-0.1.2": "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f",
     "icu_collections-2.4.0": "fe090a42a0d3140fed8c63263ed1fecc02422cb2f4bfe55cd8de2de1b8e105dd",
     "icu_locale_core-2.4.0": "25d29b57c17c6528d0dc4c2141cfa2d08200465acb537a3909c8b9b8a4a984c0",
     "icu_normalizer-2.4.0": "404a3b8c486f205c87fe7f23ab6894d84a4ad76d6e4671ae1981ba7def87c599",
@@ -327,71 +539,132 @@ CHECKSUMS = {
     "idna-1.1.0": "3b0875f23caa03898994f6ddc501886a45c7d3d62d04d2d90788d47be1b1e4de",
     "idna_adapter-1.2.2": "cb68373c0d6620ef8105e855e7745e18b0d00d3bdb07fb532e434244cdb9a714",
     "indexmap-2.14.2": "cc4e190f5d26ca7051642629da2c52fc03bde85a03197c99408dcd291734c855",
-    "is_terminal_polyfill-1.70.2": "a6cb138bb79a146c1bd460005623e142ef0181e3d0219cb493e02f7d08a35695",
-    "itoa-1.0.18": "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682",
+    "ipnet-2.12.2": "791930b43c0d5973160d90a8f3894509f2b273430f5c5c73b668636d0287c5c0",
+    "itoa-1.0.19": "3bd1574e617a9a6c1f8f8181bd7e841e1f20e4277607ef28945765188d6284d4",
+    "jni-0.22.4": "5efd9a482cf3a427f00d6b35f14332adc7902ce91efb778580e180ff90fa3498",
+    "jni-macros-0.22.4": "a00109accc170f0bdb141fed3e393c565b6f5e072365c3bd58f5b062591560a3",
+    "jni-sys-0.4.1": "c6377a88cb3910bee9b0fa88d4f42e1d2da8e79915598f65fb0c7ee14c878af2",
+    "jni-sys-macros-0.4.1": "38c0b942f458fe50cdac086d2f946512305e5631e720728f2a61aabcd47a6264",
+    "jobserver-0.1.35": "1c00acbd29eabad4a2392fa0e921c874934dbbf4194312ad20f04a0ed67a3cb3",
+    "js-sys-0.3.107": "8dc09d2154098bbf4ef54eab6b117a3c24cbbffe94046b16ee6d6d4510584d3a",
     "leb128fmt-0.1.0": "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2",
     "libc-0.2.191": "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a",
     "linux-raw-sys-0.12.1": "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53",
     "litemap-0.8.3": "47d9d19d1d6efa0109d2f65ff4c85cddd50bd572e5a00127ab10987290bcefae",
-    "litrs-1.0.1": "4744e383959f0db86ede514b809b1c53251889093803c05267acc7d4e7030d70",
     "log-0.4.35": "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c",
+    "lru-slab-0.1.3": "4050469837a6ff301cd14c1f8f24f88549e6d548f24f64e2148eb0f72cebc51f",
     "memchr-2.8.3": "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98",
-    "num-conv-0.2.2": "521739c6d2bac4aa25192232afe6841231376b2b26d4d9fae5ecf8ca5772e441",
+    "mio-1.2.4": "1788edb87fdc09c7e26304471e2f5be8cdefb1b6930d6e3985fc02ff53bf86ee",
+    "num-traits-0.2.19": "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841",
+    "octocrab-0.54.9": "319b72643e8fa16dc3278f66439534513b2b65d47ec9cf2b26e7316c0c8ef24a",
     "once_cell-1.21.4": "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50",
-    "once_cell_polyfill-1.70.2": "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe",
+    "openssl-probe-0.2.2": "7e036b411754132fd6b74e94b74e9a13c5cf606fa93d1885c35860d3060820b1",
     "percent-encoding-2.3.2": "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220",
+    "pin-project-1.1.13": "2466b2336ed02bcdca6b294417127b90ec92038d1d5c4fbeac971a922e0e0924",
+    "pin-project-internal-1.1.13": "c96395f0a926bc13b1c17622aaddda1ecb55d49c8f1bf9777e4d877800a43f8b",
+    "pin-project-lite-0.2.17": "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd",
+    "pkg-config-0.3.34": "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548",
     "potential_utf-0.1.6": "d83eb9bc6d8e5cf568e7a1101d60ee05e81ed50ea106026f3d18deeb046d7661",
-    "powerfmt-0.2.1": "4a6394b9e965e73d0a289ee54f589087e2c676aedf60885baf52c76b771e4958",
     "proc-macro2-1.0.107": "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9",
+    "quinn-0.11.12": "4051e23e9185c255a7e33ef59cdbca87a22d359052eecd22fc6b901fb37d9d11",
+    "quinn-proto-0.11.19": "0e750cca55fe4f0439a15d0bb529da9651e79993e8e72c61a899a36d462befbe",
+    "quinn-udp-0.5.16": "af66907df18639dcf4db56ca65490cabc4b27a97dbadd96f2926cca73298f016",
     "quote-1.0.47": "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001",
     "r-efi-6.0.0": "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf",
+    "rand-0.10.3": "65c9fb96cbc91e3478eaae79a69fcd3f1ae4ad052e471fe6732fff548984b4af",
+    "rand_core-0.10.1": "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69",
+    "rand_pcg-0.10.2": "caa0f4137e1c0a72f4c651489402276c8e8e1cf081f3b0ba156d2cbeef09e86a",
+    "reqwest-0.13.5": "16a1cfa75cc186dd73d5818e510e042e40927bccc9c236b061cea97e1eb08029",
     "ring-0.17.14": "a4689e6c2294d81e88dc6261c768b63bc4fcdb852be6d1352498b114f61383b7",
+    "rustc-hash-2.1.3": "6b1e7f9a428571be2dc5bc0505c13fb6bf936822b894ec87abf8a08a4e51742d",
+    "rustc_version-0.4.1": "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92",
     "rustix-1.1.6": "e5e76742e5294153d4dde1207dbec5bdd81eef6fabdc0d2118babadabfd858aa",
     "rustls-0.23.46": "48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf",
-    "rustls-pki-types-1.15.1": "2f4925028c7eb5d1fcdaf196971378ed9d2c1c4efc7dc5d011256f76c99c0a96",
+    "rustls-native-certs-0.8.5": "4a073f5dc7469f984c52ad2752b63b0807745133b6de880b7b64c1ac4c48aec4",
+    "rustls-pki-types-1.16.0": "102f35f7de7b06d8c61f1cff6592f5253e0dea431c74867aad5dfd70f44663fb",
+    "rustls-platform-verifier-0.7.1": "1167586491e2b18b8bfbb293e8180ec17c201c4f076d7cb3070ca964e7598f98",
+    "rustls-platform-verifier-android-0.2.0": "eec689c0bc40ff2458a5977b6619cb718087084a18e02a131c599b62d05e1a5f",
     "rustls-webpki-0.103.16": "4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281",
+    "rustversion-1.0.23": "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f",
+    "ryu-1.0.23": "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f",
+    "same-file-1.0.6": "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502",
+    "schannel-0.1.30": "9cb23c424d8ee841bb4d813677ca237e2a610067d594fec130f87d6093495ab5",
+    "secrecy-0.10.3": "e891af845473308773346dc847b2c23ee78fe442e0472ac50e22a18a93d3ae5a",
+    "security-framework-3.7.0": "b7f4bc775c73d9a02cde8bf7b2ec4c9d12743edf609006c7facc23998404cd1d",
+    "security-framework-sys-2.17.0": "6ce2691df843ecc5d231c0b14ece2acc3efb62c0a398c7e1d875f3983ce020e3",
     "semver-1.0.28": "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd",
     "serde-1.0.228": "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e",
     "serde_core-1.0.228": "41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad",
     "serde_derive-1.0.228": "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79",
     "serde_json-1.0.150": "e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9",
-    "serde_spanned-0.6.9": "bf41e0cfaf7226dca15e8197172c295a782857fcb97fad1808a166870dee75a3",
+    "serde_path_to_error-0.1.20": "10a9ff822e371bb5403e391ecd83e182e0e77ba7f6fe0160b795797109d1b457",
+    "serde_spanned-1.1.3": "9c187e0a369471c550af028cba56d4f4fa2a489ad28151ae95a4d340a2a8b782",
+    "serde_urlencoded-0.7.1": "d3491c14715ca2294c4d6a88f15e84739788c1d030eed8c110436aafdaa2f3fd",
     "sha2-0.10.9": "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283",
     "shlex-2.0.1": "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba",
-    "smallvec-1.16.4": "d0d5d4b1981b8bbbb7aed204cae5726d683d5d6ac7e74ec54122ea28f315e7c8",
+    "simd_cesu8-1.2.0": "11031e251abf8611c80f460e19dbdeb54a66db918e49c65a7065b46ac7aec520",
+    "simdutf8-0.1.5": "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e",
+    "slab-0.4.12": "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5",
+    "smallvec-1.16.5": "149309498a5f7334b12ddae0cad8aba81ce785fe91755068867e017cf98fee46",
+    "snafu-0.8.9": "6e84b3f4eacbf3a1ce05eac6763b4d629d60cbc94d632e4092c54ade71f1e1a2",
+    "snafu-derive-0.8.9": "c1c97747dbf44bb1ca44a561ece23508e99cb592e862f22222dcf42f51d1e451",
+    "socket2-0.6.5": "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4",
     "stable_deref_trait-1.2.1": "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596",
-    "strsim-0.11.1": "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f",
     "subtle-2.6.1": "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292",
     "syn-2.0.119": "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297",
-    "syn-3.0.9": "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b",
+    "syn-3.0.10": "4ae9ccbea3a7b0b09443036490c8f34a8b1b760fd345e5c0dae0aac718faea79",
+    "sync_wrapper-1.0.2": "0bf256ce5efdfa370213c1dabab5935a12e49f2c58d15e9eac2870d3b4f27263",
     "synstructure-0.14.0": "901704edd0dfe137f1987838ee4f259e4e063c31371bdb423f7ae38ec6f77f02",
     "tempfile-3.27.0": "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd",
-    "time-0.3.55": "cdb87b95ec50ddfa440816d227a17b2ccbdda963a316a727fda0fc4334f7d134",
-    "time-core-0.1.9": "9e1c906769ad99c88eaa54e728060edef082f8e358ff32030cb7c7d315e81109",
-    "time-macros-0.2.32": "7e689342a48d2ea927c87ea50cabf8594854bf940e9310208848d680d668ed85",
+    "thiserror-2.0.21": "09e52cb86a36cede5cb101bf8908837b3e4c6e5e59fe7fd85c23fb56200d189e",
+    "thiserror-impl-2.0.21": "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524",
     "tinystr-0.8.5": "abc840c238154d58f9e86b2792261edfde565a17696e1cda1a449de27979801a",
-    "toml-0.8.23": "dc1beb996b9d83529a9e75c17a1686767d148d70663143c7854d8b4a09ced362",
-    "toml_datetime-0.6.11": "22cddaf88f4fbc13c51aebbf5f8eceb5c7c5a9da2ac40a13519eb5b0a0e8f11c",
-    "toml_edit-0.22.27": "41fe8c660ae4257887cf66394862d21dbca4a6ddd26f04a3560410406a2f819a",
-    "toml_write-0.1.2": "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801",
+    "tinyvec-1.13.3": "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee",
+    "tokio-1.48.0": "ff360e02eab121e0bc37a2d3b4d4dc622e6eda3a8e5253d5435ecf5bd4c68408",
+    "tokio-rustls-0.26.6": "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db",
+    "tokio-util-0.7.19": "494815d09bf52b5548659851081238f0ca39ff638363907596da739561c62c52",
+    "toml-1.2.1+spec-1.1.0": "d5755c51863cdac711f1956baf8eb9588e060755f7d3c4c979e70ea1e1f32cd7",
+    "toml_datetime-1.1.3+spec-1.1.0": "173f25c883cd2176a2d8212155638c0a60d484a9d84546d270866f40f56b6e49",
+    "toml_edit-0.25.19+spec-1.1.0": "dd43688c4858d7264ae1cf9a9f874a67c3feb74a883b1cd7bebd6a4ea8307218",
+    "toml_parser-1.1.5+spec-1.1.0": "baa693a8032d7e1cada7d0041e96126df243179ff061456783ac7f12bda4744c",
+    "toml_writer-1.2.0+spec-1.1.0": "009dbb7700f11c55ef83aebbe4c0e9cf1f1ac0844bd8d6f00dc38f302026e13a",
+    "tower-0.5.3": "ebe5ef63511595f1344e2d5cfa636d973292adc0eec1f0ad45fae9f0851ab1d4",
+    "tower-http-0.6.11": "4cfcf7e2740e6fc6d4d688b4ef00650406bb94adf4731e43c096c3a19fe40840",
+    "tower-layer-0.3.3": "121c2a6cda46980bb0fcd1647ffaf6cd3fc79a013de288782836f6df9c48780e",
+    "tower-service-0.3.3": "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3",
+    "tracing-0.1.44": "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100",
+    "tracing-core-0.1.36": "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a",
+    "try-lock-0.2.5": "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b",
     "typenum-1.20.1": "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20",
     "unicode-ident-1.0.27": "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563",
     "unicode-width-0.2.3": "ca718471876992059f251e33aafc334346ada08042b7661dd1fe313a9bced557",
     "untrusted-0.9.0": "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1",
-    "ureq-3.3.0": "dea7109cdcd5864d4eeb1b58a1648dc9bf520360d7af16ec26d0a9354bafcfc0",
-    "ureq-proto-0.6.5": "841583fc36089d7d59419568ae157f43a5a03a2e5a81ba87c77d1596ef46e922",
     "url-2.5.8": "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed",
-    "utf8-zero-0.8.1": "b8c0a043c9540bae7c578c88f91dda8bd82e59ae27c21baca69c8b191aaf5a6e",
     "utf8_iter-1.1.0": "af3bd9d3e571c26fcce9d033b87ea5ab061b8d2ffe9b7a5675d810d68f03edf0",
-    "utf8parse-0.2.2": "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821",
     "utf_types-1.0.0": "3a3b425286980a367278453f3b6d28cdcb134b574e5a35824a6ff5eebad50bb6",
     "version_check-0.9.5": "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a",
+    "walkdir-2.5.0": "29790946404f91d9c5d06f9874efddea1dc06c5efe94541a7d6863108e3a5e4b",
+    "want-0.3.2": "ec4cdd0dd910afe868b7ef477227d8d538b46b3075031afee8a9f2acb0a2ed0b",
     "wasi-0.11.1+wasi-snapshot-preview1": "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b",
+    "wasm-bindgen-0.2.130": "a0181c14ddd6c7b8b0b0132a5f1ea2f32be0d893cd3ea97b6e3b28886b8a3d1c",
+    "wasm-bindgen-futures-0.4.80": "5e14e0327cb5368ad60ccb22d04a9827a693c95a926d8d125e9fa39e0baec501",
+    "wasm-bindgen-macro-0.2.130": "6e931a02a39abdbf66966fc35902b5ed58344750a70885bed4ebb3d8eaf28ed9",
+    "wasm-bindgen-macro-support-0.2.130": "2ca4b54280e455bd831e33a6b8e734baf432fe63fbc35c42ac14ce67a043a53a",
+    "wasm-bindgen-shared-0.2.130": "3b1f9c3798725016c6ee5f2f57869ec0831e8bbc0ab0310a86e787e97f41389e",
     "wasm-encoder-0.263.0": "0b883a26aea02eaabe2d2c3fba7eb039ef5cdcb5d5201ae5551e73d5e251a81f",
     "wasmparser-0.263.0": "4f5fa0a054ae153606df820eb0a84213e28cda41bbe04ba2628e71b6ba100fcb",
     "wast-263.0.0": "69d90bcf581b501aa1c358bc5dc0faa979cd375796908860ebcb6d1d70b907c7",
-    "webpki-roots-1.0.11": "f5f280bbb2b287bc8e7de7e3852945a0ff50d1bbcb5ed42b6c7a568c546df171",
+    "web-sys-0.3.107": "d7d179596ff5ec0f6de4db64d54011bde6289cc49603d3a6e4ce3f329207ab88",
+    "web-time-1.1.0": "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb",
+    "webpki-root-certs-1.0.12": "293198dcebfb821155b5092ab94b5a82ff180eddd7241df3bd6e66a4ffd1a585",
+    "webpki-roots-1.0.12": "7265c9301c16a8711c992c2d8da90ee77ef54b1ed51482d6dfeb00dc756b1297",
+    "winapi-util-0.1.11": "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22",
+    "windows-core-0.62.2": "b8e83a14d34d0623b51dce9581199302a221863196a1dde71a7663a4c2be9deb",
+    "windows-implement-0.60.2": "053e2e040ab57b9dc951b72c264860db7eb3b0200ba345b4e4c3b14f67855ddf",
+    "windows-interface-0.59.3": "3f316c4a2570ba26bbec722032c4099d8c8bc095efccdc15688708623367e358",
     "windows-link-0.2.1": "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5",
+    "windows-result-0.4.1": "7781fa89eaf60850ac3d2da7af8e5242a5ea78d1a11c49bf2910bb5a73853eb5",
+    "windows-strings-0.5.1": "7837d08f69c77cf6b07689544538e017c1bfcf57e34b4c0ff58e6c2cd3b37091",
     "windows-sys-0.52.0": "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d",
     "windows-sys-0.61.2": "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc",
     "windows-targets-0.52.6": "9b724f72796e036ab90c1021d4780d4d3d648aca59e491e6b98e725b84e99973",
@@ -403,7 +676,7 @@ CHECKSUMS = {
     "windows_x86_64_gnu-0.52.6": "147a5c80aabfbf0c7d901cb5895d1de30ef2907eb21fbbab29ca94c5b08b1a78",
     "windows_x86_64_gnullvm-0.52.6": "24d5b23dc417412679681396f2b49f3de8c1473deb516bd34410872eff51ed0d",
     "windows_x86_64_msvc-0.52.6": "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec",
-    "winnow-0.7.15": "df79d97927682d2fd8adb29682d1140b343be4ac0f08fd68b7765d9c059d3945",
+    "winnow-1.0.5": "8c3b93199df0ab874cdf0c6a94f0a0dc3423fe41f1cafb62b8bd7b1deb277aef",
     "writeable-0.6.4": "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc",
     "yoke-0.8.4": "417ef3fcf6c300b7dbd25c85531a746931c02ad536f3cf4786ed1e88223340b3",
     "yoke-derive-0.8.4": "ec8ebde2db3681e8c9980cc27822030e68752690ddfa9473e739aeb4dbde6d71",

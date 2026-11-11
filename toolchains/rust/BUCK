@@ -1,6 +1,9 @@
 load(":defs.bzl", "download_rust_host", "host_rust_triple")
 load(":sdk.bzl", "rust_sdk")
 load(":releases.bzl", "RUST_VERSION")
+
 _TRIPLE = host_rust_triple()
+
 download_rust_host(name = "host", triple = _TRIPLE)
+
 rust_sdk(name = "sdk", script = "sdk.sh", distribution = ":host", triple = _TRIPLE, version = RUST_VERSION, visibility = ["PUBLIC"])

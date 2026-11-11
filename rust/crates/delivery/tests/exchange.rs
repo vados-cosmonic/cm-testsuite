@@ -1,59 +1,17 @@
-use anyhow::{Result, bail};
-use cm_acquisition::{Repository, Snapshot, acquire, load_catalog_files};
-use cm_catalog::{CATALOG_PATH, Catalog, Manifest, digest, json};
+//! Exchange behavior across imports, receiving policies, and catalog changes.
+
+mod common;
+
+use cm_acquisition::{acquire, load_catalog_files};
+use cm_catalog::{CATALOG_PATH, Catalog, Manifest, digest, records};
 use cm_delivery::apply;
 use cm_exchange_plan::{Receipt, import, receive};
+use common::exchange::*;
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
-    path::Path,
 };
-struct Source {
-    manifest: String,
-    files: BTreeMap<String, String>,
-}
-impl Repository for Source {
-    fn resolve(&self, r: &str) -> Result<String> {
-        Ok(if r == "old" || r == "a".repeat(40) {
-            "a".repeat(40)
-        } else {
-            "b".repeat(40)
-        })
-    }
-    fn read(&self, r: &str, p: &str) -> Result<Vec<u8>> {
-        if p == ".cm-testsuite.toml" {
-            return Ok(self.manifest.as_bytes().to_vec());
-        }
-        if r == "a".repeat(40) {
-            return Ok(b";; Old revision intent\n(module)\n".to_vec());
-        }
-        self.files
-            .get(p)
-            .map(|x| x.as_bytes().to_vec())
-            .ok_or_else(|| anyhow::anyhow!("missing file"))
-    }
-}
-fn snapshot(name: &str, path: &str, text: &str) -> Snapshot {
-    acquire(&Source{manifest:format!("schema=1\n[[test]]\nname='stable-name'\npath='file:///{path}'\nrequires=['component-model']\ncovers=['smoke']\n"),files:BTreeMap::from([(path.into(),text.into())])},&format!("github:example/{name}"),"main",".cm-testsuite.toml").unwrap()
-}
-fn setup(root: &Path, snapshot: &Snapshot) -> Catalog {
-    apply(root, &import(root, std::slice::from_ref(snapshot)).unwrap()).unwrap();
-    Catalog::load(root).unwrap()
-}
-fn policy(root: &Path, extra: &str) {
-    fs::write(root.join(".cm-testsuite.toml"),format!("schema=1\n[receive]\nenabled=true\n{extra}\n[[receive.route]]\nname='smoke'\ndestination='file:///tests/shared'\nsupports=['component-model']\nallow_unknown=true\n")).unwrap();
-}
-fn received(root: &Path, catalog_root: &Path) -> cm_exchange_plan::Plan {
-    let c = Catalog::load(catalog_root).unwrap();
-    receive(
-        root,
-        "github:example/recipient",
-        ".cm-testsuite.toml",
-        &c,
-        &load_catalog_files(catalog_root, &c).unwrap(),
-    )
-    .unwrap()
-}
+
 #[test]
 fn independent_sources_same_name_and_retirement() {
     let d = tempfile::tempdir().unwrap();
@@ -70,6 +28,7 @@ fn independent_sources_same_name_and_retirement() {
     assert_eq!(c.retired.len(), 1);
     assert!(c.tests.keys().all(|id| id.starts_with("github:example/b/")));
 }
+
 #[test]
 fn per_file_pin_and_integrity_constraint() {
     let source = Source {
@@ -93,6 +52,7 @@ fn per_file_pin_and_integrity_constraint() {
     };
     assert!(acquire(&bad, "github:example/a", "main", ".cm-testsuite.toml").is_err());
 }
+
 #[test]
 fn stable_name_survives_source_file_move() {
     let d = tempfile::tempdir().unwrap();
@@ -114,6 +74,7 @@ fn stable_name_survives_source_file_move() {
         "new.wast"
     );
 }
+
 #[test]
 fn exclusions_preserve_received_files_and_survive_content_updates() {
     let hub = tempfile::tempdir().unwrap();
@@ -126,8 +87,7 @@ fn exclusions_preserve_received_files_and_survive_content_updates() {
     setup(hub.path(), &snapshot("a", "x.wast", "(component)"));
     assert!(received(target.path(), hub.path()).edits.is_empty());
     let receipt: Receipt =
-        serde_json::from_slice(&fs::read(target.path().join(".cm-testsuite-lock.json")).unwrap())
-            .unwrap();
+        records::decode(&fs::read(target.path().join(".cm-testsuite-lock.toml")).unwrap()).unwrap();
     assert_eq!(
         fs::read_to_string(
             target
@@ -138,6 +98,7 @@ fn exclusions_preserve_received_files_and_survive_content_updates() {
         "(module)"
     );
 }
+
 #[test]
 fn removal_requires_retirement_and_permission() {
     let hub = tempfile::tempdir().unwrap();
@@ -169,6 +130,7 @@ fn removal_requires_retirement_and_permission() {
     apply(target.path(), &p).unwrap();
     assert!(received(target.path(), hub.path()).edits.is_empty());
 }
+
 #[test]
 fn local_divergence_blocks_update_and_route_move() {
     let hub = tempfile::tempdir().unwrap();
@@ -185,8 +147,7 @@ fn local_divergence_blocks_update_and_route_move() {
     assert!(p.edits.iter().any(|e| e.after.is_none()));
     apply(target.path(), &p).unwrap();
     let receipt: Receipt =
-        serde_json::from_slice(&fs::read(target.path().join(".cm-testsuite-lock.json")).unwrap())
-            .unwrap();
+        records::decode(&fs::read(target.path().join(".cm-testsuite-lock.toml")).unwrap()).unwrap();
     fs::write(
         target
             .path()
@@ -207,6 +168,7 @@ fn local_divergence_blocks_update_and_route_move() {
         .is_err()
     );
 }
+
 #[test]
 fn ambiguous_routes_and_incomplete_inference_are_explicit() {
     let hub = tempfile::tempdir().unwrap();
@@ -233,23 +195,16 @@ fn ambiguous_routes_and_incomplete_inference_are_explicit() {
         .is_err()
     );
 }
+
 #[test]
 fn unavailable_source_cannot_become_deletion() {
     let d = tempfile::tempdir().unwrap();
     setup(d.path(), &snapshot("a", "x.wast", "(module)"));
     let before = fs::read(d.path().join(CATALOG_PATH)).unwrap();
-    struct Gone;
-    impl Repository for Gone {
-        fn resolve(&self, _: &str) -> Result<String> {
-            bail!("network unavailable")
-        }
-        fn read(&self, _: &str, _: &str) -> Result<Vec<u8>> {
-            unreachable!()
-        }
-    }
     assert!(acquire(&Gone, "github:example/a", "main", ".cm-testsuite.toml").is_err());
     assert_eq!(fs::read(d.path().join(CATALOG_PATH)).unwrap(), before);
 }
+
 #[test]
 fn result_identity_digests_and_duplicates_are_checked() {
     let hub = tempfile::tempdir().unwrap();
@@ -288,6 +243,7 @@ fn result_identity_digests_and_duplicates_are_checked() {
     r.catalog_sha256 = "0".repeat(64);
     assert!(r.validate(&c, &publishers).is_err());
 }
+
 #[test]
 fn incoming_paths_cannot_be_declared_as_authoritative() {
     let m = "schema=1\n[[test]]\nname='loop'\npath='file:///received/a.wast'\n[receive]\nenabled=true\n[[receive.route]]\nname='default'\ndestination='file:///received'\n";
@@ -298,6 +254,7 @@ fn incoming_paths_cannot_be_declared_as_authoritative() {
     };
     assert!(acquire(&s, "github:example/a", "main", ".cm-testsuite.toml").is_err());
 }
+
 #[test]
 fn duplicate_sources_do_not_mutate() {
     let d = tempfile::tempdir().unwrap();
@@ -305,6 +262,7 @@ fn duplicate_sources_do_not_mutate() {
     assert!(import(d.path(), &[a.clone(), a]).is_err());
     assert!(!d.path().join(CATALOG_PATH).exists());
 }
+
 #[test]
 fn snapshot_tampering_is_rejected() {
     let mut s = snapshot("a", "x.wast", "(module)");
@@ -314,7 +272,7 @@ fn snapshot_tampering_is_rejected() {
         .unwrap()
         .push_str("\n(component)");
     assert!(s.validate().is_err());
-    assert!(json(&s).is_ok());
+    assert!(records::encode(&s).is_ok());
 }
 
 #[test]
@@ -367,13 +325,12 @@ fn legacy_receipts_honor_exclusions_before_and_after_route_moves() {
         setup(hub.path(), &a);
         policy(target.path(), "deletions='pull-request'");
         apply(target.path(), &received(target.path(), hub.path())).unwrap();
-        let receipt_path = target.path().join(".cm-testsuite-lock.json");
-        let mut receipt: serde_json::Value =
-            serde_json::from_slice(&fs::read(&receipt_path).unwrap()).unwrap();
-        for test in receipt["tests"].as_object_mut().unwrap().values_mut() {
-            test.as_object_mut().unwrap().remove("route");
+        let receipt_path = target.path().join(".cm-testsuite-lock.toml");
+        let mut receipt: toml::Value = records::decode(&fs::read(&receipt_path).unwrap()).unwrap();
+        for (_, test) in receipt["tests"].as_table_mut().unwrap().iter_mut() {
+            test.as_table_mut().unwrap().remove("route");
         }
-        fs::write(&receipt_path, json(&receipt).unwrap()).unwrap();
+        fs::write(&receipt_path, records::encode(&receipt).unwrap()).unwrap();
         let path = target.path().join(".cm-testsuite.toml");
         let mut text = fs::read_to_string(&path).unwrap();
         if moved {
@@ -397,13 +354,12 @@ fn unrelated_route_exclusion_does_not_block_retirement() {
         policy(target.path(), "deletions='pull-request'");
         apply(target.path(), &received(target.path(), hub.path())).unwrap();
         if legacy {
-            let path = target.path().join(".cm-testsuite-lock.json");
-            let mut receipt: serde_json::Value =
-                serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
-            for test in receipt["tests"].as_object_mut().unwrap().values_mut() {
-                test.as_object_mut().unwrap().remove("route");
+            let path = target.path().join(".cm-testsuite-lock.toml");
+            let mut receipt: toml::Value = records::decode(&fs::read(&path).unwrap()).unwrap();
+            for (_, test) in receipt["tests"].as_table_mut().unwrap().iter_mut() {
+                test.as_table_mut().unwrap().remove("route");
             }
-            fs::write(&path, json(&receipt).unwrap()).unwrap();
+            fs::write(&path, records::encode(&receipt).unwrap()).unwrap();
         }
         let path = target.path().join(".cm-testsuite.toml");
         let text = fs::read_to_string(&path).unwrap();
@@ -500,4 +456,53 @@ fn route_move_must_protect_authoritative_paths() {
             .join("tests/new/example/a/stable-name.wast")
             .exists()
     );
+}
+
+#[test]
+fn catalog_and_receipt_updates_preserve_maintainer_comments() {
+    let hub = tempfile::tempdir().unwrap();
+    let target = tempfile::tempdir().unwrap();
+    let first = snapshot("source", "test.wast", ";; Original test intent\n(module)\n");
+    setup(hub.path(), &first);
+    policy(target.path(), "");
+    apply(target.path(), &received(target.path(), hub.path())).unwrap();
+
+    // Comments belong to maintainers and must survive real metadata reconciliation.
+    for path in [
+        hub.path().join(CATALOG_PATH),
+        target.path().join(cm_catalog::RECEIPT_PATH),
+    ] {
+        let text = fs::read_to_string(&path).unwrap();
+        fs::write(
+            &path,
+            format!(
+                "# Maintainer context\n{}",
+                text.replace("schema = 1", "schema = 1 # Keep this explanation")
+            ),
+        )
+        .unwrap();
+    }
+    assert!(
+        import(hub.path(), std::slice::from_ref(&first))
+            .unwrap()
+            .edits
+            .is_empty()
+    );
+    assert!(received(target.path(), hub.path()).edits.is_empty());
+
+    let updated = snapshot(
+        "source",
+        "test.wast",
+        ";; Updated test intent\n(module (func))\n",
+    );
+    apply(hub.path(), &import(hub.path(), &[updated]).unwrap()).unwrap();
+    apply(target.path(), &received(target.path(), hub.path())).unwrap();
+    for path in [
+        hub.path().join(CATALOG_PATH),
+        target.path().join(cm_catalog::RECEIPT_PATH),
+    ] {
+        let text = fs::read_to_string(path).unwrap();
+        assert!(text.contains("# Maintainer context"));
+        assert!(text.contains("# Keep this explanation"));
+    }
 }

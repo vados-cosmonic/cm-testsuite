@@ -5,10 +5,11 @@
 set -euo pipefail
 
 # Resolve Buck's paths before changing directories. The output may not exist yet.
-sdk=$(realpath "$1")
-source=$(realpath "$2")
+sdk=$(cd -- "$1" && pwd)
+source=$(cd -- "$2" && pwd)
 mode=$3
-out=$(realpath -m "$4")
+mkdir -p "$(dirname -- "$4")"
+out=$(cd -- "$(dirname -- "$4")" && pwd)/$(basename -- "$4")
 shift 4
 
 # Each action gets its own writable workspace and Cargo state. Dereference Buck's
@@ -32,6 +33,15 @@ while (($#)); do
     printf '{"files":{},"package":"%s"}\n' "$checksum" > "$work/vendor/$name/.cargo-checksum.json"
 done
 
+# Native Windows tools need drive-letter paths; POSIX hosts keep their usual paths.
+# Retain the caller's compiler environment (MSVC developer shell or Xcode tools).
+suffix=
+vendor="$work/vendor"
+if command -v cygpath >/dev/null 2>&1; then
+    suffix=.exe
+    vendor=$(cygpath -m "$vendor")
+fi
+
 # Replace crates.io with the declared inputs and disable network access. An
 # undeclared dependency must fail instead of resolving from a developer's cache.
 cat > "$work/cargo-home/config.toml" <<CONFIG
@@ -39,7 +49,7 @@ cat > "$work/cargo-home/config.toml" <<CONFIG
 replace-with = "pinned-inputs"
 
 [source.pinned-inputs]
-directory = "$work/vendor"
+directory = '$vendor'
 
 [net]
 offline = true
@@ -48,13 +58,22 @@ CONFIG
 # Isolate Cargo's cache and build output from other actions and local builds.
 export CARGO_HOME="$work/cargo-home"
 export CARGO_TARGET_DIR="$work/target"
+export CM_TESTSUITE_EXAMPLES="$work/source/examples"
 
-# Select the downloaded tools explicitly and exclude user-installed Rust proxies.
+# Select the downloaded tools explicitly, ahead of user-installed Rust proxies.
 # System utilities and the native C compiler/linker remain host prerequisites.
 export RUSTC="$sdk/bin/rustc"
 export RUSTDOC="$sdk/bin/rustdoc"
-export RUSTFMT="$sdk/bin/rustfmt"
-export PATH="$sdk/bin:/usr/bin:/bin"
+export RUSTFMT="$sdk/bin/rustfmt$suffix"
+if [[ -n "$suffix" ]]; then
+    export CM_TESTSUITE_EXAMPLES="$(cygpath -m "$CM_TESTSUITE_EXAMPLES")"
+    export CARGO_HOME="$(cygpath -m "$CARGO_HOME")"
+    export CARGO_TARGET_DIR="$(cygpath -m "$CARGO_TARGET_DIR")"
+    export RUSTC="$(cygpath -m "$sdk/bin/rustc.exe")"
+    export RUSTDOC="$(cygpath -m "$sdk/bin/rustdoc.exe")"
+    export RUSTFMT="$(cygpath -m "$sdk/bin/rustfmt.exe")"
+fi
+export PATH="$sdk/bin:$PATH"
 
 # The relocatable SDK carries shared libraries needed by its executables.
 export LD_LIBRARY_PATH="$sdk/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
@@ -68,12 +87,12 @@ cd "$work/source"
 # is removed. A successful build publishes only the executable used by Buck run.
 case "$mode" in
     build)
-        "$sdk/bin/cargo" build --locked --offline -p xtask
-        cp "$CARGO_TARGET_DIR/debug/xtask" "$out"
+        "$sdk/bin/cargo$suffix" build --locked --offline -p xtask
+        cp "$CARGO_TARGET_DIR/debug/xtask$suffix" "$out"
         ;;
 
     test)
-        "$sdk/bin/cargo" test --locked --offline --workspace > "$out" 2>&1 || {
+        "$sdk/bin/cargo$suffix" test --locked --offline --workspace > "$out" 2>&1 || {
             cat "$out"
             exit 1
         }
@@ -81,7 +100,7 @@ case "$mode" in
         ;;
 
     lint)
-        "$sdk/bin/cargo" clippy --locked --offline --workspace --all-targets -- -D warnings > "$out" 2>&1 || {
+        "$sdk/bin/cargo$suffix" clippy --locked --offline --workspace --all-targets -- -D warnings > "$out" 2>&1 || {
             cat "$out"
             exit 1
         }
@@ -89,7 +108,7 @@ case "$mode" in
         ;;
 
     fmt)
-        "$sdk/bin/cargo" fmt --all -- --check > "$out" 2>&1 || {
+        "$sdk/bin/cargo$suffix" fmt --all -- --check > "$out" 2>&1 || {
             cat "$out"
             exit 1
         }

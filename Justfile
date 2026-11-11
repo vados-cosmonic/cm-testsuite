@@ -1,68 +1,89 @@
 set positional-arguments
+
+[macos]
+set shell := ["zsh", "-eu", "-o", "pipefail", "-c"]
+
+[linux]
+set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
+
+[windows]
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 
 # An explicit Buck override is a single executable path, including spaces.
-buck := if env_var_or_default("BUCK2", "") != "" { quote(env_var("BUCK2")) } else { "dotslash " + quote(justfile_directory() / "buck2") }
+buck := if env_var_or_default("BUCK2", "") != "" { quote(env_var("BUCK2")) } else { "dotslash " + quote(justfile_directory() / "bins/buck2") }
 
+# List the available commands, grouped by purpose.
+[group('meta')]
 _default:
     @{{quote(just_executable())}} --list
 
-# Check the launcher environment before downloading or running repository tools.
+# Check the launcher and supported host before downloading repository tools.
+[group('meta')]
 _launcher: (_require "dotslash")
-    @if [[ '{{os()}}/{{arch()}}' != 'linux/x86_64' ]]; then printf '%s\n' 'Unsupported build host: {{os()}}/{{arch()}}. The pinned SDK currently supports Linux x86_64; use a Linux x86_64 environment.' >&2; exit 1; fi
+    @case '{{os()}}/{{arch()}}' in linux/x86_64|linux/aarch64|macos/x86_64|macos/aarch64|windows/x86_64|windows/aarch64) ;; *) printf '%s\n' 'Unsupported host: {{os()}}/{{arch()}}. See docs/src/building.md for supported hosts.' >&2; exit 1 ;; esac
 
-# Check system prerequisites without installing tools or starting a build.
-doctor: _launcher (_require "git" "cc" "ar" "tar" "xz" "realpath" "mktemp" "cp" "mkdir" "rm")
+# Check all build prerequisites without starting a build or installing tools.
+[group('meta')]
+doctor: _launcher (_require "git" "tar" "xz" "mktemp" "cp" "mkdir" "rm")
+    @if [[ "{{os()}}" == windows ]]; then {{quote(just_executable())}} _require cl.exe lib.exe cygpath; else {{quote(just_executable())}} _require cc ar; fi
     @if [[ -n "${BUCK2:-}" ]] && ! command -v "$BUCK2" >/dev/null 2>&1; then printf 'BUCK2 executable not found: %s\nSet BUCK2 to an installed executable, or unset it to use the pinned launcher.\n' "$BUCK2" >&2; exit 1; fi
     @printf '%s\n' 'Build prerequisites are available.'
 
-# Report every missing command together so setup does not fail one tool at a time.
+# Report missing commands together before any dependent recipe starts.
+[group('meta')]
 _require +tools:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    missing=()
-    for tool in "$@"; do
-        if ! command -v "$tool" >/dev/null 2>&1; then
-            missing+=("$tool")
-        fi
-    done
-    if ((${#missing[@]})); then
-        printf 'Missing required tools: %s\n' "${missing[*]}" >&2
-        printf '%s\n' 'Install them using your system package manager and ensure they are on PATH.' 'See docs/src/building.md for prerequisites. No build has been started.' >&2
-        exit 1
-    fi
+    @missing=''; for tool in "$@"; do if ! command -v "$tool" >/dev/null 2>&1; then missing="$missing $tool"; fi; done; if [[ -n "$missing" ]]; then printf 'Missing required tools:%s\n' "$missing" >&2; printf '%s\n' 'Install them using your system package manager and ensure they are on PATH.' 'See docs/src/building.md for prerequisites. No build has been started.' >&2; exit 1; fi
 
+# Build the command entrypoint using Buck's downloaded Rust SDK.
+[group('build')]
 build: doctor
     {{buck}} build //:xtask
 
+# Run workspace unit, integration, documentation, and example E2E tests.
+[group('test')]
 test: doctor
     {{buck}} build //:tests
 
+# Run Clippy across every workspace target, treating warnings as errors.
+[group('test')]
 lint: doctor
     {{buck}} build //:lint
 
+# Check workspace formatting with the pinned rustfmt.
+[group('test')]
 fmt-check: doctor
     {{buck}} build //:fmt-check
 
+# Run the same formatting, test, and lint checks used in CI.
+[group('ci')]
 check: fmt-check test lint
 
-# All exchange operations use the same Rust entrypoint locally and in CI.
+# Run an exchange command; pass --help to see typed command arguments.
+[group('meta')]
 xtask *args: doctor
     {{buck}} run //:xtask -- "$@"
 
+# Exercise every example project in isolated local Git repositories.
+[group('test')]
 demo: doctor
     {{buck}} run //:xtask -- demo --out .demo
 
+# Regenerate Buck's pinned registry inputs after updating Cargo.lock.
+[group('build')]
 buck-lock: doctor
     {{buck}} run //:xtask -- buck-lock
 
-# mdBook is a separately downloaded, pinned documentation tool; see docs.
+# Build the mdBook with the pinned documentation launcher.
+[group('docs')]
 docs: doctor
     {{buck}} run //:xtask -- docs
 
+# Build the documentation and engine-submitted results site.
+[group('docs')]
 site: doctor
     {{buck}} run //:xtask -- site
 
-# Workflow auditing needs DotSlash, but not the native build prerequisites.
+# Audit GitHub workflows without requiring the native C build toolchain.
+[group('ci')]
 zizmor *args: _launcher
-    dotslash {{quote(justfile_directory() / "zizmor")}} "$@" .github
+    dotslash {{quote(justfile_directory() / "bins/zizmor")}} "$@" .github

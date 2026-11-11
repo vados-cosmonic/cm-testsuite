@@ -17,8 +17,8 @@ Libraries accept explicit inputs and return structured values/errors. They do no
 
 An acquisition snapshot contains exact source bytes plus provenance. It is not applied automatically. A plan records each expected prior file digest, proposed new bytes or deletion, and policy/catalog guards. Application checks the full plan before mutation. Only registered sources supplied in a successful snapshot can cause central retirements; fetch errors are errors, not empty sources.
 
-A source/name identity is independent of its Git revision. The catalog holds the file SHA-256, source file and commit, and the manifest commit/hash. Source-path moves preserve a declared name. Identity-name changes need manual treatment in this draft; alias migrations are not implemented.
+A source/name identity is independent of its Git revision. The catalog holds the file SHA-256, source file and commit, and the manifest commit/hash. Source-path moves preserve a declared name. Identity-name changes need manual treatment; alias migrations are not implemented.
 
-Received identities and file locations are stored in `.cm-testsuite-lock.json`. Exclusion stops future additions/updates and leaves an existing file intact. Source retirement triggers receiving deletion only when enabled. Every removal or move checks the managed baseline.
+Received identities and file locations are stored in `.cm-testsuite-lock.toml`. Exclusion stops future additions/updates and leaves an existing file intact. Source retirement triggers receiving deletion only when enabled. Every removal or move checks the managed baseline.
 
-The initial transport uses a Rust HTTP client for GitHub and the existing Git executable to read local committed object databases. No upstream build scripts or generated WAST are invoked. Filesystem symlinks and Git symlink/submodule entries are rejected.
+The transport uses Octocrab for GitHub and the existing Git executable to read local committed object databases. No upstream build scripts or generated WAST are invoked. Filesystem symlinks and Git symlink/submodule entries are rejected.

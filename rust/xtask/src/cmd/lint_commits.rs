@@ -17,7 +17,9 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
     let Args { from, to } = args;
     let from = history::resolve(root, &from)?;
     let to = history::resolve(root, &to)?;
-    let status = Command::new("npm")
+    // Rust only infers .exe on Windows; npm is installed as a .cmd shim.
+    let npm = if cfg!(windows) { "npm.cmd" } else { "npm" };
+    let status = Command::new(npm)
         .current_dir(root)
         .args([
             "exec",

@@ -5,17 +5,6 @@ The default location is `.cm-testsuite.toml` at the source repository root. Unkn
 ```toml
 schema = 1
 
-[[test]]
-name = "resources/borrow-after-drop"
-path = "file:///tests/resources/borrow-after-drop.wast"
-summary = "Reject using a borrow after its owner is dropped"
-requires = ["component-model", "resources"]
-covers = ["resource-lifetime"]
-# Optional full immutable Git commit ID:
-# revision = "..."
-# Optional lowercase SHA-256 of the exact file bytes:
-# sha256 = "..."
-
 [receive]
 enabled = true
 additions = "pull-request"
@@ -30,6 +19,17 @@ supports = ["component-model", "resources"]
 covers_any = ["resource-lifetime"]
 exclude = []
 allow_unknown = false
+
+[[test]]
+name = "resources/borrow-after-drop"
+path = "file:///tests/resources/borrow-after-drop.wast"
+summary = "Reject using a borrow after its owner is dropped"
+requires = ["component-model", "resources"]
+covers = ["resource-lifetime"]
+# Optional full immutable Git commit ID:
+# revision = "..."
+# Optional lowercase SHA-256 of the exact file bytes:
+# sha256 = "..."
 ```
 
 `file://tests/a.wast` is relative to the manifest directory; `file:///tests/a.wast` is relative to the tracked repository root. This is project notation, not a standard file URL or access to the importing host's root. Percent encoding is decoded once. Traversal, malformed encodings, backslashes, Git metadata paths, and symlinks are rejected.

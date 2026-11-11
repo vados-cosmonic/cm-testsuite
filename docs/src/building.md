@@ -6,9 +6,9 @@ The pinned SDK and launchers support these hosts:
 
 | Operating system | Architectures | Native prerequisites |
 | --- | --- | --- |
-| Linux (glibc) | x86_64, ARM64 | Bash, Git, C compiler/linker, archiver, tar, xz, coreutils |
-| macOS | Intel, Apple Silicon | zsh, Bash, Xcode Command Line Tools, Git, tar, xz |
-| Windows | x86_64, ARM64 | Git Bash with tar/xz/coreutils, Visual Studio C++ Build Tools and Windows SDK |
+| Linux (glibc) | x86_64, ARM64 | Bash, Git, C compiler/linker, archiver, tar, gzip, xz, coreutils |
+| macOS | Intel, Apple Silicon | zsh, Bash, Xcode Command Line Tools, Git, tar, gzip, xz |
+| Windows | x86_64, ARM64 | Git Bash with tar/gzip/xz/coreutils, Visual Studio C++ Build Tools and Windows SDK |
 
 Install [DotSlash](https://dotslash-cli.com/docs/installation/) separately.
 System tools must be available on your normal PATH; Rust need not be installed.
@@ -83,7 +83,9 @@ Wasm SDKs and Rust documentation archives are not extracted.
 
 Each Cargo action uses a fresh Cargo home, a generated directory source,
 `--locked --offline`, and explicit compiler paths.
-Only dependency-fetch actions need network access.
+Only dependency-fetch actions need network access. Buck downloads crate archives
+with checksum verification, and the Cargo wrapper extracts them directly into
+its directory source. Formatting uses the SDK and sources without fetching crates.
 
 `toolchains/rust/releases.bzl` also records WASI Preview 1 and Preview 2 standard
 libraries. The `wasm32-wasip3` entry remains commented out because the pinned

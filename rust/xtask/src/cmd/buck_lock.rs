@@ -50,10 +50,10 @@ fn buck_lock(text: &str) -> Result<String> {
         let checksum = p["checksum"].as_str().context("missing crate checksum")?;
         let full = format!("{name}-{version}");
         out.push_str(&format!(
-            "    native.http_archive(name = {:?}, \
+            "    native.http_file(name = {:?}, \
              urls = [\"https://static.crates.io/crates/{name}/{version}/download\"], \
-             sha256 = \"{checksum}\", strip_prefix = \"{full}\", \
-             type = \"tar.gz\", visibility = [\"PUBLIC\"])\n",
+             sha256 = \"{checksum}\", out = \"{full}.crate\", \
+             visibility = [\"PUBLIC\"])\n",
             full.replace('+', "_"),
         ));
     }

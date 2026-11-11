@@ -37,7 +37,7 @@ cp -LR "$source/." "$work/source/"
 
 # Buck already verifies each registry archive against Cargo.lock. Cargo's
 # directory-source metadata records that package checksum; the empty file map
-# avoids recomputing per-file checksums for these verified, freshly copied inputs.
+# avoids recomputing per-file checksums for these verified, freshly extracted inputs.
 # Each entry occupies three lines: package name, archive path, and checksum.
 # Reading literal lines preserves spaces/backslashes without shell evaluation.
 while IFS= read -r name; do
@@ -48,7 +48,9 @@ while IFS= read -r name; do
     archive=$(as_shell_path "$archive")
 
     mkdir -p "$work/vendor/$name"
-    cp -R "$archive/." "$work/vendor/$name/"
+    # Extract directly from the verified download. Avoid a separate PowerShell
+    # process per crate in Buck's generic Windows archive rule.
+    tar -xzf "$archive" --strip-components=1 -C "$work/vendor/$name"
     printf '{"files":{},"package":"%s"}\n' "$checksum" > "$work/vendor/$name/.cargo-checksum.json"
 done < "$crate_inputs"
 

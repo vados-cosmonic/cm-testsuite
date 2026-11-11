@@ -1,8 +1,9 @@
 # Engine-submitted results
 
-Engines execute tests in their own projects. cm-testsuite validates their submitted observations without executing WAST or certifying conformance.
+Engines execute tests in their own projects.
+cm-testsuite validates their submitted observations without executing WAST or certifying conformance.
 
-A report includes `schema`, `publisher`, `engine`, `engine_version`, `run_id`, `catalog_sha256`, `reported_at`, `platform`, `configuration`, and `results`. Each result has a stable `id`, file `sha256`, `status`, and optional `diagnostic`. Supported statuses are `pass`, `fail`, `skip`, `unsupported`, `timeout`, and `infrastructure-error`. A successful expected-negative assertion should be reported as `pass` by the engine's harness.
+## Report format
 
 ```json
 {
@@ -19,13 +20,64 @@ A report includes `schema`, `publisher`, `engine`, `engine_version`, `run_id`, `
 }
 ```
 
-Approve publisher identifiers in `registry/publishers.json` through review. Admission checks the publisher, exact catalog digest, membership, per-file digest, duplicate identities, and required metadata. Run locally:
+### Report fields
+
+| Field | Meaning |
+| --- | --- |
+| `schema` | Report schema version; use `1`. |
+| `publisher` | Identifier approved in `registry/publishers.json`. |
+| `engine` | Name of the engine that ran the tests. |
+| `engine_version` | Engine version or build identifier. |
+| `run_id` | Identifier for the submitting harness or CI run. |
+| `catalog_sha256` | Digest of the exact catalog snapshot used for the run. |
+| `reported_at` | Timestamp supplied by the publisher. |
+| `platform` | Operating system and architecture used for the run. |
+| `configuration` | Engine settings and enabled features. |
+| `results` | Array of observations for tests in the catalog; omitted tests are not reported. |
+
+### Per-test fields
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Stable test identity, such as `github:owner/repo/name`. |
+| `sha256` | SHA-256 of the exact WAST file bytes tested. |
+| `status` | One of the supported statuses below. |
+| `diagnostic` | Optional explanatory text from the harness. |
+
+### Statuses
+
+| Status | Meaning |
+| --- | --- |
+| `pass` | The harness observed the expected result. |
+| `fail` | The harness observed a result that did not meet the test's expectations. |
+| `skip` | The harness skipped the test. |
+| `unsupported` | The engine or harness does not support the test's requirements. |
+| `timeout` | Execution exceeded the harness's time limit. |
+| `infrastructure-error` | A problem with the test environment prevented a result. |
+
+A successful expected-negative assertion should be reported as `pass`
+by the engine's harness.
+
+## Submitting a report
+
+
+Publisher identifiers in `registry/publishers.json` should be approved during review.
+
+To run admission checks locally:
 
 ```sh
 ./just xtask results-import --report /path/to/report.json
 ./just site
 ```
 
-Accepted reports are content-addressed under `reports/CATALOG_DIGEST/REPORT_DIGEST.json`, alongside the catalog snapshot. The site displays all runs submitted for the current catalog. Older reports are retained on disk but not mixed into the current comparison. Missing entries mean **not reported**. If there are no current reports, the page says so; it generates no sample execution data.
+## Storage and display
 
-The current publisher allowlist is an admission policy, not a cryptographic signature or independent verification of who produced a file. Review report submissions and their provenance before merging them. Timestamps are displayed as supplied; the draft does not infer a latest run or compare reports chronologically.
+Accepted reports are content-addressed under `reports/CATALOG_DIGEST/REPORT_DIGEST.json`, alongside the catalog snapshot.
+The site displays all runs submitted for the current catalog.
+Older reports are retained on disk but not mixed into the current comparison.
+Missing entries mean **not reported**.
+If there are no current reports, the page says so; it generates no sample execution data.
+
+The current publisher allowlist is an admission policy, not a cryptographic signature or independent verification of who produced a file.
+Review report submissions and their provenance before merging them.
+Timestamps are displayed as supplied; the site does not infer a latest run or compare reports chronologically.

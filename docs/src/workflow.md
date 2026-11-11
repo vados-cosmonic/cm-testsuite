@@ -30,7 +30,15 @@ Check out the receiving repository's trusted default branch and prepare its opt-
 
 Plans include a `.cm-testsuite-lock.json` receipt and exact suggested exclusion IDs. Adding an exclusion preserves an already received file. Changing a route can move a managed file after baseline checks. An unrelated file at the destination is a collision even if the tool has not previously managed that path.
 
-Application preflights policy/catalog and file digests, then stages replacement content. Repeating a fully applied plan is a no-op. It coordinates other instances with `.cm-testsuite-write-lock`, rechecks writes, and attempts rollback on ordinary I/O errors. It is not a transaction across process crashes or arbitrary concurrent editors. Inspect the repository before removing a stale lock; use a clean disposable worktree for automation.
+Application preflights policy/catalog and file digests, then stages replacement content.
+Repeating a fully applied plan is a no-op.
+It coordinates other instances with `.cm-testsuite-write-lock`, rechecks writes,
+and attempts rollback on ordinary I/O errors.
+
+> [!WARNING]
+> Application is not a transaction across process crashes or arbitrary concurrent editors.
+> Inspect the repository before removing a stale lock.
+> Use a clean disposable worktree for automation.
 
 ## Publish a reviewed proposal
 

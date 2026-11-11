@@ -10,24 +10,27 @@ license = "Apache-2.0"
 publish = false
 
 [workspace.dependencies]
-anyhow = "=1.0.103"
-serde = { version = "=1.0.228", features = ["derive"] }
-serde_json = "=1.0.150"
-toml = "=0.8.23"
-sha2 = "=0.10.9"
-percent-encoding = "=2.3.2"
-base64 = "=0.22.1"
-ureq = { version = "=3.3.0", default-features = false, features = ["rustls", "json"] }
-wast = "=263.0.0"
-clap = { version = "=4.6.7", features = ["derive"] }
-tempfile = "=3.27.0"
-cm-catalog = { path = "crates/catalog" }
-cm-github = { path = "crates/github" }
-cm-wast-analysis = { path = "crates/wast-analysis" }
-cm-acquisition = { path = "crates/acquisition" }
-cm-exchange-plan = { path = "crates/exchange-plan" }
-cm-delivery = { path = "crates/delivery" }
-cm-results = { path = "crates/results" }
+anyhow = { version = "=1.0.103", default-features = false }
+serde = { version = "=1.0.228", default-features = false }
+serde_json = { version = "=1.0.150", default-features = false }
+toml = { version = "=1.2.1", default-features = false }
+toml_edit = { version = "=0.25.19", default-features = false }
+sha2 = { version = "=0.10.9", default-features = false }
+percent-encoding = { version = "=2.3.2", default-features = false }
+base64 = { version = "=0.22.1", default-features = false }
+octocrab = { version = "=0.54.9", default-features = false }
+tokio = { version = "=1.48.0", default-features = false }
+wast = { version = "=263.0.0", default-features = false }
+clap = { version = "=4.6.7", default-features = false }
+tempfile = { version = "=3.27.0", default-features = false }
+
+cm-catalog = { path = "crates/catalog", default-features = false }
+cm-github = { path = "crates/github", default-features = false }
+cm-wast-analysis = { path = "crates/wast-analysis", default-features = false }
+cm-acquisition = { path = "crates/acquisition", default-features = false }
+cm-exchange-plan = { path = "crates/exchange-plan", default-features = false }
+cm-delivery = { path = "crates/delivery", default-features = false }
+cm-results = { path = "crates/results", default-features = false }
 
 [profile.dev]
 debug = 0

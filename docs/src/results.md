@@ -5,19 +5,21 @@ cm-testsuite validates their submitted observations without executing WAST or ce
 
 ## Report format
 
-```json
-{
-  "schema": 1,
-  "publisher": "your-approved-publisher",
-  "engine": "your-engine",
-  "engine_version": "your-build",
-  "run_id": "your-ci-run",
-  "catalog_sha256": "replace-with-the-validated-catalog-digest",
-  "reported_at": "2026-11-05T00:00:00Z",
-  "platform": "linux-x86_64",
-  "configuration": "describe-enabled-features",
-  "results": []
-}
+```toml
+schema = 1
+publisher = "your-approved-publisher"
+engine = "your-engine"
+engine_version = "your-build"
+run_id = "your-ci-run"
+catalog_sha256 = "replace-with-the-validated-catalog-digest"
+reported_at = "2026-11-05T00:00:00Z"
+platform = "linux-x86_64"
+configuration = "describe-enabled-features"
+
+[[results]]
+id = "github:owner/repo/test-name"
+sha256 = "replace-with-the-test-file-digest"
+status = "pass"
 ```
 
 ### Report fields
@@ -25,7 +27,7 @@ cm-testsuite validates their submitted observations without executing WAST or ce
 | Field | Meaning |
 | --- | --- |
 | `schema` | Report schema version; use `1`. |
-| `publisher` | Identifier approved in `registry/publishers.json`. |
+| `publisher` | Identifier approved in `registry/publishers.toml`. |
 | `engine` | Name of the engine that ran the tests. |
 | `engine_version` | Engine version or build identifier. |
 | `run_id` | Identifier for the submitting harness or CI run. |
@@ -61,18 +63,18 @@ by the engine's harness.
 ## Submitting a report
 
 
-Publisher identifiers in `registry/publishers.json` should be approved during review.
+Publisher identifiers in `registry/publishers.toml` should be approved during review.
 
 To run admission checks locally:
 
 ```sh
-./just xtask results-import --report /path/to/report.json
-./just site
+dotslash bins/just xtask results-import --report /path/to/report.toml
+dotslash bins/just site
 ```
 
 ## Storage and display
 
-Accepted reports are content-addressed under `reports/CATALOG_DIGEST/REPORT_DIGEST.json`, alongside the catalog snapshot.
+Accepted reports are content-addressed under `reports/CATALOG_DIGEST/REPORT_DIGEST.toml`, alongside the catalog snapshot.
 The site displays all runs submitted for the current catalog.
 Older reports are retained on disk but not mixed into the current comparison.
 Missing entries mean **not reported**.

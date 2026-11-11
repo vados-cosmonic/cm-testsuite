@@ -7,13 +7,11 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-anyhow.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-ureq.workspace = true
-base64.workspace = true
-percent-encoding.workspace = true
-cm-catalog.workspace = true
+anyhow = { workspace = true, features = ["std"] }
+serde_json = { workspace = true, features = ["std"] }
+octocrab = { workspace = true, features = ["default-client", "rustls", "rustls-ring", "rustls-webpki-tokio", "timeout"] }
+tokio = { workspace = true, features = ["rt", "time", "net"] }
+base64 = { workspace = true, features = ["std"] }
+percent-encoding = { workspace = true, features = ["std"] }
 
-[dev-dependencies]
-tempfile.workspace = true
+cm-catalog = { workspace = true }

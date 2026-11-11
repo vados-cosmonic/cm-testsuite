@@ -26,9 +26,9 @@ There is also an integration issue specific to our changing selections: adding a
 
 [Josh](https://github.com/josh-project/josh) is Rust and its reversible Git filtering worked. We demonstrated filtered views, two-source aggregation, per-file pinning, conflict detection, and a correction returned to its source using an explicit unfiltered base.
 
-Our initial product needs curated file snapshots more than transformed repository histories. Josh does not supply stable test identity, the provenance catalog, feature routing, receiving exclusions, or approval policy. Expressing independent file pins through revision-dependent filters adds machinery without removing those responsibilities. Its client-side filtering also downloads the full upstream object database; it is not a substitute for targeted acquisition.
+The exchange needs curated file snapshots more than transformed repository histories. Josh does not supply stable test identity, the provenance catalog, feature routing, receiving exclusions, or approval policy. Expressing independent file pins through revision-dependent filters adds machinery without removing those responsibilities. Its client-side filtering also downloads the full upstream object database; it is not a substitute for targeted acquisition.
 
-We therefore do not plan to depend on Josh for the initial implementation. It could become useful later if consumers need a tests-only mirror or reversible synchronization of a coherent directory. That would be a new requirement to evaluate, not a reason to carry the dependency now.
+We therefore do not plan to depend on Josh for file exchange. It could become useful later if consumers need a tests-only mirror or reversible synchronization of a coherent directory. That would be a new requirement to evaluate, not a reason to carry the dependency now.
 
 ## Why not rustc-josh-sync?
 
@@ -42,7 +42,7 @@ Our libraries will retain the separation of source ownership, received copies, a
 
 ## Why not Test262 tooling?
 
-[Test262's harness](https://github.com/tc39/test262-harness) handles JavaScript test discovery, harness includes, execution variants, and host execution. cm-testsuite initially collects WAST and does not execute tests. Its feature metadata and negative-test conventions are useful references, but its runner does not implement our exchange workflow.
+[Test262's harness](https://github.com/tc39/test262-harness) handles JavaScript test discovery, harness includes, execution variants, and host execution. cm-testsuite collects WAST and does not execute tests. Its feature metadata and negative-test conventions are useful references, but its runner does not implement our exchange workflow.
 
 Future Test262 or WPT adapters should preserve native metadata and companion files. The generic exchange libraries should not require translating those formats into WAST or taking over their execution.
 
@@ -54,7 +54,7 @@ The inspected jco fixture-sync code is a closer Rust example: it supports explic
 
 ## Why not subtrees or submodules?
 
-They manage repository or directory relationships. They do not supply per-test metadata, mixed source revisions, receiving policy, or central review state. The initial storage direction is exact-byte copies with a provenance catalog. Consumers can still submodule cm-testsuite and use its `corpus/wast/` directory.
+They manage repository or directory relationships. They do not supply per-test metadata, mixed source revisions, receiving policy, or central review state. Storage uses exact-byte copies with a provenance catalog. Consumers can still submodule cm-testsuite and use its `corpus/wast/` directory.
 
 ## Why not an existing GitHub PR action or the GitHub CLI?
 
@@ -62,11 +62,11 @@ An action such as [create-pull-request](https://github.com/peter-evans/create-pu
 
 ## Why not wpt.fyi for the results site?
 
-[wpt.fyi](https://github.com/web-platform-tests/wpt.fyi) consumes externally produced results, which matches our division of responsibility. Its App Engine backend and browser-oriented model are not a static GitHub Pages component for our catalog. We validate engine-submitted JSON and generate a separate results page, while using mdBook for documentation.
+[wpt.fyi](https://github.com/web-platform-tests/wpt.fyi) consumes externally produced results, which matches our division of responsibility. Its App Engine backend and browser-oriented model are not a static GitHub Pages component for our catalog. We validate engine-submitted TOML and generate a separate results page, while using mdBook for documentation.
 
 ## Why not Reindeer-generated Buck targets yet?
 
-[Reindeer](https://github.com/facebookincubator/reindeer) remains a possible build integration, not a rejected exchange backend. The first draft invokes Cargo inside Buck actions with a downloaded Rust SDK and lockfile-derived, checksum-pinned crate inputs. This keeps one feature/build-script/proc-macro graph while the workspace interfaces are changing. The tradeoff is coarse build caching and test discovery. Moving to native per-crate Buck rules through Reindeer could improve those properties; it would need to preserve the same Cargo graph. This choice does not imply that Reindeer cannot support the workspace.
+[Reindeer](https://github.com/facebookincubator/reindeer) remains a possible build integration, not a rejected exchange backend. The build invokes Cargo inside Buck actions with a downloaded Rust SDK and lockfile-derived, checksum-pinned crate inputs. This keeps one feature/build-script/proc-macro graph while the workspace interfaces are changing. The tradeoff is coarse build caching and test discovery. Moving to native per-crate Buck rules through Reindeer could improve those properties; it would need to preserve the same Cargo graph. This choice does not imply that Reindeer cannot support the workspace.
 
 ## What do we still reuse?
 

@@ -7,9 +7,19 @@ load("@wasmono//:defs.bzl", "host_arch", "host_os")
 load(":releases.bzl", "RUST_HOST_RELEASES", "rust_host_url")
 
 def host_rust_triple():
-    if host_arch() != "x86_64" or host_os() != "linux":
-        fail("The initial cm-testsuite build supports Linux x86_64")
-    return "x86_64-unknown-linux-gnu"
+    suffixes = {
+        "linux": "unknown-linux-gnu",
+        "macos": "apple-darwin",
+        "windows": "pc-windows-msvc",
+    }
+    suffix = suffixes.get(host_os())
+    if suffix == None:
+        fail("Unsupported Rust host operating system: " + host_os())
+    triple = host_arch() + "-" + suffix
+    if triple not in RUST_HOST_RELEASES:
+        fail("No pinned Rust SDK for host: " + triple)
+    return triple
+
 
 def download_rust_host(name, triple):
     native.http_file(

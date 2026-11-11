@@ -10,7 +10,9 @@ runs:
       with:
         path: |
           ~/.cargo/bin/just
+          ~/.cargo/bin/just.exe
           ~/.cargo/bin/dotslash
+          ~/.cargo/bin/dotslash.exe
         key: tools-${{ runner.os }}-${{ runner.arch }}-just-1.59.0-dotslash-0.5.7-v1
 
     - name: Install cargo-binstall
@@ -37,5 +39,7 @@ runs:
       with:
         path: |
           ~/.cargo/bin/just
+          ~/.cargo/bin/just.exe
           ~/.cargo/bin/dotslash
+          ~/.cargo/bin/dotslash.exe
         key: ${{ steps.tools.outputs.cache-primary-key }}

@@ -23,6 +23,9 @@ RUST_HOST_RELEASES = {
 # Per-target ``rust-std`` package. Host independent; one archive per wasm target.
 RUST_STD_RELEASES = {
     "wasm32-wasip1": "b5e91be9ed75c632a4c576d3c4c725ab143cd48c27c345133b97ccdf217b23e7",
+    # wasm32-wasip3 is not published in the Rust 1.98.1 stable manifest.
+    # Enable it here with its official rust-std checksum when stable publishes it.
+    # "wasm32-wasip3": "<official sha256>",
     "wasm32-wasip2": "efb0d2df60c97ab652d9cccd41b1e21b4c370fe5da6b66ad5f1466bac26c4195",
 }
 

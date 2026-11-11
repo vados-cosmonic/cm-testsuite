@@ -1,118 +1,21 @@
-//! Resolve opted-in manifests at immutable revisions and fetch an entire source before mutation.
+//! Acquire validated WAST snapshots from immutable repository revisions.
+
+mod repository;
+mod snapshot;
+
+pub use repository::{GitHub, LocalGit, Repository};
+pub use snapshot::{Snapshot, load_catalog_files, load_snapshot};
+
 use anyhow::{Context, Result, ensure};
 use cm_catalog::*;
-use cm_github::Api;
-use serde::{Deserialize, Serialize};
-use std::{
-    collections::BTreeMap,
-    path::{Path, PathBuf},
-    process::Command,
-};
-pub trait Repository {
-    fn resolve(&self, reference: &str) -> Result<String>;
-    fn read(&self, revision: &str, path: &str) -> Result<Vec<u8>>;
-}
-pub struct GitHub<'a> {
-    pub api: &'a dyn Api,
-    pub source: &'a str,
-}
-impl Repository for GitHub<'_> {
-    fn resolve(&self, r: &str) -> Result<String> {
-        cm_github::resolve(self.api, self.source, r)
-    }
-    fn read(&self, r: &str, p: &str) -> Result<Vec<u8>> {
-        cm_github::read_file(self.api, self.source, r, p)?
-            .with_context(|| format!("missing tracked source file {p} at {r}"))
-    }
-}
-/// Local committed Git snapshots are useful for offline development and private sources.
-/// Git is used only as the existing repository object reader, not a sync backend.
-pub struct LocalGit {
-    pub root: PathBuf,
-}
-impl LocalGit {
-    fn git(&self, args: &[&str]) -> Result<Vec<u8>> {
-        let o = Command::new("git")
-            .arg("--no-pager")
-            .arg("-C")
-            .arg(&self.root)
-            .args(args)
-            .env("GIT_CONFIG_NOSYSTEM", "1")
-            .env("GIT_CONFIG_GLOBAL", "/dev/null")
-            .output()?;
-        ensure!(
-            o.status.success(),
-            "Git snapshot read failed: {}",
-            String::from_utf8_lossy(&o.stderr)
-        );
-        Ok(o.stdout)
-    }
-}
-impl Repository for LocalGit {
-    fn resolve(&self, r: &str) -> Result<String> {
-        ensure!(!r.is_empty(), "empty Git ref");
-        let v = String::from_utf8(self.git(&[
-            "rev-parse",
-            "--verify",
-            "--end-of-options",
-            &format!("{r}^{{commit}}"),
-        ])?)?
-        .trim()
-        .to_owned();
-        validate_revision(&v)?;
-        Ok(v)
-    }
-    fn read(&self, r: &str, p: &str) -> Result<Vec<u8>> {
-        validate_revision(r)?;
-        validate_path(p)?;
-        let entry = self.git(&["ls-tree", "-z", r, "--", p])?;
-        ensure!(
-            entry.starts_with(b"100644 blob ") || entry.starts_with(b"100755 blob "),
-            "missing, symlink, or non-regular tracked file: {p}"
-        );
-        let b = self.git(&["show", &format!("{r}:{p}")])?;
-        ensure!(b.len() <= 8 * 1024 * 1024, "file exceeds 8 MiB draft limit");
-        Ok(b)
-    }
-}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Snapshot {
-    pub source: String,
-    pub metadata: SourceSnapshot,
-    pub tests: BTreeMap<String, Test>,
-    pub files: BTreeMap<String, String>,
-}
-impl Snapshot {
-    pub fn validate(&self) -> Result<()> {
-        let c = Catalog {
-            schema: SCHEMA,
-            sources: BTreeMap::from([(self.source.clone(), self.metadata.clone())]),
-            tests: self.tests.clone(),
-            retired: BTreeMap::new(),
-        };
-        c.validate()?;
-        ensure!(
-            self.files.len() == self.tests.len(),
-            "snapshot file count mismatch"
-        );
-        for t in self.tests.values() {
-            let text = self
-                .files
-                .get(&t.destination)
-                .context("missing snapshot bytes")?;
-            ensure!(
-                sha256(text.as_bytes()) == t.sha256,
-                "snapshot digest mismatch"
-            );
-            ensure!(
-                cm_wast_analysis::analyze(text)? == t.analysis,
-                "snapshot analysis does not match its bytes/analyzer"
-            );
-        }
-        Ok(())
-    }
-}
+use std::collections::BTreeMap;
+
+/// Acquire a complete source snapshot from a committed opt-in manifest.
+///
+/// Resolve the requested reference once, honor per-test commit/hash pins, and
+/// retain exact UTF-8 WAST bytes with their provenance and structural analysis.
+/// Return no snapshot if any manifest, file, or integrity check fails; never
+/// write to the destination repository or execute the producer's tests.
 pub fn acquire(
     repo: &dyn Repository,
     source: &str,
@@ -130,6 +33,8 @@ pub fn acquire(
         manifest_path: manifest_path.into(),
         manifest_sha256: sha256(&raw),
     };
+
+    // Resolve provenance before collecting files; partial acquisition is never returned.
     let mut tests = BTreeMap::new();
     let mut files = BTreeMap::new();
     for spec in manifest.test {
@@ -152,6 +57,8 @@ pub fn acquire(
                 "test points inside a receiving destination"
             );
         }
+
+        // Preserve producer bytes exactly, checking pins before structural analysis.
         let bytes = repo.read(&pinned, &path)?;
         let sha = sha256(&bytes);
         if let Some(expected) = spec.sha256 {
@@ -186,27 +93,7 @@ pub fn acquire(
     snapshot.validate()?;
     Ok(snapshot)
 }
-pub fn load_catalog_files(root: &Path, catalog: &Catalog) -> Result<BTreeMap<String, String>> {
-    catalog.validate()?;
-    let mut files = BTreeMap::new();
-    for t in catalog.tests.values() {
-        let p = checked_path(root, &t.destination)?;
-        let b = std::fs::read(&p)?;
-        ensure!(sha256(&b) == t.sha256, "catalog drift: {}", t.destination);
-        let text = String::from_utf8(b)?;
-        ensure!(
-            cm_wast_analysis::analyze(&text)? == t.analysis,
-            "catalog analysis does not match its bytes/analyzer"
-        );
-        files.insert(t.destination.clone(), text);
-    }
-    Ok(files)
-}
-pub fn load_snapshot(path: &Path) -> Result<Snapshot> {
-    let s: Snapshot = serde_json::from_slice(&std::fs::read(path)?)?;
-    s.validate()?;
-    Ok(s)
-}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,15 +102,27 @@ mod tests {
         fail: bool,
         reads: Cell<usize>,
     }
+
     impl Repository for Fake {
         fn resolve(&self, _: &str) -> Result<String> {
             Ok("a".repeat(40))
         }
+
         fn read(&self, _: &str, p: &str) -> Result<Vec<u8>> {
             self.reads.set(self.reads.get() + 1);
-            match p{".cm-testsuite.toml"=>Ok(b"schema=1\n[[test]]\nname='one'\npath='file:///one.wast'\n[[test]]\nname='two'\npath='file:///two.wast'\n".to_vec()),"two.wast" if self.fail=>anyhow::bail!("unavailable"),_=>Ok(b";; Explain the test intent\n(module)\r\n".to_vec())}
+            match p {
+                ".cm-testsuite.toml" => Ok(concat!(
+                    "schema=1\n[[test]]\nname='one'\npath='file:///one.wast'\n",
+                    "[[test]]\nname='two'\npath='file:///two.wast'\n",
+                )
+                .as_bytes()
+                .to_vec()),
+                "two.wast" if self.fail => anyhow::bail!("unavailable"),
+                _ => Ok(b";; Explain the test intent\n(module)\r\n".to_vec()),
+            }
         }
     }
+
     #[test]
     fn fetches_exact_bytes_and_fails_as_a_unit() {
         let good = Fake {

@@ -7,9 +7,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-anyhow.workspace = true
-wast.workspace = true
-cm-catalog.workspace = true
+anyhow = { workspace = true, features = ["std"] }
+wast = { workspace = true, features = ["wasm-module", "component-model"] }
 
-[dev-dependencies]
-tempfile.workspace = true
+cm-catalog = { workspace = true }

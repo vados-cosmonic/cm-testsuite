@@ -1,0 +1,21 @@
+schema = 1
+
+[receive]
+enabled = true
+deletions = "manual"
+exclude = []
+
+[[receive.route]]
+name = "arithmetic"
+destination = "file:///tests/shared"
+covers_any = ["arithmetic"]
+supports = []
+# Feature inference is incomplete: opt in to reviewing uncertainty explicitly.
+allow_unknown = true
+
+[[test]]
+name = "core/multiply"
+path = "file://multiply.wast"
+summary = "Check integer multiplication through a WAST assertion"
+requires = []
+covers = ["arithmetic"]

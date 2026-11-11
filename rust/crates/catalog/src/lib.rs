@@ -1,4 +1,6 @@
 //! Manifests, immutable identity, provenance, and safe repository-relative paths.
+pub mod records;
+
 use anyhow::{Context, Result, bail, ensure};
 use percent_encoding::percent_decode_str;
 use serde::{Deserialize, Serialize};
@@ -9,11 +11,12 @@ use std::{
 };
 
 pub const SCHEMA: u32 = 1;
-pub const CATALOG_PATH: &str = "metadata/catalog.json";
-pub const RECEIPT_PATH: &str = ".cm-testsuite-lock.json";
+pub const CATALOG_PATH: &str = "metadata/catalog.toml";
+pub const RECEIPT_PATH: &str = ".cm-testsuite-lock.toml";
 pub fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
+/// Internal canonical encoding for semantic digests and GitHub ownership metadata.
 pub fn json<T: Serialize>(value: &T) -> Result<String> {
     Ok(serde_json::to_string_pretty(value)? + "\n")
 }
@@ -367,7 +370,7 @@ impl Catalog {
         let p = checked_path(root, CATALOG_PATH)?;
         match std::fs::read(p) {
             Ok(b) => {
-                let c: Self = serde_json::from_slice(&b)?;
+                let c: Self = records::decode(&b)?;
                 c.validate()?;
                 Ok(c)
             }

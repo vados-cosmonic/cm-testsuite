@@ -55,17 +55,17 @@ jobs:
           MANIFEST: ${{ inputs.manifest }}
           GITHUB_TOKEN: ${{ secrets.CM_TESTSUITE_TOKEN }}
         run: |
-          just xtask acquire --source "$SOURCE" --reference "$REFERENCE" --manifest "$MANIFEST" --out "$RUNNER_TEMP/snapshot.json"
-          just xtask plan-import --snapshot "$RUNNER_TEMP/snapshot.json" --out "$RUNNER_TEMP/import-plan.json"
+          just xtask acquire --source "$SOURCE" --reference "$REFERENCE" --manifest "$MANIFEST" --out "$RUNNER_TEMP/snapshot.toml"
+          just xtask plan-import --snapshot "$RUNNER_TEMP/snapshot.toml" --out "$RUNNER_TEMP/import-plan.toml"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: import-plan
-          path: ${{ runner.temp }}/import-plan.json
+          path: ${{ runner.temp }}/import-plan.toml
 
       - name: Publish draft PR
         if: inputs.publish
         env:
           TARGET: github:${{ github.repository }}
           GITHUB_TOKEN: ${{ secrets.CM_TESTSUITE_TOKEN }}
-        run: just xtask publish --repository "$TARGET" --plan "$RUNNER_TEMP/import-plan.json"
+        run: just xtask publish --repository "$TARGET" --plan "$RUNNER_TEMP/import-plan.toml"

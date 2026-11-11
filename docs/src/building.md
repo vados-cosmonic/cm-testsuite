@@ -2,24 +2,38 @@
 
 ## Prerequisites
 
-The supported build host is Linux x86_64.
-Other hosts fail the prerequisite check before Buck starts.
+The pinned SDK and launchers support these hosts:
 
-Install [DotSlash](https://dotslash-cli.com/docs/installation/) and Bash,
-Git, a native C compiler/linker and archiver, tar, xz, and coreutils.
-These tools must be available on your normal system PATH.
-Rust does not need to be installed.
+| Operating system | Architectures | Native prerequisites |
+| --- | --- | --- |
+| Linux (glibc) | x86_64, ARM64 | Bash, Git, C compiler/linker, archiver, tar, xz, coreutils |
+| macOS | Intel, Apple Silicon | zsh, Bash, Xcode Command Line Tools, Git, tar, xz |
+| Windows | x86_64, ARM64 | Git Bash with tar/xz/coreutils, Visual Studio C++ Build Tools and Windows SDK |
 
-Use an installed Just or the repository's `./just` launcher.
+Install [DotSlash](https://dotslash-cli.com/docs/installation/) separately.
+System tools must be available on your normal PATH; Rust need not be installed.
+On macOS, install the Command Line Tools with `xcode-select --install` and xz
+through your package manager. Just runs recipes with zsh on macOS and Bash on
+Linux and Windows; the small SDK/build wrappers use Bash on every host.
+
+On Windows, launch Git Bash from a Visual Studio Developer Command Prompt for
+your architecture so `cl.exe`, `lib.exe`, and the Windows SDK are available.
+Enable Windows Developer Mode (or run with symlink privileges), because Buck
+uses symlinks for declared inputs. WSL is also supported through the Linux path.
+The Windows ARM64 documentation and audit launchers use upstream x86_64 binaries
+under Windows emulation; the Rust SDK, Buck, and Just run natively.
+
+Use an installed Just or the repository's `dotslash bins/just` launcher.
 The latter requires DotSlash and selects the pinned Just version.
 No repository-specific PATH changes or bootstrap downloads are needed.
+`scripts/bootstrap.sh` invokes the same prerequisite check through pinned Just.
 
 ```sh
-./just doctor
-./just build
-./just check
-./just demo
-./just site
+dotslash bins/just doctor
+dotslash bins/just build
+dotslash bins/just check
+dotslash bins/just demo
+dotslash bins/just site
 ```
 
 `doctor` checks the host and required system commands without starting a build.
@@ -52,17 +66,17 @@ All related workflows use this action and invoke `just` directly.
 
 | Command | Purpose |
 | --- | --- |
-| `./just doctor` | Check host prerequisites without building |
-| `./just build` | Build the Rust task entrypoint |
-| `./just test` | Run unit, integration, and documentation tests |
-| `./just lint` | Run Clippy with warnings denied |
-| `./just fmt-check` | Check Rust formatting |
-| `./just check` | Run formatting, tests, and Clippy |
-| `./just demo` | Exercise local acquisition, import, and receiving |
-| `./just site` | Generate documentation and submitted-result pages |
-| `./just zizmor` | Audit GitHub Actions |
+| `dotslash bins/just doctor` | Check host prerequisites without building |
+| `dotslash bins/just build` | Build the Rust task entrypoint |
+| `dotslash bins/just test` | Run unit, integration, and documentation tests |
+| `dotslash bins/just lint` | Run Clippy with warnings denied |
+| `dotslash bins/just fmt-check` | Check Rust formatting |
+| `dotslash bins/just check` | Run formatting, tests, and Clippy |
+| `dotslash bins/just demo` | Exercise local acquisition, import, and receiving |
+| `dotslash bins/just site` | Generate documentation and submitted-result pages |
+| `dotslash bins/just zizmor` | Audit GitHub Actions |
 
-Set `GH_TOKEN` for Zizmor's online audits, or use `./just zizmor --offline`
+Set `GH_TOKEN` for Zizmor's online audits, or use `dotslash bins/just zizmor --offline`
 for checks that do not need GitHub access.
 CI runs the same auditor version with its read-only GitHub token.
 Workflows default to `permissions: {}` and grant permissions per job.
@@ -76,6 +90,12 @@ Wasm SDKs and Rust documentation archives are not extracted.
 Each Cargo action uses a fresh Cargo home, a generated directory source,
 `--locked --offline`, and explicit compiler paths.
 Only dependency-fetch actions need network access.
+
+`toolchains/rust/releases.bzl` also records WASI Preview 1 and Preview 2 standard
+libraries. The `wasm32-wasip3` entry remains commented out because the pinned
+stable release does not publish it; enable it only with an official checksum
+when upgrading to a stable release that includes the target. Native exchange
+commands do not download these Wasm standard libraries.
 Cargo retains its feature, build-script, and procedural-macro dependency graph.
 
 Builds and checks are cached Buck actions.
@@ -89,9 +109,9 @@ are not guaranteed.
 
 ## Updating dependencies
 
-After updating `rust/Cargo.lock`, run `./just buck-lock` to regenerate
+After updating `rust/Cargo.lock`, run `dotslash bins/just buck-lock` to regenerate
 `third-party/crates.bzl`.
-Use `./just xtask buck-lock --check` to verify that they agree.
+Use `dotslash bins/just xtask buck-lock --check` to verify that they agree.
 
 New packages must appear in the Buck declarations before Buck can build xtask.
 To regenerate declarations when adding a package, use `cargo xtask buck-lock`

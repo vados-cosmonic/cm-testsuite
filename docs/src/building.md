@@ -22,3 +22,8 @@ Updating Rust dependencies requires updating `rust/Cargo.lock`, then running `./
 For a Cargo workflow, install the version specified by `rust/rust-toolchain.toml`, enter `rust/`, and use `cargo xtask`, `cargo test --workspace --locked`, and `cargo clippy --workspace --all-targets --locked -- -D warnings`. The library APIs and command behavior are the same.
 
 The mdBook is generated under `site-out/docs/`; the submitted-results page is separate at `site-out/results/`. `site-out/index.html` links to both using relative paths, supporting project Pages URLs. CI builds the site without publishing. The Pages workflow is manually dispatched and requires repository Pages configuration.
+
+Run `./just zizmor` to audit GitHub Actions with pinned Zizmor 1.32.0.
+Set `GH_TOKEN` for online audits, or use `./just zizmor --offline` for local checks.
+CI runs the same version with its read-only GitHub token.
+Workflows default to `permissions: {}` and grant permissions per job.

@@ -27,3 +27,7 @@ docs: bootstrap
     {{buck}} run //:xtask -- docs
 site: bootstrap
     {{buck}} run //:xtask -- site
+
+# Audit workflow security with the same pinned version used in CI.
+zizmor *args: bootstrap
+    ./zizmor "$@" .github

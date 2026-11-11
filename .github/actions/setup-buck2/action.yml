@@ -1,0 +1,21 @@
+name: setup-buck2
+description: Install repository launchers and cache the checksum-pinned Buck2 tool downloads.
+
+runs:
+  using: composite
+  steps:
+    - name: Set up launchers
+      uses: $/.github/actions/setup-tools
+
+    - name: Cache pinned tool downloads
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.cache/dotslash
+          ~/Library/Caches/dotslash
+          ~/AppData/Local/dotslash
+        key: dotslash-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bins/*') }}
+
+    - name: Verify the repository Buck2 pin
+      shell: bash
+      run: dotslash bins/buck2 --version

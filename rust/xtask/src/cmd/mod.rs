@@ -14,3 +14,5 @@ pub mod release;
 pub mod results_import;
 pub mod site;
 pub mod validate;
+
+pub mod buck_artifacts;

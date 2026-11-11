@@ -48,8 +48,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up tools
-        uses: $/.github/actions/setup-tools
+      - name: Set up Buck2
+        uses: $/.github/actions/setup-buck2
 
       - name: Validate the exact release checkout
         id: meta
@@ -146,8 +146,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up tools
-        uses: $/.github/actions/setup-tools
+      - name: Set up Buck2
+        uses: $/.github/actions/setup-buck2
 
       - name: Update related issues or PRs
         env:

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run the Cargo workspace using only Buck-provided Rust and registry inputs.
 # Arguments are SDK, workspace, mode, output, and a crate-input manifest.
-# Publish either the xtask executable or a check log; discard temporary build state.
+# Publish a reusable executable/test bundle or a check log; discard Cargo caches.
 set -euo pipefail
 
 if (($# != 5)); then
@@ -116,38 +116,28 @@ mkdir -p "$(dirname "$out")"
 cd "$work/source"
 
 # Keep check logs as Buck outputs and print failures before the temporary workspace
-# is removed. A successful build publishes only the executable used by Buck run.
+# is removed. Compilation publishes the bundle consumed by Buck run and Buck test.
 case "$mode" in
     build)
-        "$sdk/bin/cargo$suffix" build --locked --offline -p xtask
-        cp "$CARGO_TARGET_DIR/debug/xtask$suffix" "$out"
-        ;;
+        # Compile the CLI and every test harness together. Cargo shares the resolved
+        # dependency graph; downstream Buck tests never compile it a second time.
+        "$sdk/bin/cargo$suffix" build --locked --offline --workspace --all-targets \
+            --message-format=json-render-diagnostics > "$work/artifacts.jsonl"
 
-    github-test)
-        # Compile the ignored live harness without executing it. Buck run starts
-        # the resulting binary later, outside the cached build action.
-        "$sdk/bin/cargo$suffix" test --locked --offline -p xtask --test github_live --no-run
-        candidates=()
-        for candidate in "$CARGO_TARGET_DIR"/debug/deps/github_live-*"$suffix"; do
-            # Cargo also emits .d and .pdb files beside the executable.
-            name=$(basename -- "$candidate")
-            if [[ -f "$candidate" && ( "$name" == *.exe || "$name" != *.* ) ]]; then
-                candidates+=("$candidate")
-            fi
-        done
-        if ((${#candidates[@]} != 1)); then
-            printf 'Expected one live GitHub test executable, found %s\n' "${#candidates[@]}" >&2
-            exit 1
+        # Ask Cargo for the exact rustdoc commands, but record them rather than
+        # executing tests in a cached build action. Version probes still reach the
+        # real rustdoc; the test runner executes these commands under buck test.
+        export CM_REAL_RUSTDOC="$RUSTDOC"
+        export RUSTDOC="$CARGO_TARGET_DIR/debug/rustdoc-capture$suffix"
+        export CM_DOC_CAPTURE="$work/doctests"
+        if [[ -n "$suffix" ]]; then
+            export CM_DOC_CAPTURE="$(cygpath -m "$CM_DOC_CAPTURE")"
         fi
-        cp "${candidates[0]}" "$out"
-        ;;
+        "$sdk/bin/cargo$suffix" test --locked --offline --workspace --doc
 
-    test)
-        "$sdk/bin/cargo$suffix" test --locked --offline --workspace > "$out" 2>&1 || {
-            cat "$out"
-            exit 1
-        }
-        cat "$out"
+        # Export only runtime and rustdoc inputs, omitting Cargo's mutable caches.
+        "$CARGO_TARGET_DIR/debug/xtask$suffix" buck-artifacts export \
+            --work "$work" --sdk "$sdk" --out "$out"
         ;;
 
     lint)

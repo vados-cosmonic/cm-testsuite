@@ -50,8 +50,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Set up tools
-        uses: $/.github/actions/setup-tools
+      - name: Set up Buck2
+        uses: $/.github/actions/setup-buck2
       # Build before any step receives a token, so dependency build scripts never see it.
 
       - name: Build release tooling

@@ -40,8 +40,8 @@ jobs:
           path: recipient-checkout
           persist-credentials: false
 
-      - name: Set up tools
-        uses: $/.github/actions/setup-tools
+      - name: Set up Buck2
+        uses: $/.github/actions/setup-buck2
 
       - name: Plan against the target default branch
         env:

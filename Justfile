@@ -44,7 +44,7 @@ doctor: _launcher (_require "git" "tar" "gzip" "xz" "mktemp" "cp" "mkdir" "rm" "
 _require +tools:
     @missing=''; for tool in "$@"; do if ! command -v "$tool" >/dev/null 2>&1; then missing="$missing $tool"; fi; done; if [[ -n "$missing" ]]; then printf 'Missing required tools:%s\n' "$missing" >&2; printf '%s\n' 'Install them using your system package manager and ensure they are on PATH.' 'See docs/src/building.md for prerequisites. No build has been started.' >&2; exit 1; fi
 
-# Build the command entrypoint using Buck's downloaded Rust SDK.
+# Compile shared CLI and test artifacts using Buck's downloaded Rust SDK.
 [group('build')]
 build: doctor
     {{buck}} build {{host_config}} //:xtask
@@ -52,7 +52,7 @@ build: doctor
 # Run workspace unit, integration, documentation, and example E2E tests.
 [group('test')]
 test: doctor
-    {{buck}} build {{host_config}} //:tests
+    {{buck}} test {{host_config}} //:tests
 
 # Create temporary private GitHub repositories and exercise the live exchange.
 [group('test')]
@@ -72,7 +72,19 @@ fmt-check: doctor
 
 # Run the same formatting, test, and lint checks used in CI.
 [group('ci')]
-check: fmt-check test lint
+check: fmt-check lint build test
+
+# Compile shared CLI/test artifacts and save Buck's machine-readable build report.
+[group('ci')]
+ci-build: doctor
+    mkdir -p .ci-results
+    {{buck}} build {{host_config}} //:artifacts //:xtask --build-report .ci-results/build.json
+
+# Execute all offline test suites from those artifacts and retain Buck diagnostics.
+[group('ci')]
+ci-test: doctor
+    mkdir -p .ci-results
+    {{buck}} test {{host_config}} //:tests --build-report .ci-results/test-build.json --command-report-path .ci-results/test-command.json
 
 # Run an exchange command; pass --help to see typed command arguments.
 [group('meta')]

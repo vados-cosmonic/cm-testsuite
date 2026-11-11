@@ -64,11 +64,11 @@ DotSlash verifies launcher downloads, and Buck verifies Rust and crate inputs.
 | Command | Purpose |
 | --- | --- |
 | `dotslash bins/just doctor` | Check host prerequisites without building |
-| `dotslash bins/just build` | Build the Rust task entrypoint |
+| `dotslash bins/just build` | Compile the shared CLI and test artifacts |
 | `dotslash bins/just test` | Run unit, integration, and documentation tests |
 | `dotslash bins/just lint` | Run Clippy with warnings denied |
 | `dotslash bins/just fmt-check` | Check Rust formatting |
-| `dotslash bins/just check` | Run formatting, tests, and Clippy |
+| `dotslash bins/just check` | Run formatting, Clippy, compilation, and Buck test suites |
 | `dotslash bins/just demo` | Exercise local acquisition, import, and receiving |
 | `dotslash bins/just site` | Generate documentation and submitted-result pages |
 | `dotslash bins/just zizmor` | Audit GitHub Actions |
@@ -95,14 +95,44 @@ when upgrading to a stable release that includes the target. Native exchange
 commands do not download these Wasm standard libraries.
 Cargo retains its feature, build-script, and procedural-macro dependency graph.
 
-Builds and checks are cached Buck actions.
-Changing a declared source or lockfile invalidates the action.
-Buck wraps the Cargo workspace rather than exposing individual crates or tests
-as native Buck targets.
+Compilation and lint checks are cached Buck actions. Changing a declared source
+or lockfile invalidates the relevant action. The `//:artifacts` target compiles the
+workspace once and publishes a relocatable bundle containing xtask, unit and
+integration harnesses, and the libraries and sources needed by rustdoc.
+`//:xtask` selects its executable from that bundle.
+
+`buck2 test //:tests` runs the `//:unit-tests`, `//:integration-tests`, and
+`//:doc-tests` suites. These are test executions, not cached build steps: a repeat
+invocation reuses compilation but executes the suites again. Cargo supplies the
+exact rustdoc arguments during compilation; rustdoc builds and runs documentation
+examples only when the documentation suite executes. The live GitHub suite is
+excluded and remains behind `just test-github` and its explicit opt-in.
+
+Cargo retains responsibility for individual crate compilation. Buck owns the
+workspace artifact and test-suite graph; this does not yet provide per-crate
+incremental actions or remote execution.
 
 The host C toolchain and operating system remain external prerequisites.
 The build is not fully hermetic, and byte-identical outputs across machines
 are not guaranteed.
+
+## Continuous integration
+
+Each platform job runs formatting and Clippy before compiling `//:artifacts`.
+`just ci-build` writes Buck's build report to `.ci-results/build.json`, and
+`just ci-test` executes all offline suites with separate build and command reports.
+The demo, release-tool checks, and site generation reuse the compiled xtask in the
+same job. CI uploads the reports alongside the generated site preview.
+
+The reusable `.github/actions/setup-buck2` action installs Just and DotSlash,
+restores DotSlash's platform-specific download cache, and verifies the repository's
+Buck2 launcher. Cache keys include the operating system, architecture, and launcher
+contents. It deliberately uses the repository pin: the [installer linked by Buck2](https://github.com/dtolnay/install-buck2)
+currently downloads a floating release and selects x86_64 on Windows.
+
+Only pinned tool downloads are cached across workflow runs. Sharing Buck action
+results across machines requires a [remote cache service](https://buck2.build/docs/users/remote_execution/);
+copying a running daemon's `buck-out` directory is not configured as a substitute.
 
 ## Updating dependencies
 

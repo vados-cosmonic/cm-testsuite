@@ -10,3 +10,5 @@
 /recipient-checkout/
 
 /node_modules/
+
+/.ci-results/

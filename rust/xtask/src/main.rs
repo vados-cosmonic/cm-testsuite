@@ -1,5 +1,6 @@
 //! Parse command-line arguments and dispatch to typed command handlers.
 
+mod build_artifacts;
 mod cmd;
 mod io;
 
@@ -18,6 +19,10 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Task {
+    /// Export or run the compiled artifacts used by Buck.
+    #[command(hide = true)]
+    BuckArtifacts(cmd::buck_artifacts::Args),
+
     /// Repository release preparation, tagging, and post-release updates.
     Release(cmd::release::Args),
 
@@ -68,6 +73,7 @@ fn main() -> Result<()> {
     let root = cli.root.canonicalize()?;
 
     match cli.command {
+        Task::BuckArtifacts(args) => cmd::buck_artifacts::run(args),
         Task::Release(args) => cmd::release::run(&root, args),
         Task::LintCommits(args) => cmd::lint_commits::run(&root, args),
         Task::Acquire(args) => cmd::acquire::run(&root, args),

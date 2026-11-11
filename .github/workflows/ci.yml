@@ -47,14 +47,20 @@ jobs:
         with:
           arch: ${{ runner.arch == 'ARM64' && 'amd64_arm64' || 'amd64' }}
 
-      - name: Set up tools
-        uses: $/.github/actions/setup-tools
+      - name: Set up Buck2
+        uses: $/.github/actions/setup-buck2
 
-      - name: Format, test, and lint through the downloaded Rust toolchain
-        run: just check
+      - name: Check formatting before compilation
+        run: just fmt-check
 
-      - name: Build the task entrypoint
-        run: just build
+      - name: Lint the workspace
+        run: just lint
+
+      - name: Build shared CLI and test artifacts
+        run: just ci-build
+
+      - name: Run offline suites through Buck2
+        run: just ci-test
 
       - name: Verify Cargo/Buck inputs and the local flow
         run: |
@@ -74,3 +80,11 @@ jobs:
         with:
           name: site-preview-${{ matrix.runner }}
           path: site-out/
+
+      - name: Upload Buck2 reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: buck2-reports-${{ matrix.runner }}
+          path: .ci-results/
+          if-no-files-found: ignore

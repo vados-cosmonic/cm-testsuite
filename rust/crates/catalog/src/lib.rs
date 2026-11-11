@@ -20,6 +20,16 @@ pub fn sha256(bytes: &[u8]) -> String {
 pub fn json<T: Serialize>(value: &T) -> Result<String> {
     Ok(serde_json::to_string_pretty(value)? + "\n")
 }
+/// Hash a record's canonical representation for exchange integrity checks.
+///
+/// ```
+/// use cm_catalog::{digest, validate_sha};
+/// let record = vec!["component-model", "arithmetic"];
+/// let hash = digest(&record)?;
+/// validate_sha(&hash)?;
+/// assert_eq!(hash, digest(&record)?);
+/// # Ok::<(), anyhow::Error>(())
+/// ```
 pub fn digest<T: Serialize>(value: &T) -> Result<String> {
     Ok(sha256(json(value)?.as_bytes()))
 }

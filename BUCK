@@ -1,5 +1,5 @@
 load("@toolchains//rust:defs.bzl", "host_build_tools")
-load("//build-support:cargo.bzl", "cargo_workspace")
+load("//build-support:cargo.bzl", "cargo_binary", "cargo_test", "cargo_workspace")
 load("//third-party:crates.bzl", "CHECKSUMS", "CRATES")
 
 _TOOLS = host_build_tools()
@@ -8,7 +8,7 @@ _SOURCES = {path[len("rust/"):]: path for path in glob(["rust/Cargo.toml", "rust
 _SOURCES.update({path: path for path in glob(["examples/**", "examples/**/.cm-testsuite.toml"])})
 
 cargo_workspace(
-    name = "xtask",
+    name = "artifacts",
     mode = "build",
     srcs = _SOURCES,
     crates = CRATES,
@@ -18,14 +18,23 @@ cargo_workspace(
     visibility = ["PUBLIC"],
 )
 
-cargo_workspace(
-    name = "tests",
-    mode = "test",
-    srcs = _SOURCES,
-    crates = CRATES,
-    checksums = CHECKSUMS,
-    bash = _TOOLS.bash,
+cargo_binary(
+    name = "xtask",
+    artifacts = ":artifacts",
+    visibility = ["PUBLIC"],
+)
+
+[cargo_test(
+    name = suite + "-tests",
+    suite = suite,
+    artifacts = ":artifacts",
     env = _TOOLS.env,
+    visibility = ["PUBLIC"],
+) for suite in ["unit", "integration", "doc"]]
+
+native.test_suite(
+    name = "tests",
+    test_deps = [":unit-tests", ":integration-tests", ":doc-tests"],
     visibility = ["PUBLIC"],
 )
 
@@ -51,14 +60,11 @@ cargo_workspace(
     visibility = ["PUBLIC"],
 )
 
-# Compile the opt-in live harness; GitHub operations occur only under buck run.
-cargo_workspace(
+# Live publication stays outside the ordinary test suite and requires an opt-in.
+cargo_test(
     name = "github-e2e",
-    mode = "github-test",
-    srcs = _SOURCES,
-    crates = CRATES,
-    checksums = CHECKSUMS,
-    bash = _TOOLS.bash,
+    suite = "live",
+    artifacts = ":artifacts",
     env = _TOOLS.env,
     visibility = ["PUBLIC"],
 )

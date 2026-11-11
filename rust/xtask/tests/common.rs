@@ -96,7 +96,10 @@ pub fn commit(root: &Path) -> String {
 
 /// Build an offline command that cannot accidentally inherit publication credentials.
 pub fn cli(root: &Path) -> Command {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_xtask"));
+    let mut command = Command::new(
+        std::env::var_os("CM_TESTSUITE_XTASK")
+            .unwrap_or_else(|| env!("CARGO_BIN_EXE_xtask").into()),
+    );
     command
         .arg("--root")
         .arg(root)

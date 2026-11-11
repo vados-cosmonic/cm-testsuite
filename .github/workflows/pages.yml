@@ -26,8 +26,8 @@ jobs:
           ref: main
           persist-credentials: false
 
-      - name: Set up tools
-        uses: $/.github/actions/setup-tools
+      - name: Set up Buck2
+        uses: $/.github/actions/setup-buck2
 
       - name: Build site
         run: just site

@@ -14,12 +14,12 @@ See the [architecture](docs/src/architecture.md) and
 ## Try it locally
 
 The supported build host is Linux x86_64.
-Install Git, a C compiler/linker and archiver, Bash, curl, tar, xz, and coreutils.
+Install [DotSlash](https://dotslash-cli.com/docs/installation/), Git,
+a C compiler/linker and archiver, Bash, tar, xz, and coreutils.
 Rust does **not** need to be installed for the Buck path.
 
 ```sh
-bash scripts/bootstrap.sh
-export PATH="$PWD/.tools:$PATH"
+./just doctor
 ./just build
 ./just demo
 ./just check
@@ -31,7 +31,8 @@ It verifies that repeating both plans produces no changes.
 No network or credentials are used by the demo itself; cold tool/dependency downloads require network access.
 
 Buck downloads checksum-pinned Rust 1.98.1 and uses Cargo's locked dependency graph with declared crate archives and offline build actions.
-Buck, Just, DotSlash, mdBook, and Wasmono are pinned.
+Buck, Just, mdBook, Zizmor, and Wasmono are pinned.
+DotSlash is a system prerequisite.
 The compiler's host C toolchain remains a prerequisite.
 See [build details](docs/src/building.md).
 
@@ -79,7 +80,8 @@ Publication is limited to 200 changed files and same-repository branches.
 Local application coordinates this tool with a lock and rolls back ordinary write errors; it is not crash-atomic across multiple files and cannot lock out unrelated editors.
 
 CI checks changes without secrets.
-Run the exchange and Pages workflows manually when you want to publish proposals
-or update the hosted documentation and results.
+Run the exchange workflows manually when you want to publish proposals.
+Pages publishes documentation and results on pushes to `main`;
+manual publication is also available.
 
 Licensed under Apache-2.0. See [third-party attribution](THIRD_PARTY.md).

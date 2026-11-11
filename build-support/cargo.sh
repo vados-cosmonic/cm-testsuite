@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 # Run the Cargo workspace using only Buck-provided Rust and registry inputs.
-# Arguments are SDK, workspace, mode, output, then name/archive/checksum triples.
+# Arguments are SDK, workspace, mode, output, and a crate-input manifest.
 # Publish either the xtask executable or a check log; discard temporary build state.
 set -euo pipefail
+
+if (($# != 5)); then
+    printf '%s\n' 'Usage: cargo.sh SDK WORKSPACE MODE OUTPUT CRATE_INPUTS' >&2
+    exit 2
+fi
 
 # Convert Windows artifact paths before handing them to POSIX file utilities.
 # On other hosts, retain their spelling so spaces and unusual path names survive.
@@ -21,7 +26,7 @@ mode=$3
 output_path=$(as_shell_path "$4")
 mkdir -p "$(dirname -- "$output_path")"
 out=$(cd -- "$(dirname -- "$output_path")" && pwd)/$(basename -- "$output_path")
-shift 4
+crate_inputs=$(as_shell_path "$5")
 
 # Each action gets its own writable workspace and Cargo state. Dereference Buck's
 # source symlinks so Cargo never writes into the declared input tree.
@@ -33,16 +38,19 @@ cp -LR "$source/." "$work/source/"
 # Buck already verifies each registry archive against Cargo.lock. Cargo's
 # directory-source metadata records that package checksum; the empty file map
 # avoids recomputing per-file checksums for these verified, freshly copied inputs.
-while (($#)); do
-    name=$1
-    archive=$(as_shell_path "$2")
-    checksum=$3
-    shift 3
+# Each entry occupies three lines: package name, archive path, and checksum.
+# Reading literal lines preserves spaces/backslashes without shell evaluation.
+while IFS= read -r name; do
+    if ! IFS= read -r archive || ! IFS= read -r checksum; then
+        printf 'Incomplete crate-input entry for %s\n' "$name" >&2
+        exit 1
+    fi
+    archive=$(as_shell_path "$archive")
 
     mkdir -p "$work/vendor/$name"
     cp -R "$archive/." "$work/vendor/$name/"
     printf '{"files":{},"package":"%s"}\n' "$checksum" > "$work/vendor/$name/.cargo-checksum.json"
-done
+done < "$crate_inputs"
 
 # Native Windows tools need drive-letter paths; POSIX hosts keep their usual paths.
 # Retain the caller's compiler environment (MSVC developer shell or Xcode tools).
@@ -53,6 +61,10 @@ if command -v cygpath >/dev/null 2>&1; then
     vendor=$(cygpath -m "$vendor")
 fi
 
+# Escape the path as a TOML basic string, including quotes in checkout/user names.
+vendor_toml=${vendor//\\/\\\\}
+vendor_toml=${vendor_toml//\"/\\\"}
+
 # Replace crates.io with the declared inputs and disable network access. An
 # undeclared dependency must fail instead of resolving from a developer's cache.
 cat > "$work/cargo-home/config.toml" <<CONFIG
@@ -60,7 +72,7 @@ cat > "$work/cargo-home/config.toml" <<CONFIG
 replace-with = "pinned-inputs"
 
 [source.pinned-inputs]
-directory = '$vendor'
+directory = "$vendor_toml"
 
 [net]
 offline = true

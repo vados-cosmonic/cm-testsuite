@@ -1,5 +1,11 @@
 # Participation
 
-No sources or publishers are enrolled automatically. The first draft selects source repositories and manifest overrides through explicit CLI/workflow inputs. A persistent discovery registry and scheduled polling are future work.
+Select source repositories and manifest paths through the acquisition command
+or the import workflow inputs.
+See the [workflow guide](../docs/src/workflow.md#import) for usage.
 
-`publishers.json` is the reviewed list of engine-result publisher identifiers. It starts empty. Membership is an admission policy, not a signature verification mechanism.
+`publishers.json` lists the identifiers allowed to submit engine-result reports.
+Review changes to this list before admitting reports from a new publisher.
+Membership controls admission; it does not verify a report's signature or origin.
+See the [result-submission guide](../docs/src/results.md) for the report format
+and admission process.

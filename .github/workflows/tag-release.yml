@@ -42,8 +42,8 @@ jobs:
       proceed: ${{ steps.event.outputs.proceed || steps.manual.outputs.proceed }}
       tag: ${{ steps.event.outputs.tag || steps.manual.outputs.tag }}
     steps:
-      # Run the trusted main tooling; the xtask validates the target's committed files.
 
+      # Run the trusted main tooling; the xtask validates the target's committed files.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
@@ -52,8 +52,8 @@ jobs:
 
       - name: Set up tools
         uses: $/.github/actions/setup-tools
-      # Build before any step receives a token, so dependency build scripts never see it.
 
+      # Build before any step receives a token, so dependency build scripts never see it.
       - name: Build release tooling
         run: just build
 

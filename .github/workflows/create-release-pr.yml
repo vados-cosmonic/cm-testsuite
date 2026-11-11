@@ -56,10 +56,10 @@ jobs:
           just check
           just xtask buck-lock --check
           git diff --check
+
       # Mint the write token only after the build, so build steps never see it.
       # Unlike GITHUB_TOKEN, a GitHub App token starts pull_request workflows
       # on the release PR, so required checks run.
-
       - name: Federate a release PR token
         id: octo-sts
         uses: octo-sts/action@f603d3be9d8dd9871a265776e625a27b00effe05 # v1.1.1

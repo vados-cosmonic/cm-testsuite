@@ -44,15 +44,9 @@ receives tests from its peers. The flow checks exact delivered bytes, preserves
 original source files, and verifies that repeated plans produce no changes.
 It runs without GitHub credentials or network access once build inputs are cached.
 
-Run `dotslash bins/just check` to execute the checks, or `dotslash bins/just site`
-to build the documentation and results pages under `site-out/`. Developers who
-already have the pinned Rust version can use the same commands through Cargo:
-
-```sh
-cd rust
-cargo xtask --help
-cargo test --workspace --locked
-```
+Run `dotslash bins/just site` to build browsable documentation and results pages
+under `site-out/`. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup
+and checks.
 
 ## Main operations
 

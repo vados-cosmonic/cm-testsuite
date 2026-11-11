@@ -10,6 +10,5 @@ project directory, copies it into `.demo/`, and exercises acquisition, catalog
 import, validation, and receiving. It verifies exact delivered bytes, preservation
 of original files, and empty plans on repeated runs. Source examples stay untouched.
 
-`dotslash bins/just test` runs this flow as an E2E test. New example directories
-are enrolled automatically: each must have a valid `.cm-testsuite.toml`, contribute
-at least one test, and opt into receiving another project's tests.
+See [CONTRIBUTING.md](../CONTRIBUTING.md#adding-examples-and-tests) for adding
+example projects and running their E2E checks.

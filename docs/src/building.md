@@ -58,13 +58,6 @@ DotSlash verifies launcher downloads, and Buck verifies Rust and crate inputs.
 | DotSlash | 0.5.7 | CI; installed separately for local use |
 | cargo-binstall | 1.27.0 | CI tool installation on cache misses |
 
-The shared `.github/actions/setup-tools` action caches Just and DotSlash binaries
-by operating system, architecture, and version.
-On a cache miss, cargo-binstall installs upstream prebuilt binaries.
-The action selects DotSlash's release filename explicitly for each host, avoiding
-compilation during bootstrap.
-All related workflows use this action and invoke `just` directly.
-
 ## Build and check commands
 
 | Command | Purpose |
@@ -81,8 +74,6 @@ All related workflows use this action and invoke `just` directly.
 
 Set `GH_TOKEN` for Zizmor's online audits, or use `dotslash bins/just zizmor --offline`
 for checks that do not need GitHub access.
-CI runs the same auditor version with its read-only GitHub token.
-Workflows default to `permissions: {}` and grant permissions per job.
 
 ## Build isolation
 
@@ -136,8 +127,3 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 The site entrypoint is `site-out/index.html`.
 It links to the mdBook under `site-out/docs/` and submitted engine results under
 `site-out/results/` using relative paths, including on project Pages URLs.
-
-Pull-request CI builds the site without publishing it.
-The `publish-pages` workflow publishes on every push to `main` and also supports
-manual dispatch; a newer run cancels an older run still in progress.
-Repository Pages configuration is required before deployment can succeed.

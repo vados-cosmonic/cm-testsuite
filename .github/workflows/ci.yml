@@ -87,4 +87,5 @@ jobs:
         with:
           name: buck2-reports-${{ matrix.runner }}
           path: .ci-results/
+          include-hidden-files: true
           if-no-files-found: ignore

@@ -2,7 +2,6 @@
 
 mod cmd;
 mod io;
-mod release;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -20,18 +19,10 @@ struct Cli {
 #[derive(Subcommand)]
 enum Task {
     /// Repository release preparation, tagging, and post-release updates.
-    Release {
-        #[command(subcommand)]
-        command: release::Release,
-    },
+    Release(cmd::release::Args),
 
     /// Run commitlint over an exact Git range.
-    LintCommits {
-        #[arg(long)]
-        from: String,
-        #[arg(long)]
-        to: String,
-    },
+    LintCommits(cmd::lint_commits::Args),
 
     /// Read an opted-in manifest and its files from immutable Git snapshots.
     Acquire(cmd::acquire::Args),
@@ -77,8 +68,8 @@ fn main() -> Result<()> {
     let root = cli.root.canonicalize()?;
 
     match cli.command {
-        Task::Release { command } => release::run(&root, command),
-        Task::LintCommits { from, to } => release::lint_commits(&root, &from, &to),
+        Task::Release(args) => cmd::release::run(&root, args),
+        Task::LintCommits(args) => cmd::lint_commits::run(&root, args),
         Task::Acquire(args) => cmd::acquire::run(&root, args),
         Task::PlanImport(args) => cmd::plan_import::run(&root, args),
         Task::Apply(args) => cmd::apply::run(&root, args),

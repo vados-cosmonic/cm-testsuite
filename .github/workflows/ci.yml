@@ -62,6 +62,11 @@ jobs:
           just demo
           just xtask validate
 
+      - name: Check release tooling
+        run: |
+          dotslash bins/git-cliff --version
+          just xtask release metadata --version 0.2.0-rc.1
+
       - name: Build documentation and submitted-results site
         run: just site
 

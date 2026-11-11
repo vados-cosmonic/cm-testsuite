@@ -1,7 +1,9 @@
 name: release
+
 on:
   push:
-    tags: ['cm-testsuite-v*']
+    tags:
+      - 'cm-testsuite-v*'
   workflow_dispatch:
     inputs:
       tag:
@@ -13,51 +15,61 @@ on:
       tag:
         type: string
         required: true
-permissions:
-  contents: read
+
+permissions: {}
+
 concurrency:
   group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
+
 jobs:
+
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
       prerelease: ${{ steps.meta.outputs.prerelease }}
     steps:
+
       - name: Check release tag syntax before checkout
         env:
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           # Full SemVer validation is performed by xtask after checkout.
           [[ "$TAG" =~ ^cm-testsuite-v[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.+-]+)?$ ]]
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/tags/${{ inputs.tag || github.ref_name }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Bootstrap pinned tools
-        run: |
-          bash scripts/bootstrap.sh
-          echo "$PWD/.tools" >> "$GITHUB_PATH"
+
+      - name: Set up tools
+        uses: $/.github/actions/setup-tools
+
       - name: Validate the exact release checkout
         id: meta
         env:
           TAG: ${{ inputs.tag || github.ref_name }}
-        run: ./just xtask release validate --tag "$TAG" --github-output "$GITHUB_OUTPUT"
+        run: just xtask release validate --tag "$TAG" --github-output "$GITHUB_OUTPUT"
+
       - name: Run release checks
         run: |
-          ./just check
-          ./just xtask buck-lock --check
-          ./just demo
-          ./just xtask validate
+          just check
+          just xtask buck-lock --check
+          just demo
+          just xtask validate
+
       - name: Package validated Linux binary and release notes
         env:
           TAG: ${{ steps.meta.outputs.tag }}
           VERSION: ${{ steps.meta.outputs.version }}
         run: |
-          ./buck2 build //:xtask --show-full-output > "$RUNNER_TEMP/xtask-output"
+          dotslash bins/buck2 build //:xtask --show-full-output > "$RUNNER_TEMP/xtask-output"
           binary=$(awk '$1 == "root//:xtask" { $1=""; sub(/^ /, ""); print }' "$RUNNER_TEMP/xtask-output")
           test -x "$binary"
           mkdir -p "$RUNNER_TEMP/package" "$RUNNER_TEMP/release-artifacts"
@@ -67,24 +79,28 @@ jobs:
           cd "$RUNNER_TEMP/release-artifacts"
           sha256sum ./*.tar.gz > SHA256SUMS
           cd "$GITHUB_WORKSPACE"
-          ./just xtask release extract-latest-changelog-section --version "$VERSION" --out "$RUNNER_TEMP/release-artifacts/RELEASE_NOTES.md"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+          just xtask release extract-latest-changelog-section --version "$VERSION" --out "$RUNNER_TEMP/release-artifacts/RELEASE_NOTES.md"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-${{ steps.meta.outputs.tag }}
           path: ${{ runner.temp }}/release-artifacts/
           if-no-files-found: error
           retention-days: 7
+
   publish:
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
     steps:
+
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: release-${{ needs.build.outputs.tag }}
           path: release-artifacts
+
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -110,8 +126,10 @@ jobs:
           fi
 
   notify:
-    needs: [build, publish]
-    runs-on: ubuntu-24.04
+    needs:
+      - build
+      - publish
+    runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
       contents: read
@@ -121,17 +139,18 @@ jobs:
       group: release-notifications
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/tags/${{ needs.build.outputs.tag }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Bootstrap pinned tools
-        run: |
-          bash scripts/bootstrap.sh
-          echo "$PWD/.tools" >> "$GITHUB_PATH"
+
+      - name: Set up tools
+        uses: $/.github/actions/setup-tools
+
       - name: Update related issues or PRs
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TAG: ${{ needs.build.outputs.tag }}
-        run: ./just xtask release post-release-issue-update --repository "$GITHUB_REPOSITORY" --tag "$TAG" --apply
+        run: just xtask release post-release-issue-update --repository "$GITHUB_REPOSITORY" --tag "$TAG" --apply

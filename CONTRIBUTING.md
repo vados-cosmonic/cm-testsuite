@@ -74,3 +74,7 @@ Use GitHub-compatible admonitions for warnings and tables for pinned versions.
 Explain the behavior changed, why it matters, and the checks you ran. Use
 Conventional Commits with a concise title. Keep `.llm/` plans and working notes
 local, and avoid committing generated build output or credentials.
+
+For commit-message checks, install Node.js 24 or newer and run
+`npm ci --ignore-scripts`. The [release guide](docs/src/releases.md#commit-messages)
+lists the allowed Conventional Commit types and scopes and the local lint command.

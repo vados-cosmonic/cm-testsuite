@@ -1,13 +1,19 @@
-//! CLI adapters for repository hygiene and release automation.
-use anyhow::{Context, Result, ensure};
+//! Typed adapters for release preparation, tagging, and notifications.
+
+use anyhow::{Result, ensure};
 use clap::Subcommand;
 use cm_release::{Metadata, github, history};
 use std::{
     fs,
     io::Write,
     path::{Path, PathBuf},
-    process::Command,
 };
+
+#[derive(clap::Args)]
+pub struct Args {
+    #[command(subcommand)]
+    command: Release,
+}
 
 #[derive(Subcommand)]
 pub enum Release {
@@ -82,6 +88,7 @@ pub enum Release {
         apply: bool,
     },
 }
+/// Print validated workflow metadata and optionally append Actions outputs.
 fn emit(meta: &Metadata, output: Option<&Path>) -> Result<()> {
     print!("{}", meta.outputs());
     if let Some(path) = output {
@@ -93,15 +100,17 @@ fn emit(meta: &Metadata, output: Option<&Path>) -> Result<()> {
     }
     Ok(())
 }
+/// Require caller credentials only for operations that perform writes.
 fn client(apply: bool) -> Result<cm_github::Client> {
     let token = std::env::var("GITHUB_TOKEN")
         .ok()
         .filter(|s| !s.trim().is_empty());
     ensure!(!apply || token.is_some(), "--apply requires GITHUB_TOKEN");
-    Ok(cm_github::Client::new(token))
+    cm_github::Client::new(token)
 }
-pub fn run(root: &Path, task: Release) -> Result<()> {
-    match task {
+/// Run the selected release operation with explicit mutation flags.
+pub fn run(root: &Path, args: Args) -> Result<()> {
+    match args.command {
         Release::Metadata {
             version,
             github_output,
@@ -201,27 +210,5 @@ pub fn run(root: &Path, task: Release) -> Result<()> {
             }
         }
     }
-    Ok(())
-}
-
-pub fn lint_commits(root: &Path, from: &str, to: &str) -> Result<()> {
-    let from = history::resolve(root, from)?;
-    let to = history::resolve(root, to)?;
-    let status = Command::new("npm")
-        .current_dir(root)
-        .args([
-            "exec",
-            "--no",
-            "--",
-            "commitlint",
-            "--from",
-            &from,
-            "--to",
-            &to,
-            "--verbose",
-        ])
-        .status()
-        .context("install Node.js and run npm ci before linting commits")?;
-    ensure!(status.success(), "commitlint rejected one or more commits");
     Ok(())
 }

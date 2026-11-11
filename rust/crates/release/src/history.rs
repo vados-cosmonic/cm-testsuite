@@ -35,11 +35,12 @@ pub fn resolve(root: &Path, reference: &str) -> Result<String> {
 }
 
 pub fn changelog(root: &Path, meta: &Metadata) -> Result<String> {
-    let tool = root.join("git-cliff");
-    let output = Command::new(&tool)
+    let tool = root.join("bins/git-cliff");
+    let output = Command::new("dotslash")
+        .arg(&tool)
         .arg("--version")
         .output()
-        .context("bootstrap DotSlash before preparing a release")?;
+        .context("install DotSlash before preparing a release")?;
     ensure!(
         output.status.success() && String::from_utf8_lossy(&output.stdout).trim() == CLIFF_VERSION,
         "expected pinned {CLIFF_VERSION}"
@@ -49,7 +50,8 @@ pub fn changelog(root: &Path, meta: &Metadata) -> Result<String> {
     } else {
         "^cm-testsuite-v[0-9]+\\.[0-9]+\\.[0-9]+(?:\\+.*)?$"
     };
-    let output = Command::new(tool)
+    let output = Command::new("dotslash")
+        .arg(tool)
         .arg("--repository")
         .arg(root)
         .arg("--config")

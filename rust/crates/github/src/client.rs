@@ -17,7 +17,11 @@ pub struct HttpStatus {
 
 impl std::fmt::Display for HttpStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "GitHub {} {} returned HTTP {}; check token permissions, rate limits, and branch state", self.method, self.path, self.status)
+        write!(
+            f,
+            "GitHub {} {} returned HTTP {}; check token permissions, rate limits, and branch state",
+            self.method, self.path, self.status
+        )
     }
 }
 

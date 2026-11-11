@@ -1,5 +1,15 @@
 # Curated WAST
 
-Reviewed imports populate `wast/OWNER/REPOSITORY/NAME.wast` and `metadata/catalog.json`. Do not edit imported files here as if this were their authoritative source. Propose corrections to their originating repositories, then import the accepted revision.
+Reviewed imports populate `wast/OWNER/REPOSITORY/NAME.wast`.
+The [catalog](../metadata/catalog.json) records each file's source repository,
+immutable revision, and content digest.
 
-No real upstream tests are enrolled in this initial draft. `examples/` and `xtask demo` provide local demonstrations.
+> [!WARNING]
+> Imported files are snapshots, not authoritative sources.
+> Propose corrections in the originating repository, then import the accepted revision.
+> Editing a snapshot directly causes its contents to diverge from the catalog digest.
+
+Use `./just xtask validate` from the repository root to check the catalog
+against the imported files.
+See the [import workflow](../docs/src/workflow.md#import) for acquiring,
+planning, and applying updates.

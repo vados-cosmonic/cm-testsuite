@@ -27,6 +27,7 @@ pub struct Sandbox {
     owner: String,
     prefix: String,
     created: Vec<Remote>,
+    keep_repos: bool,
 }
 
 impl Sandbox {
@@ -34,8 +35,15 @@ impl Sandbox {
     pub fn new() -> Result<Self> {
         ensure!(
             std::env::var("CM_TESTSUITE_LIVE_GITHUB").as_deref() == Ok("1"),
-            "set CM_TESTSUITE_LIVE_GITHUB=1 to create and delete private test repositories"
+            "set CM_TESTSUITE_LIVE_GITHUB=1 to create private test repositories"
         );
+        let retention =
+            std::env::var("CM_TESTSUITE_KEEP_GITHUB_REPOS").unwrap_or_else(|_| "0".into());
+        ensure!(
+            matches!(retention.as_str(), "0" | "1"),
+            "CM_TESTSUITE_KEEP_GITHUB_REPOS must be 0 or 1"
+        );
+        let keep_repos = retention == "1";
         let token = match std::env::var("GH_TOKEN").or_else(|_| std::env::var("GITHUB_TOKEN")) {
             Ok(token) if !token.trim().is_empty() => token,
             _ => {
@@ -58,6 +66,7 @@ impl Sandbox {
             owner: String::new(),
             prefix: format!("cm-testsuite-e2e-{stamp}-{}", std::process::id()),
             created: vec![],
+            keep_repos,
         };
         sandbox.check_classic_token_scopes()?;
         let user = sandbox.gh_api("GET", "/user", None)?;
@@ -99,8 +108,12 @@ impl Sandbox {
         // repository administration permissions at each lifecycle operation.
         if let Some(scopes) = scopes.filter(|scopes| scopes.iter().any(|s| !s.is_empty())) {
             ensure!(
-                scopes.contains(&"repo") && scopes.contains(&"delete_repo"),
-                "live tests require repo and delete_repo scopes; no repositories have been created"
+                scopes.contains(&"repo"),
+                "live tests require repo scope; no repositories have been created"
+            );
+            ensure!(
+                self.keep_repos || scopes.contains(&"delete_repo"),
+                "automatic cleanup requires delete_repo scope; set CM_TESTSUITE_KEEP_GITHUB_REPOS=1 for manual cleanup; no repositories have been created"
             );
         }
         Ok(())
@@ -137,7 +150,7 @@ impl Sandbox {
         }
     }
 
-    /// Create under the authenticated user's namespace with an unguessable run prefix.
+    /// Create under the authenticated user's namespace with a unique run prefix.
     pub fn create(&mut self, role: &str) -> Result<Remote> {
         ensure!(
             ["source", "catalog", "recipient"].contains(&role),
@@ -270,8 +283,19 @@ impl Sandbox {
         Ok(())
     }
 
-    /// Delete only verified temporary repositories, retaining failed entries for recovery.
+    /// Retain fixtures when requested, otherwise delete only verified repositories.
     pub fn cleanup(&mut self) -> Result<()> {
+        // Manual-cleanup mode applies equally on success and during unwinding.
+        // Drain the list after reporting so Drop cannot print or delete it again.
+        if self.keep_repos {
+            for repo in self.created.drain(..) {
+                eprintln!(
+                    "Retained for manual deletion: https://github.com/{}",
+                    repo.full_name
+                );
+            }
+            return Ok(());
+        }
         let mut failures = vec![];
         for repo in self.created.clone().into_iter().rev() {
             let result = self.require_owned(&repo).and_then(|()| {

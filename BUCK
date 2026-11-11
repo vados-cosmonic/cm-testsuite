@@ -34,6 +34,7 @@ cargo_binary(
 
 native.test_suite(
     name = "tests",
+    tests = [":unit-tests", ":integration-tests", ":doc-tests"],
     test_deps = [":unit-tests", ":integration-tests", ":doc-tests"],
     visibility = ["PUBLIC"],
 )

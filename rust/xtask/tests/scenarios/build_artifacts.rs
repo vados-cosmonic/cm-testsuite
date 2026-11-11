@@ -90,3 +90,17 @@ fn export_rejects_a_build_without_test_artifacts() {
             .contains("Cargo produced no test executables")
     );
 }
+
+#[test]
+fn rustdoc_arguments_accept_mixed_separators_after_windows_relocation() {
+    let bundle = Path::new(r"\\?\D:\build artifacts");
+    let sdk = Path::new(r"\\?\UNC\server\sdk");
+    assert_eq!(
+        run::expanded(r"dependency=${BUNDLE}/target\debug\deps", bundle, sdk),
+        r"dependency=D:\build artifacts/target\debug\deps",
+    );
+    assert_eq!(
+        run::expanded("${SDK}/bin/rustc.exe", bundle, sdk),
+        r"\\server\sdk/bin/rustc.exe"
+    );
+}

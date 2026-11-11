@@ -12,11 +12,21 @@ pub enum Suite {
     Live,
 }
 
-/// Expand the two artifact roots recorded in documentation test commands.
-fn expanded(value: &str, bundle: &Path, sdk: &Path) -> String {
+/// Render Windows verbatim roots as ordinary paths before appending recorded suffixes.
+fn argument_root(path: &Path) -> String {
+    let value = path.to_string_lossy();
+    if let Some(rest) = value.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{rest}")
+    } else {
+        value.strip_prefix(r"\\?\").unwrap_or(&value).to_owned()
+    }
+}
+
+/// Expand recorded roots without mixing forward slashes into a Windows verbatim path.
+pub(crate) fn expanded(value: &str, bundle: &Path, sdk: &Path) -> String {
     value
-        .replace("${BUNDLE}", &bundle.to_string_lossy())
-        .replace("${SDK}", &sdk.to_string_lossy())
+        .replace("${BUNDLE}", &argument_root(bundle))
+        .replace("${SDK}", &argument_root(sdk))
 }
 
 /// Execute every selected harness, retaining failures instead of stopping at the first.

@@ -58,7 +58,7 @@ or a caller-selected repository as a publication destination.
 
 Install `gh` and authenticate to github.com. The test accepts `GH_TOKEN`, then
 `GITHUB_TOKEN`, or the token from `gh auth token`. A classic token needs `repo`
-and `delete_repo` scopes; fine-grained credentials need permission to create
+scope (plus `delete_repo` for automatic cleanup); fine-grained credentials need permission to create
 private repositories and administer their contents, pull requests, and deletion.
 The test checks classic scopes before creating anything. Ordinary `just test`,
 `just check`, and CI compile this scenario but leave it ignored.
@@ -81,3 +81,15 @@ Cleanup checks each repository's recorded creation ID before deleting it and
 also runs on ordinary test failures. Failed cleanup is reported with exact
 repository names. If the process is forcibly terminated or access is revoked,
 remove those temporary repositories manually after confirming the run has ended.
+
+To retain the repositories for inspection and delete them yourself afterward, set
+`CM_TESTSUITE_KEEP_GITHUB_REPOS=1` as well:
+
+```sh
+CM_TESTSUITE_LIVE_GITHUB=1 CM_TESTSUITE_KEEP_GITHUB_REPOS=1 dotslash bins/just test-github
+```
+
+This mode prints each retained repository URL on success or failure and never
+deletes repositories. It does not require the classic token's `delete_repo` scope.
+All three repositories share the same `cm-testsuite-e2e-<run-suffix>-` prefix,
+followed by `source`, `catalog`, or `recipient`.

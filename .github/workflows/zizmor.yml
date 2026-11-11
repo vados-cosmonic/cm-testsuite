@@ -1,9 +1,10 @@
-name: Audit workflows
+name: audit-workflows
 
 on:
   pull_request:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions: {}

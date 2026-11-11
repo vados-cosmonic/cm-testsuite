@@ -6,6 +6,5 @@
 /docs/book/
 /.demo/
 /.cm-testsuite-write-lock
-/.tools/
 /.cm-testsuite-stage-*/
 /recipient-checkout/

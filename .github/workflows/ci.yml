@@ -1,8 +1,9 @@
-name: Check
+name: check
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
 
 permissions: {}
@@ -24,25 +25,23 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Bootstrap pinned tools
-        run: |
-          bash scripts/bootstrap.sh
-          echo "$PWD/.tools" >> "$GITHUB_PATH"
+      - name: Set up tools
+        uses: $/.github/actions/setup-tools
 
       - name: Format, test, and lint through the downloaded Rust toolchain
-        run: ./just check
+        run: just check
 
       - name: Build the task entrypoint
-        run: ./just build
+        run: just build
 
       - name: Verify Cargo/Buck inputs and the local flow
         run: |
-          ./just xtask buck-lock --check
-          ./just demo
-          ./just xtask validate
+          just xtask buck-lock --check
+          just demo
+          just xtask validate
 
       - name: Build documentation and submitted-results site
-        run: ./just site
+        run: just site
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

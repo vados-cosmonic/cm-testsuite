@@ -253,16 +253,18 @@ fn main() -> Result<()> {
     Ok(())
 }
 fn docs(root: &Path) -> Result<()> {
-    let version = Command::new(root.join("mdbook"))
+    let version = Command::new("dotslash")
+        .arg(root.join("mdbook"))
         .arg("--version")
         .output()
-        .context("run just bootstrap to install DotSlash")?;
+        .context("DotSlash is required; install it and ensure dotslash is on PATH")?;
     ensure!(
         version.status.success()
             && String::from_utf8_lossy(&version.stdout).trim() == "mdbook v0.5.4",
         "expected pinned mdBook 0.5.4"
     );
-    let status = Command::new(root.join("mdbook"))
+    let status = Command::new("dotslash")
+        .arg(root.join("mdbook"))
         .arg("build")
         .arg(root.join("docs"))
         .arg("--dest-dir")

@@ -130,9 +130,31 @@ Buck2 launcher. Cache keys include the operating system, architecture, and launc
 contents. It deliberately uses the repository pin: the [installer linked by Buck2](https://github.com/dtolnay/install-buck2)
 currently downloads a floating release and selects x86_64 on Windows.
 
-Only pinned tool downloads are cached across workflow runs. Sharing Buck action
-results across machines requires a [remote cache service](https://buck2.build/docs/users/remote_execution/);
-copying a running daemon's `buck-out` directory is not configured as a substitute.
+Linux and macOS jobs also use commit-pinned [Rebuck](https://github.com/gilescope/rebuck)
+to run a loopback-only bazel-remote cache and persist its contents through Actions cache.
+The cache has a 4 GiB disk limit per runner variant.
+The `//platforms:ci-cache` execution platform keeps compilation local while allowing
+Buck to download and upload action results through REAPI.
+The setup action writes `.buckconfig.local` before starting Buck;
+local development continues to use the default execution platform.
+Windows keeps the shared build/test flow without this persistent action cache,
+because Rebuck does not support Windows yet.
+
+Cache namespaces include the matrix runner and Buck launcher pin.
+The setup action also records the hosted runner's OS, architecture, image name,
+and image version in the environment of SDK and Cargo actions.
+That environment participates in Buck's action keys, preventing reuse across host
+toolchain updates even when an older cache archive is restored.
+If CI changes the host compiler or SDK after provisioning the runner image,
+extend this identity to describe that change before enabling reuse.
+
+Repeated runs can reuse SDK extraction, formatting, Clippy, and the compiled bundle.
+Every test suite still executes, as do the demo, release checks, and site generation.
+Caching is at workspace-action granularity: changing a Rust source rebuilds the
+bundle and reruns Clippy; it does not provide per-crate reuse across source edits.
+Compare build-step timings and Buck's cache-hit summaries on a fresh runner rerun
+to measure the benefit, including cache download and upload time.
+The existing build and test reports remain available as workflow artifacts.
 
 ## Updating dependencies
 

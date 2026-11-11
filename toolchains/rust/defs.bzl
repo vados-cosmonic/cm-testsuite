@@ -30,9 +30,13 @@ def download_rust_host(name, triple):
     )
 
 def host_build_tools():
-    """Capture the native Windows shell/compiler environment supplied by Just."""
+    """Include CI's host image and Just's Windows tools in action identities."""
+    env = {}
+    cache_identity = read_root_config("host_tools", "cache_identity")
+    if cache_identity:
+        env["CM_BUCK_HOST_IDENTITY"] = cache_identity
     if host_os() != "windows":
-        return struct(bash = "bash", env = {})
+        return struct(bash = "bash", env = env)
 
     bash = read_root_config("host_tools", "bash")
     path = read_root_config("host_tools", "path")
@@ -40,4 +44,5 @@ def host_build_tools():
     include = read_root_config("host_tools", "include")
     if not bash or not path or not lib or not include:
         fail("Use `just build` or `just check` from a Visual Studio Git Bash shell; Just passes the native tools to Buck.")
-    return struct(bash = bash, env = {"PATH": path, "LIB": lib, "INCLUDE": include})
+    env.update({"PATH": path, "LIB": lib, "INCLUDE": include})
+    return struct(bash = bash, env = env)

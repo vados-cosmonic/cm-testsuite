@@ -1,6 +1,7 @@
 /.llm/
 /buck-out/
 /.buckd/
+/.buckconfig.local
 /rust/target/
 /site-out/
 /docs/book/

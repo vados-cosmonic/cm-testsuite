@@ -32,7 +32,7 @@ _launcher: (_require "dotslash")
 
 # Check all build prerequisites without starting a build or installing tools.
 [group('meta')]
-doctor: _launcher (_require "git" "tar" "xz" "mktemp" "cp" "mkdir" "rm" "dirname" "basename")
+doctor: _launcher (_require "git" "tar" "gzip" "xz" "mktemp" "cp" "mkdir" "rm" "dirname" "basename")
     @if [[ "{{os()}}" == windows ]]; then {{quote(just_executable())}} _require cl.exe lib.exe cygpath; else {{quote(just_executable())}} _require cc ar; fi
     @if [[ "{{os()}}" == windows ]] && [[ ! -f "$(dirname -- "$(command -v cl.exe)")/link.exe" ]]; then printf '%s\n' 'MSVC link.exe was not found beside cl.exe. Open Git Bash from the Visual Studio Developer Command Prompt.' >&2; exit 1; fi
     @if [[ "{{os()}}" == windows ]] && [[ -z "${LIB:-}" || -z "${INCLUDE:-}" ]]; then printf '%s\n' 'MSVC LIB and INCLUDE must be set. Open Git Bash from the Visual Studio Developer Command Prompt.' >&2; exit 1; fi

@@ -170,7 +170,7 @@ impl Sandbox {
         Ok(remote)
     }
 
-    /// Retry only read assertions, with a fixed deadline; never repeat a mutation.
+    /// Retry read assertions up to 30 times; never repeat a mutation.
     pub fn wait_for(&self, mut check: impl FnMut() -> Result<bool>) -> Result<()> {
         for _ in 0..30 {
             if check()? {
@@ -178,7 +178,7 @@ impl Sandbox {
             }
             thread::sleep(Duration::from_secs(1));
         }
-        bail!("GitHub state did not become visible within 30 seconds")
+        bail!("GitHub state did not become visible after 30 read attempts")
     }
 
     /// Seed/update producer and policy files using the actual GitHub Git data API.

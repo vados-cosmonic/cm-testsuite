@@ -46,3 +46,38 @@ Configure the repository's Pages source as GitHub Actions. The `publish-pages`
 workflow builds and deploys on pushes to `main`, and also supports manual runs.
 Its concurrency group cancels older in-progress runs so the newest deployment
 can finish. Pull requests build a site preview without deploying it.
+
+## Live GitHub tests
+
+The live scenario exercises real acquisition and publication through Octocrab.
+It creates private source, catalog, and recipient repositories under the
+GitHub CLI's authenticated user, then publishes and merges draft import and
+receiving PRs. It checks repeat publication, source updates, retirement, exact
+file bytes, and preservation of unrelated files. It never uses this repository
+or a caller-selected repository as a publication destination.
+
+Install `gh` and authenticate to github.com. The test accepts `GH_TOKEN`, then
+`GITHUB_TOKEN`, or the token from `gh auth token`. A classic token needs `repo`
+and `delete_repo` scopes; fine-grained credentials need permission to create
+private repositories and administer their contents, pull requests, and deletion.
+The test checks classic scopes before creating anything. Ordinary `just test`,
+`just check`, and CI compile this scenario but leave it ignored.
+
+Run explicitly from the checkout root; Buck downloads Rust and compiles the
+harness before running it outside the cached build action:
+
+```sh
+CM_TESTSUITE_LIVE_GITHUB=1 dotslash bins/just test-github
+```
+
+With local Cargo, run from `rust/`:
+
+```sh
+CM_TESTSUITE_LIVE_GITHUB=1 cargo test -p xtask --test github_live -- --ignored --nocapture
+```
+
+Temporary names begin with `cm-testsuite-e2e-` and include a unique run suffix.
+Cleanup checks each repository's recorded creation ID before deleting it and
+also runs on ordinary test failures. Failed cleanup is reported with exact
+repository names. If the process is forcibly terminated or access is revoked,
+remove those temporary repositories manually after confirming the run has ended.

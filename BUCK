@@ -50,3 +50,15 @@ cargo_workspace(
     env = _TOOLS.env,
     visibility = ["PUBLIC"],
 )
+
+# Compile the opt-in live harness; GitHub operations occur only under buck run.
+cargo_workspace(
+    name = "github-e2e",
+    mode = "github-test",
+    srcs = _SOURCES,
+    crates = CRATES,
+    checksums = CHECKSUMS,
+    bash = _TOOLS.bash,
+    env = _TOOLS.env,
+    visibility = ["PUBLIC"],
+)

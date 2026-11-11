@@ -21,4 +21,5 @@ cm-delivery = { workspace = true }
 cm-results = { workspace = true }
 
 [dev-dependencies]
+serde_json = { workspace = true, features = ["std"] }
 tempfile = { workspace = true, features = ["getrandom"] }

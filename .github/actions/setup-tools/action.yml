@@ -13,7 +13,7 @@ runs:
           ~/.cargo/bin/just.exe
           ~/.cargo/bin/dotslash
           ~/.cargo/bin/dotslash.exe
-        key: tools-${{ runner.os }}-${{ runner.arch }}-just-1.59.0-dotslash-0.5.7-v1
+        key: tools-${{ runner.os }}-${{ runner.arch }}-just-1.59.0-dotslash-0.5.7-v2
 
     - name: Install cargo-binstall
       if: steps.tools.outputs.cache-hit != 'true'
@@ -24,7 +24,24 @@ runs:
     - name: Install tool binaries
       if: steps.tools.outputs.cache-hit != 'true'
       shell: bash
-      run: cargo binstall --no-confirm --locked just@1.59.0 dotslash@0.5.7
+      run: |
+        cargo binstall --no-confirm --locked --strategies crate-meta-data just@1.59.0
+
+        # DotSlash release names differ from Rust triples. Supply their upstream
+        # layout so every host gets a binary instead of falling back to compilation.
+        case "$RUNNER_OS/$RUNNER_ARCH" in
+          Linux/X64) asset=dotslash-linux-musl.x86_64.tar.gz ;;
+          Linux/ARM64) asset=dotslash-linux-musl.aarch64.tar.gz ;;
+          macOS/X64) asset=dotslash-macos-x86_64.tar.gz ;;
+          macOS/ARM64) asset=dotslash-macos-arm64.tar.gz ;;
+          Windows/X64) asset=dotslash-windows.tar.gz ;;
+          Windows/ARM64) asset=dotslash-windows-arm64.tar.gz ;;
+          *) printf 'Unsupported runner: %s/%s\n' "$RUNNER_OS" "$RUNNER_ARCH" >&2; exit 1 ;;
+        esac
+
+        cargo binstall --no-confirm --locked --strategies crate-meta-data \
+          --pkg-url "https://github.com/facebook/dotslash/releases/download/v{version}/$asset" \
+          --pkg-fmt tgz --bin-dir 'dotslash{binary-ext}' dotslash@0.5.7
 
     - name: Verify installed versions
       shell: bash

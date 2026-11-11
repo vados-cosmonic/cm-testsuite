@@ -6,7 +6,7 @@ runs:
   steps:
     - name: Restore tool binaries
       id: tools
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: |
           ~/.cargo/bin/just
@@ -29,3 +29,13 @@ runs:
       run: |
         test "$(just --version)" = 'just 1.59.0'
         test "$(dotslash --version)" = 'DotSlash 0.5.7'
+
+    # Save before builds so an unrelated failure does not discard tool installation.
+    - name: Cache verified tool binaries
+      if: steps.tools.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.cargo/bin/just
+          ~/.cargo/bin/dotslash
+        key: ${{ steps.tools.outputs.cache-primary-key }}

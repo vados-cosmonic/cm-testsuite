@@ -295,13 +295,13 @@ name = "cm-release"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cm-acquisition",
  "cm-catalog",
  "cm-github",
  "semver",
  "serde",
  "serde_json",
  "tempfile",
- "toml",
  "toml_edit",
 ]
 

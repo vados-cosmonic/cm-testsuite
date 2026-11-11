@@ -1,6 +1,10 @@
 //! Build the mdBook with the pinned repository launcher.
-use anyhow::{Context, Result, ensure};
-use std::{path::Path, process::Command};
+use crate::tools;
+use anyhow::{Result, ensure};
+use std::path::Path;
+
+/// Exact `--version` output of the mdBook release pinned by `bins/mdbook`.
+const MDBOOK_VERSION: &str = "mdbook v0.5.4";
 
 #[derive(clap::Args)]
 pub struct Args {}
@@ -16,18 +20,7 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
 
 /// Verify the pinned mdBook and render documentation into the site directory.
 fn docs(root: &Path) -> Result<()> {
-    let version = Command::new("dotslash")
-        .arg(root.join("bins/mdbook"))
-        .arg("--version")
-        .output()
-        .context("DotSlash is required; install it and ensure dotslash is on PATH")?;
-    ensure!(
-        version.status.success()
-            && String::from_utf8_lossy(&version.stdout).trim() == "mdbook v0.5.4",
-        "expected pinned mdBook 0.5.4"
-    );
-    let status = Command::new("dotslash")
-        .arg(root.join("bins/mdbook"))
+    let status = tools::pinned(root, "mdbook", MDBOOK_VERSION)?
         .arg("build")
         .arg(root.join("docs"))
         .arg("--dest-dir")

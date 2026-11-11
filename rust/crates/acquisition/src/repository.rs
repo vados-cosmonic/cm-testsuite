@@ -38,7 +38,7 @@ pub struct LocalGit {
 
 impl LocalGit {
     /// Run a read-only Git command with ambient configuration disabled.
-    fn git(&self, args: &[&str]) -> Result<Vec<u8>> {
+    pub fn git(&self, args: &[&str]) -> Result<Vec<u8>> {
         let o = Command::new("git")
             .arg("--no-pager")
             .arg("-C")
@@ -52,7 +52,8 @@ impl LocalGit {
             .output()?;
         ensure!(
             o.status.success(),
-            "Git snapshot read failed: {}",
+            "Git snapshot read failed (git {}): {}",
+            args.join(" "),
             String::from_utf8_lossy(&o.stderr)
         );
         Ok(o.stdout)

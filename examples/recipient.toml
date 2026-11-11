@@ -1,8 +1,10 @@
 schema = 1
+
 [receive]
 enabled = true
 deletions = "manual"
 exclude = []
+
 [[receive.route]]
 name = "arithmetic"
 destination = "file:///tests/shared"

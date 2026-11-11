@@ -161,9 +161,9 @@ def pinned_crates():
     native.http_archive(name = "thiserror-impl-2.0.21", urls = ["https://static.crates.io/crates/thiserror-impl/2.0.21/download"], sha256 = "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524", strip_prefix = "thiserror-impl-2.0.21", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "tinystr-0.8.5", urls = ["https://static.crates.io/crates/tinystr/0.8.5/download"], sha256 = "abc840c238154d58f9e86b2792261edfde565a17696e1cda1a449de27979801a", strip_prefix = "tinystr-0.8.5", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "tinyvec-1.13.3", urls = ["https://static.crates.io/crates/tinyvec/1.13.3/download"], sha256 = "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee", strip_prefix = "tinyvec-1.13.3", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "tokio-1.48.0", urls = ["https://static.crates.io/crates/tokio/1.48.0/download"], sha256 = "ff360e02eab121e0bc37a2d3b4d4dc622e6eda3a8e5253d5435ecf5bd4c68408", strip_prefix = "tokio-1.48.0", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tokio-1.54.1", urls = ["https://static.crates.io/crates/tokio/1.54.1/download"], sha256 = "b52fd3255258d26fac7264ab5a76b53c13367136dc011d3d6ad4f8ed070396a3", strip_prefix = "tokio-1.54.1", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "tokio-rustls-0.26.6", urls = ["https://static.crates.io/crates/tokio-rustls/0.26.6/download"], sha256 = "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db", strip_prefix = "tokio-rustls-0.26.6", type = "tar.gz", visibility = ["PUBLIC"])
-    native.http_archive(name = "tokio-util-0.7.19", urls = ["https://static.crates.io/crates/tokio-util/0.7.19/download"], sha256 = "494815d09bf52b5548659851081238f0ca39ff638363907596da739561c62c52", strip_prefix = "tokio-util-0.7.19", type = "tar.gz", visibility = ["PUBLIC"])
+    native.http_archive(name = "tokio-util-0.7.20", urls = ["https://static.crates.io/crates/tokio-util/0.7.20/download"], sha256 = "e464cf451ba96ebfc6f9b6542f17ee8b8956e33f1e40d9690624e59d7a7f8a4b", strip_prefix = "tokio-util-0.7.20", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "toml-1.2.1_spec-1.1.0", urls = ["https://static.crates.io/crates/toml/1.2.1+spec-1.1.0/download"], sha256 = "d5755c51863cdac711f1956baf8eb9588e060755f7d3c4c979e70ea1e1f32cd7", strip_prefix = "toml-1.2.1+spec-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "toml_datetime-1.1.3_spec-1.1.0", urls = ["https://static.crates.io/crates/toml_datetime/1.1.3+spec-1.1.0/download"], sha256 = "173f25c883cd2176a2d8212155638c0a60d484a9d84546d270866f40f56b6e49", strip_prefix = "toml_datetime-1.1.3+spec-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
     native.http_archive(name = "toml_edit-0.25.19_spec-1.1.0", urls = ["https://static.crates.io/crates/toml_edit/0.25.19+spec-1.1.0/download"], sha256 = "dd43688c4858d7264ae1cf9a9f874a67c3feb74a883b1cd7bebd6a4ea8307218", strip_prefix = "toml_edit-0.25.19+spec-1.1.0", type = "tar.gz", visibility = ["PUBLIC"])
@@ -390,9 +390,9 @@ CRATES = {
     "thiserror-impl-2.0.21": "//third-party:thiserror-impl-2.0.21",
     "tinystr-0.8.5": "//third-party:tinystr-0.8.5",
     "tinyvec-1.13.3": "//third-party:tinyvec-1.13.3",
-    "tokio-1.48.0": "//third-party:tokio-1.48.0",
+    "tokio-1.54.1": "//third-party:tokio-1.54.1",
     "tokio-rustls-0.26.6": "//third-party:tokio-rustls-0.26.6",
-    "tokio-util-0.7.19": "//third-party:tokio-util-0.7.19",
+    "tokio-util-0.7.20": "//third-party:tokio-util-0.7.20",
     "toml-1.2.1+spec-1.1.0": "//third-party:toml-1.2.1_spec-1.1.0",
     "toml_datetime-1.1.3+spec-1.1.0": "//third-party:toml_datetime-1.1.3_spec-1.1.0",
     "toml_edit-0.25.19+spec-1.1.0": "//third-party:toml_edit-0.25.19_spec-1.1.0",
@@ -620,9 +620,9 @@ CHECKSUMS = {
     "thiserror-impl-2.0.21": "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524",
     "tinystr-0.8.5": "abc840c238154d58f9e86b2792261edfde565a17696e1cda1a449de27979801a",
     "tinyvec-1.13.3": "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee",
-    "tokio-1.48.0": "ff360e02eab121e0bc37a2d3b4d4dc622e6eda3a8e5253d5435ecf5bd4c68408",
+    "tokio-1.54.1": "b52fd3255258d26fac7264ab5a76b53c13367136dc011d3d6ad4f8ed070396a3",
     "tokio-rustls-0.26.6": "c9cc2678c2cdd569ef8215e2afd7954ada2ae20b4fdd2c5fe6139a3b02d105db",
-    "tokio-util-0.7.19": "494815d09bf52b5548659851081238f0ca39ff638363907596da739561c62c52",
+    "tokio-util-0.7.20": "e464cf451ba96ebfc6f9b6542f17ee8b8956e33f1e40d9690624e59d7a7f8a4b",
     "toml-1.2.1+spec-1.1.0": "d5755c51863cdac711f1956baf8eb9588e060755f7d3c4c979e70ea1e1f32cd7",
     "toml_datetime-1.1.3+spec-1.1.0": "173f25c883cd2176a2d8212155638c0a60d484a9d84546d270866f40f56b6e49",
     "toml_edit-0.25.19+spec-1.1.0": "dd43688c4858d7264ae1cf9a9f874a67c3feb74a883b1cd7bebd6a4ea8307218",

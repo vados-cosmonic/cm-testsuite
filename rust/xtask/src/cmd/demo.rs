@@ -91,23 +91,24 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
     // Serialize and reload plans at the command boundary, just as separate CLI
     // invocations do. Replanning must produce no edits after successful application.
     let import_plan = out.join("import-plan.toml");
-    for _ in 0..2 {
+    let import_rerun = out.join("import-plan-rerun.toml");
+    for plan in [&import_plan, &import_rerun] {
         super::plan_import::run(
             &hub,
             super::plan_import::Args {
                 snapshot: snapshots.clone(),
-                out: import_plan.clone(),
+                out: plan.to_owned(),
             },
         )?;
         super::apply::run(
             &hub,
             super::apply::Args {
-                plan: import_plan.clone(),
+                plan: plan.to_owned(),
             },
         )?;
     }
     ensure!(
-        load_plan(&import_plan)?.edits.is_empty(),
+        load_plan(&import_rerun)?.edits.is_empty(),
         "import rerun must be empty"
     );
     super::validate::run(&hub, super::validate::Args {})?;
@@ -116,20 +117,26 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
     for (name, files) in &originals {
         let project = out.join(name);
         let plan = out.join(format!("{name}-receive-plan.toml"));
-        for _ in 0..2 {
+        let rerun = out.join(format!("{name}-receive-plan-rerun.toml"));
+        for plan in [&plan, &rerun] {
             super::plan_receive::run(
                 &project,
                 super::plan_receive::Args {
                     catalog_root: hub.clone(),
                     recipient: format!("github:example/{name}"),
                     manifest: ".cm-testsuite.toml".into(),
-                    out: plan.clone(),
+                    out: plan.to_owned(),
                 },
             )?;
-            super::apply::run(&project, super::apply::Args { plan: plan.clone() })?;
+            super::apply::run(
+                &project,
+                super::apply::Args {
+                    plan: plan.to_owned(),
+                },
+            )?;
         }
         ensure!(
-            load_plan(&plan)?.edits.is_empty(),
+            load_plan(&rerun)?.edits.is_empty(),
             "receiving rerun must be empty for {name}"
         );
         let receipt: Receipt = records::decode(&fs::read(project.join(RECEIPT_PATH))?)?;

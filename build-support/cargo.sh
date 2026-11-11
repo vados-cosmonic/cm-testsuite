@@ -72,6 +72,13 @@ if [[ -n "$suffix" ]]; then
     export RUSTC="$(cygpath -m "$sdk/bin/rustc.exe")"
     export RUSTDOC="$(cygpath -m "$sdk/bin/rustdoc.exe")"
     export RUSTFMT="$(cygpath -m "$sdk/bin/rustfmt.exe")"
+
+    # Git Bash also ships a link.exe. Select MSVC's linker beside cl.exe rather
+    # than letting rustc pick the unrelated filesystem utility earlier on PATH.
+    msvc_bin=$(dirname -- "$(command -v cl.exe)")
+    msvc_linker=$(cygpath -m "$msvc_bin/link.exe")
+    export CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER="$msvc_linker"
+    export CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_LINKER="$msvc_linker"
 fi
 export PATH="$sdk/bin:$PATH"
 

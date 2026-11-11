@@ -58,8 +58,9 @@ DotSlash verifies launcher downloads, and Buck verifies Rust and crate inputs.
 
 The shared `.github/actions/setup-tools` action caches Just and DotSlash binaries
 by operating system, architecture, and version.
-On a cache miss, cargo-binstall prefers prebuilt binaries and falls back to Cargo
-installation when necessary.
+On a cache miss, cargo-binstall installs upstream prebuilt binaries.
+The action selects DotSlash's release filename explicitly for each host, avoiding
+compilation during bootstrap.
 All related workflows use this action and invoke `just` directly.
 
 ## Build and check commands

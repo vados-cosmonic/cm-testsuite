@@ -1,4 +1,8 @@
-// Adapted from bytecodealliance/jco (Apache-2.0); see THIRD_PARTY.md.
+/*
+ * Validate commit messages and PR titles with the repository's Conventional
+ * Commit types and scopes. Exports configuration consumed by commitlint.
+ * Adapted from bytecodealliance/jco (Apache-2.0); see THIRD_PARTY.md.
+ */
 export default {
     extends: ['@commitlint/config-conventional'],
     parserPreset: 'conventional-changelog-conventionalcommits',

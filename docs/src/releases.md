@@ -26,15 +26,15 @@ Install Node.js 24 or newer and the locked development dependencies:
 
 ```sh
 npm ci --ignore-scripts
-./just xtask lint-commits --from origin/main --to HEAD
+dotslash bins/just xtask lint-commits --from origin/main --to HEAD
 printf '%s\n' 'fix(catalog): preserve identity' | npm exec --no -- commitlint
 ```
 
 The hygiene workflow checks every proposed commit and the PR title (which may
 become a squash commit), including merge-queue ranges. Existing history outside
-the proposed range is not re-linted. It also audits the workflows with zizmor. Dependabot groups weekly GitHub Actions and commitlint updates.
-Branch protection can require `commits`, `workflows`, and the existing `check`
-job; installing these workflows does not change repository protection settings.
+the proposed range is not re-linted. The separate `audit-workflows` workflow runs Zizmor. Dependabot groups weekly GitHub Actions and commitlint updates.
+Branch protection can require `commits`, `zizmor`, and the six `check (RUNNER)`
+matrix jobs; installing these workflows does not change repository protection settings.
 
 ## Release lifecycle
 
@@ -113,18 +113,18 @@ release tooling has landed on `main`.
 
 ## Local preparation and inspection
 
-Use a clean disposable checkout with full history and tags. Bootstrap the
-repository tools first; the checksum-pinned `git-cliff` launcher generates
+Use a clean disposable checkout with full history and tags. Install DotSlash and
+run `dotslash bins/just doctor`; the checksum-pinned `bins/git-cliff` launcher generates
 changelogs offline from Git history. Stable release notes include changes from
 intervening prereleases; prerelease notes start after the previous release.
 
 ```sh
-./just xtask release metadata --version 0.2.0-rc.1
-./just xtask release prepare --version 0.2.0-rc.1
-./just xtask release extract-latest-changelog-section --version 0.2.0-rc.1 --out /tmp/notes.md
-./just xtask release semver-is-prerelease 0.2.0-rc.1
-./just xtask release semver-get-prerelease 0.2.0-rc.1
-./just xtask release semver-lt 0.2.0-rc.1 0.2.0
+dotslash bins/just xtask release metadata --version 0.2.0-rc.1
+dotslash bins/just xtask release prepare --version 0.2.0-rc.1
+dotslash bins/just xtask release extract-latest-changelog-section --version 0.2.0-rc.1 --out /tmp/notes.md
+dotslash bins/just xtask release semver-is-prerelease 0.2.0-rc.1
+dotslash bins/just xtask release semver-get-prerelease 0.2.0-rc.1
+dotslash bins/just xtask release semver-lt 0.2.0-rc.1 0.2.0
 ```
 
 `release from-event` validates a merged-PR event JSON file. `release validate`
@@ -134,10 +134,10 @@ can append validated values to `--github-output PATH` for GitHub Actions.
 ## Post-release issue and PR updates
 
 ```sh
-./just xtask release post-release-issue-update \
+dotslash bins/just xtask release post-release-issue-update \
   --repository OWNER/REPO --tag cm-testsuite-v0.2.0
 # Inspect the printed plan, then explicitly send the comments:
-./just xtask release post-release-issue-update \
+dotslash bins/just xtask release post-release-issue-update \
   --repository OWNER/REPO --tag cm-testsuite-v0.2.0 --apply
 ```
 

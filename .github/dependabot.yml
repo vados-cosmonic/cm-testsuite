@@ -10,7 +10,9 @@ updates:
       prefix: 'ci(deps)'
     groups:
       actions:
-        patterns: ['*']
+        patterns:
+          - '*'
+
   - package-ecosystem: npm
     directory: /
     cooldown:
@@ -21,4 +23,5 @@ updates:
       prefix: 'chore(deps-dev)'
     groups:
       commitlint:
-        patterns: ['*']
+        patterns:
+          - '*'

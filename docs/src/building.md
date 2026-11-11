@@ -53,6 +53,7 @@ DotSlash verifies launcher downloads, and Buck verifies Rust and crate inputs.
 | Buck2 | 2026-09-15 | Build and check targets |
 | Rust | 1.98.1 | Native compiler, standard library, Cargo, rustfmt, and Clippy |
 | mdBook | 0.5.4 | Documentation builds |
+| git-cliff | 2.14.2 | Release changelog generation |
 | Zizmor | 1.32.0 | Local and CI workflow audits |
 | Wasmono | `5cb97a58be3853916a0fcb7f27eeca2524d58ea5` | Buck build utilities |
 | DotSlash | 0.5.7 | CI; installed separately for local use |

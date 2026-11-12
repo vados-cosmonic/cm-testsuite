@@ -3,8 +3,8 @@
 use cm_acquisition::load_catalog_files;
 use cm_catalog::{Catalog, Participant, Participants};
 use cm_delivery::{
-    Delivery, Failure, GATHER_BRANCH, Publication, Report, Source, apply, branch_for, distribute,
-    gather, publish, publish_on, report,
+    Delivery, Failure, GATHER_BRANCH, Offer, Publication, Report, Review, Source, apply,
+    branch_for, distribute, gather, publish, publish_on, report,
 };
 use cm_test_support::github::FakeGitHubs;
 use serde_json::json;
@@ -189,8 +189,12 @@ fn whole_registry_imports_share_one_pull_request_that_partial_plans_leave_alone(
     // Whole-registry runs replace each other in one pull request as the registry grows.
     let first = plan(&["example/a"]);
     let both = plan(&["example/a", "example/b"]);
-    publish_on(&hub, "github:example/catalog", &first, GATHER_BRANCH).unwrap();
-    publish_on(&hub, "github:example/catalog", &both, GATHER_BRANCH).unwrap();
+    let ready = Offer {
+        review: Review::Ready,
+        recreate: false,
+    };
+    publish_on(&hub, "github:example/catalog", &first, GATHER_BRANCH, ready).unwrap();
+    publish_on(&hub, "github:example/catalog", &both, GATHER_BRANCH, ready).unwrap();
     assert_eq!(hub.repository("example/catalog").state().prs.len(), 1);
 
     // A plan for some repositories has its own branch, so it leaves the shared
@@ -211,7 +215,10 @@ fn whole_registry_imports_share_one_pull_request_that_partial_plans_leave_alone(
         pr["title"],
         "feat(corpus): import tests from example/a and example/b"
     );
-    assert_eq!(pr["draft"], true);
+    // Each pull request opens in the review state its caller named:
+    // ready on the shared branch here, a draft by default.
+    assert_eq!(pr["draft"], false);
+    assert_eq!(state.prs[1]["draft"], true);
     let body = pr["body"].as_str().unwrap();
     assert!(body.contains("| Add | `github:example/a/one` |"), "{body}");
     assert!(body.contains("| Add | `github:example/b/two` |"), "{body}");
@@ -229,7 +236,8 @@ fn distributes_one_pull_request_per_receiving_repository() {
     let run = |name: &str, publish: bool| {
         let catalog = Catalog::load(root.path()).unwrap();
         let files = load_catalog_files(root.path(), &catalog).unwrap();
-        distribute(&hub, &enrolled(&[name])[0], &catalog, &files, publish)
+        let offer = publish.then(Offer::default);
+        distribute(&hub, &enrolled(&[name])[0], &catalog, &files, offer)
     };
 
     // Checking never writes, and a repository that has not opted in is left alone.

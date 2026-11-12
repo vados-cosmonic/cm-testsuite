@@ -38,7 +38,10 @@ mentions their maintainers and this repository's, and closes itself after a clea
 Fix the cause, or remove the repository from the registry to stop trying.
 To stop a workflow altogether, disable it in the repository's Actions settings.
 
-Gathered imports arrive as one draft pull request on the `cm-testsuite/gather` branch.
+Gathered imports arrive as one pull request on the `cm-testsuite/gather` branch, opened ready for review.
+A run cannot change the draft state of one that is already open; mark it ready by hand.
+Closing it without merging declines that exact import until the sources change.
+To get it back, run `gather-updates` by hand with `publish` and `recreate` checked.
 Review and merge it like any other import;
 `distribute-updates` then offers the merged changes to receiving repositories.
 

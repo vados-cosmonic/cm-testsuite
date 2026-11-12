@@ -2,7 +2,7 @@
 use crate::exchange::{Access, Credentials, Selection, participants, planned, published, settle};
 use anyhow::Result;
 use cm_catalog::{Catalog, PARTICIPANTS_PATH};
-use cm_delivery::{Delivery, Failure};
+use cm_delivery::{Delivery, Failure, Offer, Review};
 use std::path::{Path, PathBuf};
 
 #[derive(clap::Args)]
@@ -15,6 +15,9 @@ pub struct Args {
     /// Open, update, or withdraw each repository's single draft pull request.
     #[arg(long)]
     pub(crate) publish: bool,
+    /// Open a repository's pull request again when an identical one was closed without merging.
+    #[arg(long, requires = "publish")]
+    pub(crate) recreate: bool,
     #[command(flatten)]
     pub(crate) credentials: Credentials,
     /// File failures as one issue in this repository instead of failing the run.
@@ -30,6 +33,7 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
         registry: path,
         selection,
         publish,
+        recreate,
         credentials,
         report_to,
     } = args;
@@ -39,12 +43,16 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
     let catalog = Catalog::load(root)?;
     let files = cm_acquisition::load_catalog_files(root, &catalog)?;
     let api = access.api();
+    let offer = publish.then_some(Offer {
+        review: Review::Draft,
+        recreate,
+    });
 
     // One repository's failure must not keep the others from their updates.
     let mut failures = vec![];
     for participant in &registry.participant {
         let repository = &participant.repository;
-        match cm_delivery::distribute(&api, participant, &catalog, &files, publish) {
+        match cm_delivery::distribute(&api, participant, &catalog, &files, offer) {
             Ok(Delivery::NotReceiving) => println!("{repository}: does not receive tests"),
             Ok(Delivery::Planned(plan)) => println!("{repository}: {}", planned(&plan)),
             Ok(Delivery::Published(plan, publication)) => {

@@ -13,6 +13,11 @@ on:
         default: false
         type: boolean
 
+      recreate:
+        description: 'With publish: open the PR again if an identical one was closed without merging'
+        default: false
+        type: boolean
+
 permissions: {}
 
 concurrency:
@@ -60,4 +65,9 @@ jobs:
           RECIPIENT: github:${{ inputs.recipient }}
           # Reads the repository; the write token comes from Octo STS.
           GITHUB_TOKEN: ${{ github.token }}
-        run: just xtask publish --repository "$RECIPIENT" --plan "$RUNNER_TEMP/receive-plan.toml" --sts-identity cm-testsuite
+          RECREATE: ${{ inputs.recreate }}
+        shell: bash
+        run: |
+          args=()
+          if [[ "$RECREATE" == true ]]; then args+=(--recreate); fi
+          just xtask publish --repository "$RECIPIENT" --plan "$RUNNER_TEMP/receive-plan.toml" --sts-identity cm-testsuite "${args[@]}"

@@ -204,13 +204,39 @@ fn withdraw(api: &dyn Api, repository: &str, plan: &Plan, branch: &str) -> Resul
     ))
 }
 
-/// Explicit mutation API. Caller must deliberately invoke it with a reviewed plan and token.
-/// First draft supports same-repository proposal branches, not fork delivery.
-pub fn publish(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publication> {
-    publish_on(api, repository, plan, &branch_for(plan))
+/// How a newly opened proposal asks for attention. Neither state merges it.
+///
+/// This applies only when the pull request is created. GitHub's REST API
+/// cannot change the draft state of an existing one, so an update leaves an
+/// open proposal as its reviewers last set it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Review {
+    /// Open a draft that its recipients mark ready themselves.
+    #[default]
+    Draft,
+    /// Open a pull request that is ready for review at once.
+    Ready,
 }
 
-/// Publish like [`publish`], on a branch the caller names instead of the plan's own.
+/// How a plan is offered when it needs a pull request.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Offer {
+    /// The review state of a pull request this publication opens.
+    pub review: Review,
+    /// Open a new pull request for a plan whose identical proposal was closed
+    /// unmerged, instead of leaving it [`Publication::Declined`].
+    pub recreate: bool,
+}
+
+/// Explicit mutation API. Caller must deliberately invoke it with a reviewed plan and token.
+/// First draft supports same-repository proposal branches, not fork delivery.
+///
+/// The proposal lives on the plan's own branch and is offered with the default [`Offer`].
+pub fn publish(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publication> {
+    publish_on(api, repository, plan, &branch_for(plan), Offer::default())
+}
+
+/// Publish like [`publish`], on a branch and with an offer the caller names.
 ///
 /// Plans published on one branch replace each other in a single pull request,
 /// so use this only for plans that describe the same scope every time.
@@ -219,6 +245,7 @@ pub fn publish_on(
     repository: &str,
     plan: &Plan,
     branch: &str,
+    offer: Offer,
 ) -> Result<Publication> {
     plan.validate()?;
     ensure!(
@@ -284,6 +311,7 @@ pub fn publish_on(
     // Inspect history before mutating refs so an identical declined proposal
     // stays closed and an existing managed PR can be updated in place.
     let mut open = None;
+    let mut declined = false;
     let mut finished = false;
     for page in 1..=10 {
         let prs = required(
@@ -310,7 +338,7 @@ pub fn publish_on(
                 && published_plan_key(body) == Some(key.as_str())
                 && !body.trim_end().ends_with(&withdrawal_marker(&key))
             {
-                return Ok(Publication::Declined);
+                declined = true;
             }
         }
         if list.len() < 100 {
@@ -322,6 +350,15 @@ pub fn publish_on(
         finished,
         "too many historical PRs to check decline state safely"
     );
+    // A decline stands until the caller asks for the plan to be offered again.
+    // Once it has been, the open pull request that carries the plan answers
+    // for it, so a later run updates that one instead of reporting the decline.
+    let reoffered = open.as_ref().is_some_and(|pr: &Value| {
+        published_plan_key(pr["body"].as_str().unwrap_or_default()) == Some(key.as_str())
+    });
+    if declined && !offer.recreate && !reoffered {
+        return Ok(Publication::Declined);
+    }
     let reference_path = format!("{repo}/git/ref/heads/{branch}");
     let reference = api.request("GET", &reference_path, None)?;
     let head = reference
@@ -406,7 +443,8 @@ pub fn publish_on(
         }
     }
 
-    // Publish only after the branch update succeeds; creation always uses draft mode.
+    // Publish only after the branch update succeeds. The pulls API accepts
+    // `draft` on creation alone, so an existing proposal keeps its state.
     let pr = if let Some(pr) = open {
         required(
             api,
@@ -422,7 +460,13 @@ pub fn publish_on(
             api,
             "POST",
             &format!("{repo}/pulls"),
-            Some(json!({"title":title,"body":body,"head":branch,"base":base_name,"draft":true})),
+            Some(json!({
+                "title": title,
+                "body": body,
+                "head": branch,
+                "base": base_name,
+                "draft": offer.review == Review::Draft,
+            })),
         )?
     };
     Ok(Publication::PullRequest(

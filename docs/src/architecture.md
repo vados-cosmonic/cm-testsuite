@@ -9,7 +9,7 @@ The workspace lives under `rust/`. Library boundaries follow responsibilities in
 | `cm-wast-analysis` | WAST parsing, syntax evidence, intent-comment warnings, explicit analysis incompleteness |
 | `cm-acquisition` | Immutable GitHub/local-Git acquisition and complete source snapshots |
 | `cm-exchange-plan` | Read-only import/receive plans, routes, exclusions, baseline checks, and delivery receipts |
-| `cm-delivery` | Guarded local application, explicit GitHub draft-PR reconciliation, gathering from and distributing to enrolled repositories, and failure reports |
+| `cm-delivery` | Guarded local application, explicit GitHub pull-request reconciliation, gathering from and distributing to enrolled repositories, and failure reports |
 | `cm-results` | Submitted-report validation and HTML presentation |
 | `cm-release` | Workspace release preparation, exact-commit tagging, and issue/PR notification planning |
 | `cm-test-support` | Test-only fixtures: an in-memory GitHub repository behind the API boundary and isolated local Git repositories |

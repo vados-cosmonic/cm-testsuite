@@ -10,7 +10,8 @@ use std::path::{Path, PathBuf};
 
 #[derive(clap::Args)]
 pub struct Args {
-    /// Registry of enrolled repositories, relative to --root.
+    /// Registry file, relative to --root. Repositories are also read, one file each,
+    /// from the directory named like it without the extension.
     #[arg(long, default_value = PARTICIPANTS_PATH)]
     pub(crate) registry: PathBuf,
     #[command(flatten)]

@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Enrollment adds your repository to `registry/participants.toml`.
+        Enrollment adds a file for your repository under `registry/participants/`.
         The scheduled runs then read the tests it declares, open one draft pull request with tests it receives, or both.
         The committed `.cm-testsuite.toml` in your repository decides which; see the [manifest reference](https://github.com/vados-cosmonic/cm-testsuite/blob/main/docs/src/manifest.md).
 

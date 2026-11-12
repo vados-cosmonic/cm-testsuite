@@ -1,7 +1,10 @@
 # Participation
 
-`participants.toml` lists the repositories the scheduled `gather` and `distribute`
-runs look at, and the maintainers to mention when one of them fails.
+`participants/` holds one file per repository the scheduled `gather` and `distribute` runs look at,
+with the maintainers to mention when it fails;
+see its [README](participants/README.md).
+`participants.toml` holds the settings shared by all of them,
+including the maintainers mentioned on every failure report.
 Enrollment is approved during review.
 Each repository's own manifest decides whether it shares tests, receives them, or both.
 See the [workflow guide](../docs/src/workflow.md#gather-and-distribute) for the format and commands.

@@ -7,7 +7,8 @@ use std::path::{Path, PathBuf};
 
 #[derive(clap::Args)]
 pub struct Args {
-    /// Registry of enrolled repositories, relative to --root.
+    /// Registry file, relative to --root. Repositories are also read, one file each,
+    /// from the directory named like it without the extension.
     #[arg(long, default_value = PARTICIPANTS_PATH)]
     pub(crate) registry: PathBuf,
     #[command(flatten)]
@@ -64,7 +65,7 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
     }
     drop(api);
     if registry.participant.is_empty() {
-        println!("no repositories are enrolled in {}", path.display());
+        println!("no repositories are enrolled through {}", path.display());
     } else if !publish {
         println!("dry run; pass --publish to open or update pull requests");
     }

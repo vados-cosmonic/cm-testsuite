@@ -2,7 +2,7 @@
 pub mod records;
 mod registry;
 
-pub use registry::{PARTICIPANTS_PATH, Participant, Participants};
+pub use registry::{PARTICIPANTS_DIR, PARTICIPANTS_PATH, Participant, Participants};
 
 use anyhow::{Context, Result, bail, ensure};
 use percent_encoding::percent_decode_str;

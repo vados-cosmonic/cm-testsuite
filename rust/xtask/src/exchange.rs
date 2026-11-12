@@ -248,9 +248,9 @@ mod tests {
 
     fn selected(only: &[&str], except: &[&str]) -> Result<Vec<String>> {
         let mut registry = Participants::parse(
-            b"schema = 1\n[[participant]]\nrepository = 'github:example/a'\n\
+            b"schema = 1\n[[participant]]\nrepository = 'github:example/c'\n\
               [[participant]]\nrepository = 'github:example/b'\n\
-              [[participant]]\nrepository = 'github:example/c'\n",
+              [[participant]]\nrepository = 'github:example/a'\n",
         )?;
         let names = |names: &[&str]| names.iter().map(|name| (*name).to_owned()).collect();
         let selection = Selection {

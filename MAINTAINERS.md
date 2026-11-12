@@ -15,9 +15,9 @@ Check that the manifest is committed and, for a receiving repository,
 that `.github/chainguard/cm-testsuite.sts.yaml` is on its default branch;
 a `propose-receiving-update` run for that repository with `publish` enabled confirms the policy works,
 and needs no enrollment.
-Enroll a repository by adding it to `registry/participants.toml` through review,
+Enroll a repository by adding `registry/participants/OWNER/REPO.toml` through review,
 with the GitHub logins of the people who can fix it under `maintainers`.
-List this repository's own maintainers in the top-level `maintainers` array.
+List this repository's own maintainers in the `maintainers` array of `registry/participants.toml`.
 The [workflow guide](docs/src/workflow.md#gather-and-distribute) documents the format
 and the `gather` and `distribute` commands, which run locally exactly as they do in CI.
 

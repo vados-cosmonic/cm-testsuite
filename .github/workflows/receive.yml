@@ -9,7 +9,7 @@ on:
         type: string
 
       publish:
-        description: 'Explicitly publish a draft PR using CM_TESTSUITE_TOKEN'
+        description: 'Open or update the draft PR in the target repository'
         default: false
         type: boolean
 
@@ -26,6 +26,8 @@ jobs:
 
     permissions:
       contents: read
+      # Exchange this workflow's identity for an Octo STS token scoped to the target.
+      id-token: write
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -36,7 +38,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: ${{ inputs.recipient }}
-          token: ${{ secrets.CM_TESTSUITE_TOKEN || github.token }}
           path: recipient-checkout
           persist-credentials: false
 
@@ -57,5 +58,6 @@ jobs:
         if: inputs.publish
         env:
           RECIPIENT: github:${{ inputs.recipient }}
-          GITHUB_TOKEN: ${{ secrets.CM_TESTSUITE_TOKEN }}
-        run: just xtask publish --repository "$RECIPIENT" --plan "$RUNNER_TEMP/receive-plan.toml"
+          # Reads the repository; the write token comes from Octo STS.
+          GITHUB_TOKEN: ${{ github.token }}
+        run: just xtask publish --repository "$RECIPIENT" --plan "$RUNNER_TEMP/receive-plan.toml" --sts-identity cm-testsuite

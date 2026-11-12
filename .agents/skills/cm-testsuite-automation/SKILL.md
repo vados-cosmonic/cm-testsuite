@@ -29,6 +29,11 @@ Read the sections that match the files being changed.
   Update the cache keys there when a tool pin changes.
 - Workflows that publish, tag, or release are manually invoked or tightly guarded.
   Do not widen their triggers or permissions without being asked.
+- Do not add stored tokens. Cross-repository and PR-opening writes use Octo STS:
+  the job gets `id-token: write`, and the destination's `.github/chainguard/<identity>.sts.yaml`
+  must trust the workflow file by name.
+  A new publishing workflow or destination needs a matching policy change;
+  see [Credentials in GitHub Actions](../../../docs/src/workflow.md#credentials-in-github-actions).
 - Audit every workflow or action change with `dotslash bins/just zizmor --offline`.
   Fix findings instead of suppressing them.
 

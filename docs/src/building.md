@@ -56,6 +56,7 @@ DotSlash verifies launcher downloads, and Buck verifies Rust and crate inputs.
 | git-cliff | 2.14.2 | Release changelog generation |
 | Zizmor | 1.32.0 | Local and CI workflow audits |
 | bazel-remote | 2.6.1 | CI action cache server on Linux and macOS |
+| bb-storage | `20261112T085002Z-8d2acac` | CI action cache server on Windows |
 | Wasmono | `5cb97a58be3853916a0fcb7f27eeca2524d58ea5` | Buck build utilities |
 | DotSlash | 0.5.7 | CI; installed separately for local use |
 | cargo-binstall | 1.27.0 | CI tool installation on cache misses |
@@ -136,20 +137,29 @@ currently downloads a floating release and selects x86_64 on Windows.
 
 ### Action cache
 
-On Linux and macOS the setup action also restores a Buck action cache
-and serves it on loopback with the pinned [bazel-remote](https://github.com/buchgr/bazel-remote) launcher.
+The setup action also restores a Buck action cache and serves it to Buck on loopback.
 Every workflow that calls the setup action gets the cache; no workflow configures it separately.
 The `//.buck/platforms:ci-cache` execution platform keeps compilation local while allowing
 Buck to download and upload action results through REAPI.
 The setup action writes `.buckconfig.local` before starting Buck;
 local development continues to use the default execution platform.
-Windows jobs build without the action cache, because bazel-remote does not run on Windows.
 
-The store is an Actions cache entry of at most 1 GiB per runner image.
+Linux and macOS runners serve the store with the pinned [bazel-remote](https://github.com/buchgr/bazel-remote) launcher,
+capped at 1 GiB of compressed blobs.
+bazel-remote does not run on Windows, so those runners start Buildbarn's
+[bb-storage](https://github.com/buildbarn/bb-storage) from its own launcher,
+configured by `bb-storage.jsonnet` beside the setup action.
+Its store is a set of fixed-size files, about 2.2 GiB before compression.
+Buildbarn publishes no Windows ARM64 build; that runner uses the x86_64 binary.
+
+The store is one Actions cache entry per runner image.
 Its key holds the runner OS, architecture, image name, and image version,
+then a hash of the cache server launchers and configuration,
 then a hash of the Buck inputs: `.buckconfig`, `BUCK`, `.buck/`, `bins/buck2`, `rust/`, and `examples/`.
 Jobs on the same runner image share one store, whichever workflow they belong to.
-A run restores the entry for its exact inputs, or else the newest entry for its runner image.
+A run restores the entry for its exact inputs, or else the newest entry for its runner image and server.
+GitHub rolls a new runner image out over several days,
+so jobs can land on either image version and miss until the default branch has built on both.
 
 Only the `check` job of `ci.yml` saves the store, and only when it succeeds on the default branch.
 That job builds every cached target, so the saved store serves every other workflow.

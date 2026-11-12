@@ -75,6 +75,7 @@ Add a meaningful intent comment at the top of each WAST file and explain subtle
 assertions nearby.
 The analyzer can flag missing explanatory comments, but authors must check that
 the explanations accurately describe the test.
+[Warnings](warnings.md) explains each warning the analyzer reports and how to resolve it.
 
 Export original tests from their authoritative locations.
 Tests inside receiving destinations cannot be exported as new originals.
@@ -116,6 +117,10 @@ The analyzer reports syntax evidence and **always marks inference incomplete**.
 Default routes therefore withhold tests whose requirements may be incomplete.
 Set `allow_unknown = true` only when you intend to review those tests despite
 that uncertainty; the plan will include warnings.
+A route without it reports [`route-needs-allow-unknown`](warnings.md#route-needs-allow-unknown)
+for each test it withholds;
+a route with it reports [`accepted-incomplete-inference`](warnings.md#accepted-incomplete-inference)
+for each test it selects.
 
 Routing selects tests using metadata.
 It does not establish that your engine supports or passes the selected tests.

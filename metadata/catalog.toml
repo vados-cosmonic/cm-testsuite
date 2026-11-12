@@ -1,7 +1,29 @@
 schema = 1
 
-[sources]
+[sources."github:vados-cosmonic/cm-testsuite-test-source"]
+revision = "479a5dcbf4d0ab0be15ace2f98e6c1b9dd3c9690"
+manifest_path = ".cm-testsuite.toml"
+manifest_sha256 = "88ad1fa4e1c60a5e210088d4f51177e93a0e0b5083cae097e2c77627d225708d"
 
-[tests]
+[tests."github:vados-cosmonic/cm-testsuite-test-source/values/u32-add"]
+source = "github:vados-cosmonic/cm-testsuite-test-source"
+name = "values/u32-add"
+revision = "479a5dcbf4d0ab0be15ace2f98e6c1b9dd3c9690"
+source_path = "tests/values/u32-add.wast"
+manifest_revision = "479a5dcbf4d0ab0be15ace2f98e6c1b9dd3c9690"
+sha256 = "665a236d28bdcc2afd6d32dc77a93757325330e3251d46487e9f92c04f4fb96c"
+destination = "corpus/wast/vados-cosmonic/cm-testsuite-test-source/values/u32-add.wast"
+summary = "Add two u32 values through a lifted core function, including wrap-around"
+requires = ["component-model"]
+covers = ["values"]
+
+[tests."github:vados-cosmonic/cm-testsuite-test-source/values/u32-add".analysis]
+analyzer = "cm-wast-analysis/0.1+wast-263.0.0"
+complete = false
+warnings = ["Feature inference is incomplete; syntax evidence is not a complete execution requirement set."]
+
+[[tests."github:vados-cosmonic/cm-testsuite-test-source/values/u32-add".analysis.syntax]]
+feature = "component-model"
+byte_offset = 192
 
 [retired]

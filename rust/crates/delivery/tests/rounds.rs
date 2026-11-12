@@ -269,6 +269,7 @@ fn distributes_one_pull_request_per_receiving_repository() {
             state.prs[0]["title"],
             "Update tests received from cm-testsuite"
         );
+        assert_eq!(state.prs[0]["draft"], true);
         let body = state.prs[0]["body"].as_str().unwrap();
         assert!(body.contains("| Add | `github:example/a/one` |"), "{body}");
     }

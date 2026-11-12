@@ -225,6 +225,12 @@ mod tests {
         }
         assert_eq!(pulls().len(), 2);
 
+        // An open proposal that is a draft stays one when a later run updates it.
+        hub.repository("example/catalog").state_mut().prs[0]["draft"] = true.into();
+        publish(true, false);
+        assert_eq!(pulls().len(), 2);
+        assert_eq!(pulls()[0]["draft"], true);
+
         // A closed import stays closed until a run asks for it again, each time it is closed.
         for round in 0..2 {
             let last = pulls().len() - 1;

@@ -115,6 +115,10 @@ impl Plan {
                 // The title lint caps headers at 100 characters; long names fall back to a count.
                 if sources.len() <= 2 && named.len() <= 100 {
                     named
+                } else if let [source] = sources[..] {
+                    // One source is still named, as far as the cap allows.
+                    let kept: String = source.chars().take(65).collect();
+                    format!("feat(corpus): import tests from {kept}...")
                 } else {
                     format!(
                         "feat(corpus): import tests from {} repositories",
@@ -427,5 +431,11 @@ mod tests {
             plan.title(),
             "feat(corpus): import tests from 3 repositories"
         );
+        plan.subject = "github:example/a".into();
+        assert_eq!(plan.title(), "feat(corpus): import tests from example/a");
+        plan.subject = format!("github:{}/{}", "o".repeat(39), "r".repeat(100));
+        let long = plan.title();
+        assert_eq!(long.len(), 100);
+        assert!(long.ends_with("rrr..."), "{long}");
     }
 }

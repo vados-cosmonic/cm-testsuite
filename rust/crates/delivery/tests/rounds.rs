@@ -1,12 +1,16 @@
 //! Gathering from and distributing to several enrolled repositories.
 
+mod common;
+
 use cm_acquisition::load_catalog_files;
 use cm_catalog::{Catalog, Participant, Participants};
 use cm_delivery::{
-    Delivery, Failure, GATHER_BRANCH, Publication, Report, Source, apply, branch_for, distribute,
-    gather, publish, publish_on, report,
+    Delivery, Failure, Publication, Report, Source, apply, branch_for, distribute, gather, publish,
+    report,
 };
+use cm_exchange_plan::Plan;
 use cm_test_support::github::FakeGitHubs;
+use common::github::merge;
 use serde_json::json;
 use std::path::Path;
 
@@ -111,14 +115,49 @@ fn failures_share_one_issue_that_closes_when_they_clear() {
     assert_eq!(hub.repository("example/catalog").state().issues.len(), 3);
 }
 
-/// Gather the enrolled repositories and apply the import to the catalog in `root`.
-fn import(hub: &FakeGitHubs, root: &Path, participants: &[Participant]) {
-    let plan = gather(hub, root, participants).unwrap().plan.unwrap();
-    apply(root, &plan).unwrap();
+/// The import of one enrolled repository against the catalog in `root`.
+fn plan(hub: &FakeGitHubs, root: &Path, name: &str) -> Plan {
+    let source = gather(hub, root, &enrolled(&[name])[0]).unwrap();
+    source.plan().clone()
 }
 
+/// Gather the enrolled repositories and apply each import to the catalog in `root`.
+fn import(hub: &FakeGitHubs, root: &Path, names: &[&str]) {
+    for name in names {
+        apply(root, &plan(hub, root, name)).unwrap();
+    }
+}
+
+/// Gather each repository and publish its import, as a publishing run does.
+/// A repository that fails leaves its pull request alone.
+fn round(hub: &FakeGitHubs, root: &Path, names: &[&str]) -> Vec<Option<Publication>> {
+    let run = |name: &&str| {
+        let source = gather(hub, root, &enrolled(&[name])[0]).ok()?;
+        Some(publish(hub, CATALOG, source.plan()).unwrap())
+    };
+    names.iter().map(run).collect()
+}
+
+/// The catalog repository's pull requests as (branch, state), in creation order.
+fn proposals(hub: &FakeGitHubs) -> Vec<(String, String)> {
+    let state = hub.repository("example/catalog").state();
+    let text = |value: &serde_json::Value| value.as_str().unwrap().to_owned();
+    let prs = state.prs.iter();
+    prs.map(|pr| (text(&pr["head"]), text(&pr["state"])))
+        .collect()
+}
+
+/// The commit a branch of the catalog repository points at.
+fn head(hub: &FakeGitHubs, branch: &str) -> String {
+    hub.repository("example/catalog").state().refs[branch].clone()
+}
+
+const CATALOG: &str = "github:example/catalog";
+const A_BRANCH: &str = "cm-testsuite/sources/example/a";
+const B_BRANCH: &str = "cm-testsuite/sources/example/b";
+
 #[test]
-fn gathers_every_source_into_one_import_and_isolates_failures() {
+fn gathers_each_source_into_its_own_import_and_isolates_failures() {
     let names = [
         "example/a",
         "example/b",
@@ -131,90 +170,262 @@ fn gathers_every_source_into_one_import_and_isolates_failures() {
     hub.push("example/receiver", &[(MANIFEST, RECEIVING)]);
     let participants = enrolled(&names);
     let catalog = tempfile::tempdir().unwrap();
+    let found = |name: usize| gather(&hub, catalog.path(), &participants[name]);
 
-    let gathered = gather(&hub, catalog.path(), &participants).unwrap();
+    for (name, subject) in [(0, "github:example/a"), (1, "github:example/b")] {
+        let Source::Acquired { tests, plan, .. } = found(name).unwrap() else {
+            panic!("expected a snapshot of {subject}")
+        };
+        assert_eq!((tests, plan.changes().added), (1, 1));
+        assert_eq!(plan.subject, subject);
+        assert_eq!(
+            plan.title(),
+            format!("feat(corpus): import tests from {}", &subject[7..])
+        );
+    }
+    // A repository that only receives is not imported, and a failure is its own.
+    let Source::NoTests(nothing) = found(2).unwrap() else {
+        panic!("expected no tests")
+    };
+    assert!(nothing.edits.is_empty());
+    assert!(found(3).is_err());
     assert_eq!(hub.writes(), 0);
-    let found: Vec<_> = gathered.sources.iter().map(|(_, source)| source).collect();
-    assert!(matches!(found[0], Source::Acquired { tests: 1, .. }));
-    assert!(matches!(found[1], Source::Acquired { tests: 1, .. }));
-    assert!(matches!(found[2], Source::NoTests));
-    assert!(matches!(found[3], Source::Failed(_)));
-    let plan = gathered.plan.unwrap();
-    assert_eq!(plan.changes().added, 2);
-    assert_eq!(plan.subject, "github:example/a, github:example/b");
 
     // A repeat after applying finds nothing, and a failing source retires nothing.
-    apply(catalog.path(), &plan).unwrap();
-    let repeat = gather(&hub, catalog.path(), &participants).unwrap();
-    assert!(repeat.plan.unwrap().edits.is_empty());
-    assert_eq!(Catalog::load(catalog.path()).unwrap().tests.len(), 2);
+    import(&hub, catalog.path(), &names[..2]);
+    for name in &names[..2] {
+        assert!(plan(&hub, catalog.path(), name).edits.is_empty());
+    }
+    let loaded = Catalog::load(catalog.path()).unwrap();
+    assert_eq!(loaded.tests.len(), 2);
+    assert!(!loaded.sources.contains_key("github:example/receiver"));
 
     // A commit that touches no shared test proposes nothing, although the
     // source's head moved.
     hub.push("example/a", &[("README.md", "unrelated\n")]);
-    let unrelated = gather(&hub, catalog.path(), &participants).unwrap();
     assert!(matches!(
-        unrelated.sources[0].1,
-        Source::Acquired { tests: 1, .. }
+        found(0).unwrap(),
+        Source::Acquired { tests: 1, plan, .. } if plan.edits.is_empty()
     ));
-    assert!(unrelated.plan.unwrap().edits.is_empty());
 
     // An edit to a shared test is proposed.
     hub.push(
         "example/a",
         &[("tests/one.wast", ";; intent\n(component)\n")],
     );
-    let edited = gather(&hub, catalog.path(), &participants).unwrap();
-    assert_eq!(edited.plan.unwrap().changes().updated, 1);
+    assert_eq!(plan(&hub, catalog.path(), "example/a").changes().updated, 1);
 
     // A source that drops its tests retires them instead of being skipped.
     hub.push("example/b", &[(MANIFEST, "schema=1\n")]);
-    let retiring = gather(&hub, catalog.path(), &participants).unwrap();
-    assert_eq!(retiring.plan.unwrap().changes().removed, 1);
+    let retiring = plan(&hub, catalog.path(), "example/b");
+    assert_eq!(retiring.changes().removed, 1);
 }
 
 #[test]
-fn whole_registry_imports_share_one_pull_request_that_partial_plans_leave_alone() {
+fn every_source_has_one_pull_request_on_its_own_branch() {
     let hub = FakeGitHubs::new(&["example/a", "example/b", "example/catalog"]);
     share(&hub, "example/a", "one");
     share(&hub, "example/b", "two");
     let catalog = tempfile::tempdir().unwrap();
-    let plan = |names: &[&str]| {
-        gather(&hub, catalog.path(), &enrolled(names))
-            .unwrap()
-            .plan
-            .unwrap()
-    };
+    let names = ["example/a", "example/b"];
+    let open = |branch: &str| (branch.to_owned(), "open".to_owned());
 
-    // Whole-registry runs replace each other in one pull request as the registry grows.
-    let first = plan(&["example/a"]);
-    let both = plan(&["example/a", "example/b"]);
-    publish_on(&hub, "github:example/catalog", &first, GATHER_BRANCH).unwrap();
-    publish_on(&hub, "github:example/catalog", &both, GATHER_BRANCH).unwrap();
-    assert_eq!(hub.repository("example/catalog").state().prs.len(), 1);
+    // The branch depends on the source alone, not on what else the run covers.
+    round(&hub, catalog.path(), &names[..1]);
+    round(&hub, catalog.path(), &names);
+    assert_eq!(proposals(&hub), [open(A_BRANCH), open(B_BRANCH)]);
+    {
+        let state = hub.repository("example/catalog").state();
+        for (pr, name) in state.prs.iter().zip(["a/one", "b/two"]) {
+            let source = name.split('/').next().unwrap();
+            assert_eq!(
+                pr["title"],
+                format!("feat(corpus): import tests from example/{source}")
+            );
+            assert_eq!(pr["draft"], true);
+            let body = pr["body"].as_str().unwrap();
+            assert!(body.contains("into the catalog: 1 added."), "{body}");
+            assert!(
+                body.contains(&format!("| Add | `github:example/{name}` |")),
+                "{body}"
+            );
+        }
+    }
 
-    // A plan for some repositories has its own branch, so it leaves the shared
-    // pull request alone instead of narrowing it.
-    assert_ne!(branch_for(&first), GATHER_BRANCH);
-    let partial = publish(&hub, "github:example/catalog", &first).unwrap();
-    assert!(
-        matches!(partial, Publication::PullRequest(_)),
-        "{partial:?}"
-    );
-    publish(&hub, "github:example/catalog", &first).unwrap();
-
-    let state = hub.repository("example/catalog").state();
-    assert_eq!(state.prs.len(), 2);
-    assert!(state.prs.iter().all(|pr| pr["state"] == "open"));
-    let pr = &state.prs[0];
+    // A repeated run changes nothing.
+    let commits = hub.repository("example/catalog").state().commits.len();
+    let writes = hub.writes();
+    round(&hub, catalog.path(), &names);
     assert_eq!(
-        pr["title"],
-        "feat(corpus): import tests from example/a and example/b"
+        hub.repository("example/catalog").state().commits.len(),
+        commits
     );
-    assert_eq!(pr["draft"], true);
-    let body = pr["body"].as_str().unwrap();
-    assert!(body.contains("| Add | `github:example/a/one` |"), "{body}");
-    assert!(body.contains("| Add | `github:example/b/two` |"), "{body}");
+    assert_eq!(proposals(&hub).len(), 2);
+
+    // A source that moves on updates its own pull request in place.
+    let (a, b) = (head(&hub, A_BRANCH), head(&hub, B_BRANCH));
+    hub.push(
+        "example/a",
+        &[("tests/one.wast", ";; intent\n(component)\n")],
+    );
+    round(&hub, catalog.path(), &names);
+    assert_eq!(proposals(&hub), [open(A_BRANCH), open(B_BRANCH)]);
+    assert_ne!(head(&hub, A_BRANCH), a);
+    assert_eq!(head(&hub, B_BRANCH), b);
+    assert!(hub.writes() > writes);
+
+    // An import of the same source planned by hand lands in that pull request too.
+    let manual = cm_acquisition::acquire(
+        &cm_acquisition::GitHub {
+            api: &hub,
+            source: "github:example/a",
+        },
+        "github:example/a",
+        "main",
+        MANIFEST,
+    )
+    .unwrap();
+    let manual = cm_exchange_plan::import(catalog.path(), &[manual]).unwrap();
+    assert_eq!(branch_for(&manual), A_BRANCH);
+    let a = head(&hub, A_BRANCH);
+    publish(&hub, CATALOG, &manual).unwrap();
+    assert_eq!(proposals(&hub).len(), 2);
+    assert_eq!(head(&hub, A_BRANCH), a);
+}
+
+#[test]
+fn a_source_that_fails_keeps_its_pull_request_while_the_others_update() {
+    let hub = FakeGitHubs::new(&["example/a", "example/b", "example/catalog"]);
+    share(&hub, "example/a", "one");
+    share(&hub, "example/b", "two");
+    let catalog = tempfile::tempdir().unwrap();
+    let names = ["example/a", "example/b"];
+    round(&hub, catalog.path(), &names);
+    let (a, b) = (head(&hub, A_BRANCH), head(&hub, B_BRANCH));
+    let body = |number: usize| {
+        let state = hub.repository("example/catalog").state();
+        state.prs[number]["body"].clone()
+    };
+    let described = body(1);
+
+    // One source can no longer be read while the other moves on.
+    hub.push("example/b", &[(MANIFEST, "schema=2\n")]);
+    hub.push(
+        "example/a",
+        &[("tests/one.wast", ";; intent\n(component)\n")],
+    );
+    let outcome = round(&hub, catalog.path(), &names);
+    assert!(matches!(outcome[0], Some(Publication::PullRequest(_))));
+    assert_eq!(outcome[1], None);
+    assert_ne!(head(&hub, A_BRANCH), a);
+    assert_eq!(head(&hub, B_BRANCH), b);
+    assert_eq!(body(1), described);
+    assert!(proposals(&hub).iter().all(|(_, state)| state == "open"));
+}
+
+#[test]
+fn a_source_with_nothing_new_withdraws_only_its_own_pull_request() {
+    let hub = FakeGitHubs::new(&["example/a", "example/b", "example/catalog"]);
+    share(&hub, "example/a", "one");
+    share(&hub, "example/b", "two");
+    let catalog = tempfile::tempdir().unwrap();
+    let names = ["example/a", "example/b"];
+    let state = |branch: &str, state: &str| (branch.to_owned(), state.to_owned());
+    round(&hub, catalog.path(), &names);
+
+    // A source that stops sharing before its first import lands has nothing to propose.
+    hub.push("example/a", &[(MANIFEST, "schema=1\n")]);
+    let outcome = round(&hub, catalog.path(), &names);
+    assert!(matches!(outcome[0], Some(Publication::Closed(_))));
+    assert!(matches!(outcome[1], Some(Publication::PullRequest(_))));
+    assert_eq!(
+        proposals(&hub),
+        [state(A_BRANCH, "closed"), state(B_BRANCH, "open")]
+    );
+    assert_eq!(
+        round(&hub, catalog.path(), &names[..1]),
+        [Some(Publication::NoChanges)]
+    );
+
+    // Sharing again opens a new pull request on the same branch.
+    share(&hub, "example/a", "one");
+    let first = plan(&hub, catalog.path(), "example/a");
+    round(&hub, catalog.path(), &names);
+    assert_eq!(proposals(&hub)[2], state(A_BRANCH, "open"));
+
+    // Once that import has landed, a change that is taken back is withdrawn too.
+    merge(hub.repository("example/catalog"), &first);
+    apply(catalog.path(), &first).unwrap();
+    hub.push(
+        "example/a",
+        &[("tests/one.wast", ";; intent\n(component)\n")],
+    );
+    round(&hub, catalog.path(), &names);
+    assert_eq!(proposals(&hub)[3], state(A_BRANCH, "open"));
+    hub.push("example/a", &[("tests/one.wast", ";; intent\n(module)\n")]);
+    let outcome = round(&hub, catalog.path(), &names);
+    assert!(matches!(outcome[0], Some(Publication::Closed(_))));
+    assert_eq!(
+        proposals(&hub),
+        [
+            state(A_BRANCH, "closed"),
+            state(B_BRANCH, "open"),
+            state(A_BRANCH, "closed"),
+            state(A_BRANCH, "closed"),
+        ]
+    );
+}
+
+#[test]
+fn per_source_pull_requests_merge_in_either_order() {
+    let names = ["example/a", "example/b"];
+    for order in [[0, 1], [1, 0]] {
+        let hub = FakeGitHubs::new(&["example/a", "example/b", "example/catalog"]);
+        share(&hub, "example/a", "one");
+        share(&hub, "example/b", "two");
+        let catalog = tempfile::tempdir().unwrap();
+        let remote = hub.repository("example/catalog");
+        let plans = names.map(|name| plan(&hub, catalog.path(), name));
+        round(&hub, catalog.path(), &names);
+        let (first, second) = (order[0], order[1]);
+
+        // One lands. The other, planned against the catalog before that, is
+        // neither stale nor in conflict: it touches no file the first one did.
+        merge(remote, &plans[first]);
+        let kept = publish(&hub, CATALOG, &plans[second]).unwrap();
+        assert!(matches!(kept, Publication::PullRequest(_)), "{kept:?}");
+
+        // The next run, from a checkout of the new default branch, agrees.
+        apply(catalog.path(), &plans[first]).unwrap();
+        let outcome = round(&hub, catalog.path(), &names);
+        assert_eq!(outcome[first], Some(Publication::NoChanges));
+        assert!(matches!(outcome[second], Some(Publication::PullRequest(_))));
+        assert_eq!(plan(&hub, catalog.path(), names[second]), plans[second]);
+
+        // The other lands too, and nothing is left to propose.
+        merge(remote, &plans[second]);
+        apply(catalog.path(), &plans[second]).unwrap();
+        assert_eq!(
+            round(&hub, catalog.path(), &names),
+            [Some(Publication::NoChanges), Some(Publication::NoChanges)]
+        );
+        assert_eq!(proposals(&hub).len(), 2);
+
+        // The default branch holds exactly the catalog the run's checkout does.
+        let landed = tempfile::tempdir().unwrap();
+        {
+            let state = remote.state();
+            for (path, text) in state.files_at(&state.refs["main"]) {
+                let file = landed.path().join(path);
+                std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+                std::fs::write(file, text).unwrap();
+            }
+        }
+        let loaded = Catalog::load(landed.path()).unwrap();
+        assert_eq!(loaded, Catalog::load(catalog.path()).unwrap());
+        assert_eq!(loaded.tests.len(), 2);
+        assert_eq!(load_catalog_files(landed.path(), &loaded).unwrap().len(), 2);
+    }
 }
 
 #[test]
@@ -225,7 +436,7 @@ fn distributes_one_pull_request_per_receiving_repository() {
     hub.push("example/r2", &[(MANIFEST, RECEIVING)]);
     hub.push("example/plain", &[(MANIFEST, "schema=1\n")]);
     let root = tempfile::tempdir().unwrap();
-    import(&hub, root.path(), &enrolled(&["example/a"]));
+    import(&hub, root.path(), &["example/a"]);
     let run = |name: &str, publish: bool| {
         let catalog = Catalog::load(root.path()).unwrap();
         let files = load_catalog_files(root.path(), &catalog).unwrap();
@@ -270,7 +481,7 @@ fn distributes_one_pull_request_per_receiving_repository() {
         "example/a",
         &[("tests/one.wast", ";; revised intent\n(component)\n")],
     );
-    import(&hub, root.path(), &enrolled(&["example/a"]));
+    import(&hub, root.path(), &["example/a"]);
     run("example/r1", true).unwrap();
     {
         let state = hub.repository("example/r1").state();

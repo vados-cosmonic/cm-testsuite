@@ -1,10 +1,11 @@
-//! Gather updates from enrolled repositories into one catalog import.
+//! Gather updates from enrolled repositories into one catalog import each.
 use crate::exchange::{
     Access, Credentials, Selection, github_name, participants, planned, published, settle,
 };
 use anyhow::{Context, Result};
 use cm_catalog::PARTICIPANTS_PATH;
-use cm_delivery::{Failure, GATHER_BRANCH, Gathered, Source};
+use cm_delivery::{Failure, Source};
+use cm_exchange_plan::Plan;
 use cm_github::Api;
 use std::path::{Path, PathBuf};
 
@@ -15,11 +16,11 @@ pub struct Args {
     pub(crate) registry: PathBuf,
     #[command(flatten)]
     pub(crate) selection: Selection,
-    /// Write the import into the catalog checkout at --root.
+    /// Write the imports into the catalog checkout at --root.
     #[arg(long, conflicts_with = "publish")]
     pub(crate) apply: bool,
-    /// Open or update the catalog repository's draft import pull request: the shared one
-    /// for a whole-registry run, a separate one for a run narrowed by --only or --except.
+    /// Open, update, or withdraw one draft import pull request per source
+    /// repository in the catalog repository.
     #[arg(long)]
     pub(crate) publish: bool,
     /// Catalog repository to publish to; defaults to GITHUB_REPOSITORY.
@@ -32,66 +33,65 @@ pub struct Args {
     pub(crate) report_to: Option<String>,
 }
 
-/// What to do with the combined import once it is planned.
+/// What to do with each repository's import once it is planned.
 enum Mode {
     DryRun,
     Apply,
-    /// Publish to `repository`, on the shared branch when the run covers the whole registry.
-    Publish {
-        repository: Option<String>,
-        shared: bool,
-    },
+    /// Publish to this catalog repository.
+    Publish(String),
 }
 
-/// Act on the combined import and say in one phrase what happened.
-fn conclude(api: &dyn Api, root: &Path, gathered: &Gathered, mode: &Mode) -> Result<String> {
-    let Some(plan) = &gathered.plan else {
-        return Ok("nothing to gather".into());
-    };
+/// Act on one repository's import and say in one phrase what happened.
+fn conclude(api: &dyn Api, root: &Path, plan: &Plan, mode: &Mode) -> Result<String> {
     match mode {
-        Mode::DryRun => Ok(format!(
-            "{} (dry run; pass --apply or --publish)",
-            planned(plan)
-        )),
-        Mode::Apply => {
+        Mode::Apply if !plan.edits.is_empty() => {
             cm_delivery::apply(root, plan)?;
             Ok(format!("applied {}", planned(plan)))
         }
-        Mode::Publish { repository, shared } => {
-            let target = repository
-                .clone()
-                .or_else(|| std::env::var("GITHUB_REPOSITORY").ok())
-                .map(|name| github_name(&name))
-                .context("--publish needs --repository or GITHUB_REPOSITORY")?;
-            let unread = gathered
-                .sources
-                .iter()
-                .any(|(_, source)| matches!(source, Source::Failed(_)));
-            // An empty plan withdraws the open proposal. That is wrong while a
-            // repository could not be read: its pending changes are still wanted.
-            if plan.edits.is_empty() && unread {
-                return Ok("nothing new from the repositories that could be read; \
-                           any open import pull request is left as it is"
-                    .into());
-            }
-            // Only a run over the whole registry speaks for the shared proposal.
-            let publication = if *shared {
-                cm_delivery::publish_on(api, &target, plan, GATHER_BRANCH)
-            } else {
-                cm_delivery::publish(api, &target, plan)
-            }
-            .with_context(|| format!("publishing the import to {target}"))?;
+        Mode::DryRun | Mode::Apply => Ok(planned(plan)),
+        Mode::Publish(target) => {
+            // Every import proposal is opened here, on its source's own branch.
+            let publication = cm_delivery::publish(api, target, plan)
+                .with_context(|| format!("publishing the import to {target}"))?;
             Ok(published(plan, &publication))
         }
     }
 }
 
-/// Gather updates from enrolled repositories into one catalog import.
+/// Gather one repository and say in one phrase what was found and done.
+///
+/// Each repository is planned after the ones before it were concluded, so
+/// with --apply a plan sees the imports already written.
+fn gather(
+    api: &dyn Api,
+    root: &Path,
+    participant: &cm_catalog::Participant,
+    mode: &Mode,
+) -> Result<String> {
+    Ok(match cm_delivery::gather(api, root, participant)? {
+        Source::Acquired {
+            tests,
+            revision,
+            plan,
+        } => format!(
+            "{tests} tests at {}; {}",
+            &revision[..12],
+            conclude(api, root, &plan, mode)?
+        ),
+        // Nothing to import; publishing only withdraws a proposal left open.
+        Source::NoTests(plan) => match mode {
+            Mode::Publish(_) => format!("shares no tests; {}", conclude(api, root, &plan, mode)?),
+            Mode::DryRun | Mode::Apply => "shares no tests".into(),
+        },
+    })
+}
+
+/// Gather updates from enrolled repositories into one catalog import each.
 ///
 /// Without --apply or --publish this only reports what would change.
 pub fn run(root: &Path, args: Args) -> Result<()> {
     let Args {
-        registry,
+        registry: path,
         selection,
         apply,
         publish,
@@ -100,54 +100,43 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
         report_to,
     } = args;
 
-    let registry = participants(root, &registry, &selection)?;
+    let registry = participants(root, &path, &selection)?;
     let access = Access::new(&credentials, publish)?;
     let mode = match (apply, publish) {
         (true, _) => Mode::Apply,
-        (_, true) => Mode::Publish {
-            repository,
-            shared: !selection.is_partial(),
-        },
+        (_, true) => Mode::Publish(
+            repository
+                .or_else(|| std::env::var("GITHUB_REPOSITORY").ok())
+                .map(|name| github_name(&name))
+                .context("--publish needs --repository or GITHUB_REPOSITORY")?,
+        ),
         _ => Mode::DryRun,
     };
     let api = access.api();
 
-    // A repository that cannot be read is reported and left out. A failure of
-    // the combined import is reported too, against the catalog as a whole.
+    // A repository that cannot be read, planned, or published is reported and
+    // left as it is, with its open pull request; the others carry on.
     let mut failures = vec![];
-    let catalog = cm_delivery::gather(&api, root, &registry.participant).and_then(|gathered| {
-        for (participant, (repository, source)) in
-            registry.participant.iter().zip(&gathered.sources)
-        {
-            match source {
-                Source::Acquired { tests, revision } => {
-                    println!("{repository}: {tests} tests at {}", &revision[..12]);
-                }
-                Source::NoTests => println!("{repository}: shares no tests"),
-                Source::Failed(error) => {
-                    println!("{repository}: failed: {error:#}");
-                    failures.push(Failure {
-                        repository: repository.clone(),
-                        error: format!("{error:#}"),
-                        contacts: participant.maintainers.clone(),
-                    });
-                }
+    for participant in &registry.participant {
+        let repository = &participant.repository;
+        match gather(&api, root, participant, &mode) {
+            Ok(outcome) => println!("{repository}: {outcome}"),
+            Err(error) => {
+                println!("{repository}: failed: {error:#}");
+                failures.push(Failure {
+                    repository: repository.clone(),
+                    error: format!("{error:#}"),
+                    contacts: participant.maintainers.clone(),
+                });
             }
         }
-        conclude(&api, root, &gathered, &mode)
-    });
+    }
     // Publishing is over: revoke the import token before reporting.
     drop(api);
-    match catalog {
-        Ok(outcome) => println!("catalog: {outcome}"),
-        Err(error) => {
-            println!("catalog: failed: {error:#}");
-            failures.push(Failure {
-                repository: "catalog import".into(),
-                error: format!("{error:#}"),
-                contacts: vec![],
-            });
-        }
+    if registry.participant.is_empty() {
+        println!("no repositories are enrolled in {}", path.display());
+    } else if matches!(mode, Mode::DryRun) {
+        println!("dry run; pass --apply or --publish");
     }
 
     settle(
@@ -156,4 +145,92 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
         &failures,
         &registry.maintainers,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cm_catalog::{Catalog, Participants};
+    use cm_test_support::github::FakeGitHubs;
+
+    const CATALOG: &str = "github:example/catalog";
+
+    fn share(hub: &FakeGitHubs, repository: &str, name: &str, text: &str) {
+        let manifest = format!(
+            "schema=1\n[[test]]\nname='{name}'\npath='file:///tests/{name}.wast'\n\
+             summary='Check {name}'\nrequires=['component-model']\ncovers=['smoke']\n"
+        );
+        let path = format!("tests/{name}.wast");
+        hub.push(
+            repository,
+            &[(".cm-testsuite.toml", &manifest), (&path, text)],
+        );
+    }
+
+    fn enrolled(names: &[&str]) -> Vec<cm_catalog::Participant> {
+        let entries: String = names
+            .iter()
+            .map(|name| format!("[[participant]]\nrepository='github:{name}'\n"))
+            .collect();
+        Participants::parse(format!("schema=1\n{entries}").as_bytes())
+            .unwrap()
+            .participant
+    }
+
+    #[test]
+    fn each_repository_is_concluded_alone_and_says_what_happened() {
+        let hub = FakeGitHubs::new(&["example/a", "example/b", "example/r", "example/catalog"]);
+        share(&hub, "example/a", "one", ";; intent\n(module)\n");
+        share(&hub, "example/b", "two", ";; intent\n(component)\n");
+        hub.push("example/r", &[(".cm-testsuite.toml", "schema=1\n")]);
+        let root = tempfile::tempdir().unwrap();
+        let participants = enrolled(&["example/a", "example/missing", "example/b", "example/r"]);
+        let run = |mode: &Mode| -> Vec<Result<String>> {
+            let each = participants.iter();
+            each.map(|participant| gather(&hub, root.path(), participant, mode))
+                .collect()
+        };
+
+        // A dry run writes nothing, and an unreadable repository fails alone.
+        let found = run(&Mode::DryRun);
+        assert_eq!(hub.writes(), 0);
+        assert!(root.path().read_dir().unwrap().next().is_none());
+        let said = |outcome: &Result<String>| outcome.as_ref().unwrap().clone();
+        assert!(
+            said(&found[0]).ends_with("; 1 added"),
+            "{}",
+            said(&found[0])
+        );
+        assert!(found[1].is_err());
+        assert!(said(&found[2]).starts_with("1 tests at "));
+        assert_eq!(said(&found[3]), "shares no tests");
+
+        // Publishing names each pull request beside its repository.
+        let published = run(&Mode::Publish(CATALOG.into()));
+        assert!(said(&published[0]).ends_with("; 1 added; https://example.invalid/pull/1"));
+        assert!(published[1].is_err());
+        assert!(said(&published[2]).ends_with("; 1 added; https://example.invalid/pull/2"));
+        assert_eq!(said(&published[3]), "shares no tests; up to date");
+        {
+            let state = hub.repository("example/catalog").state();
+            let heads: Vec<_> = state.prs.iter().map(|pr| pr["head"].clone()).collect();
+            assert_eq!(
+                heads,
+                [
+                    "cm-testsuite/sources/example/a",
+                    "cm-testsuite/sources/example/b"
+                ]
+            );
+            assert!(state.prs.iter().all(|pr| pr["draft"] == true));
+        }
+
+        // Applying writes each import before the next repository is planned.
+        let applied = run(&Mode::Apply);
+        assert!(said(&applied[0]).ends_with("; applied 1 added"));
+        assert!(said(&applied[2]).ends_with("; applied 1 added"));
+        assert_eq!(Catalog::load(root.path()).unwrap().tests.len(), 2);
+        let repeated = run(&Mode::Apply);
+        assert!(said(&repeated[0]).ends_with("; up to date"));
+        assert!(said(&repeated[2]).ends_with("; up to date"));
+    }
 }

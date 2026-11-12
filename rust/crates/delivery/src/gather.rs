@@ -1,4 +1,4 @@
-//! Collect updates from every enrolled repository into one import plan.
+//! Plan the import of one enrolled repository's tests into the catalog.
 
 use anyhow::{Context, Result};
 use cm_acquisition::{GitHub, Snapshot, acquire};
@@ -10,22 +10,26 @@ use std::path::Path;
 /// What gathering found in one enrolled repository.
 #[derive(Debug)]
 pub enum Source {
-    /// A complete snapshot of this many tests at the given commit.
-    Acquired { tests: usize, revision: String },
+    /// A complete snapshot of this many tests at the given commit, and the
+    /// import it calls for. The plan is empty when no shared test changed.
+    Acquired {
+        tests: usize,
+        revision: String,
+        plan: Plan,
+    },
     /// The repository shares no tests and the catalog holds none from it.
-    NoTests,
-    /// Acquisition failed; the catalog keeps what it has from this repository.
-    Failed(anyhow::Error),
+    /// The plan is empty; publishing it withdraws a proposal left open from
+    /// when the repository did share tests.
+    NoTests(Plan),
 }
 
-/// The combined import plan and the per-repository findings behind it.
-#[derive(Debug)]
-pub struct Gathered {
-    /// One plan covering every acquired repository; absent when none was acquired.
-    /// The plan is empty when no repository changed a test it shares.
-    pub plan: Option<Plan>,
-    /// Findings in registry order, by repository.
-    pub sources: Vec<(String, Source)>,
+impl Source {
+    /// The import of this repository alone.
+    pub fn plan(&self) -> &Plan {
+        match self {
+            Self::Acquired { plan, .. } | Self::NoTests(plan) => plan,
+        }
+    }
 }
 
 /// Name the branch a repository treats as its default.
@@ -37,65 +41,43 @@ pub(crate) fn default_branch(api: &dyn Api, repository: &str) -> Result<String> 
         .to_owned())
 }
 
-/// Acquire every enrolled repository and plan one import against the catalog in `root`.
+/// Acquire one enrolled repository and plan its import against the catalog in `root`.
 ///
-/// A repository that fails acquisition is reported and left out, so it can
-/// neither block the others nor retire its own tests. Nothing is written.
-pub fn gather(api: &dyn Api, root: &Path, participants: &[Participant]) -> Result<Gathered> {
-    let catalog = Catalog::load(root)?;
-    let mut snapshots: Vec<Snapshot> = vec![];
-    let mut sources = vec![];
-    for participant in participants {
-        let repository = participant.repository.as_str();
-        let acquired = participant
-            .reference
-            .clone()
-            .map_or_else(|| default_branch(api, repository), Ok)
-            .and_then(|reference| {
-                acquire(
-                    &GitHub {
-                        api,
-                        source: repository,
-                    },
-                    repository,
-                    &reference,
-                    &participant.manifest,
-                )
-            });
-        let source = match acquired {
-            Err(error) => Source::Failed(error),
-            // A receive-only participant must not appear in the catalog as an
-            // empty source, but a source that dropped every test must retire them.
-            Ok(snapshot)
-                if snapshot.tests.is_empty() && !catalog.sources.contains_key(repository) =>
-            {
-                Source::NoTests
-            }
-            Ok(snapshot) => {
-                let source = Source::Acquired {
-                    tests: snapshot.tests.len(),
-                    revision: snapshot.metadata.revision.clone(),
-                };
-                snapshots.push(snapshot);
-                source
-            }
-        };
-        sources.push((repository.to_owned(), source));
-    }
-    let plan = if snapshots.is_empty() {
-        None
-    } else {
-        let mut plan = import(root, &snapshots)?;
-        // Commits that touch no shared test would otherwise advance the
-        // recorded revisions, proposing an import on every run and a receipt
-        // update in every receiving repository after it.
-        if snapshots.iter().all(|snapshot| current(&catalog, snapshot)) {
-            plan.edits.clear();
-            plan.provenance.clear();
-        }
-        Some(plan)
+/// Each repository has its own plan, so one that cannot be read or planned
+/// fails alone: it can neither block the others nor retire its own tests.
+/// Nothing is written.
+pub fn gather(api: &dyn Api, root: &Path, participant: &Participant) -> Result<Source> {
+    let repository = participant.repository.as_str();
+    let reference = match &participant.reference {
+        Some(reference) => reference.clone(),
+        None => default_branch(api, repository)?,
     };
-    Ok(Gathered { plan, sources })
+    let source = GitHub {
+        api,
+        source: repository,
+    };
+    let snapshot = acquire(&source, repository, &reference, &participant.manifest)?;
+    let catalog = Catalog::load(root)?;
+    let mut plan = import(root, std::slice::from_ref(&snapshot))?;
+    // A receive-only participant must not appear in the catalog as an empty
+    // source, but a source that dropped every test must retire them.
+    let absent = snapshot.tests.is_empty() && !catalog.sources.contains_key(repository);
+    // Commits that touch no shared test would otherwise advance the recorded
+    // revision, proposing an import on every run and a receipt update in
+    // every receiving repository after it.
+    if absent || current(&catalog, &snapshot) {
+        plan.edits.clear();
+        plan.provenance.clear();
+    }
+    Ok(if absent {
+        Source::NoTests(plan)
+    } else {
+        Source::Acquired {
+            tests: snapshot.tests.len(),
+            revision: snapshot.metadata.revision,
+            plan,
+        }
+    })
 }
 
 /// Whether the catalog already holds everything in a snapshot, apart from

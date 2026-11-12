@@ -7,11 +7,10 @@ use cm_acquisition::{Snapshot, load_catalog_files};
 use cm_catalog::{
     CATALOG_DIR, CATALOG_PATH, Catalog, Layout, RECEIPT_PATH, digest, records, source_path,
 };
-use cm_delivery::{Publication, apply, branch_for, publish};
+use cm_delivery::{Publication, apply, publish};
 use cm_exchange_plan::{Plan, Receipt, import};
 use cm_test_support::github::FakeGitHub;
-use common::exchange::*;
-use serde_json::json;
+use common::{exchange::*, github::merge};
 use std::{fs, path::Path};
 
 const A: &str = "github:example/a";
@@ -220,27 +219,6 @@ fn deliveries_do_not_depend_on_the_layout() {
         digest(&Catalog::load(hub.path()).unwrap()).unwrap(),
         receipt().catalog_sha256
     );
-}
-
-/// Land a plan on the default branch as a merge of its pull request would,
-/// keeping whatever the branch gained since the plan was made.
-fn merge(api: &FakeGitHub, plan: &Plan) {
-    let mut state = api.state_mut();
-    let main = state.refs["main"].clone();
-    let mut files = state.files_at(&main).clone();
-    for edit in &plan.edits {
-        match &edit.after {
-            Some(text) => files.insert(edit.path.clone(), text.clone()),
-            None => files.remove(&edit.path),
-        };
-    }
-    let merged = state.commit(files, "merge", vec![main]);
-    state.refs.insert("main".into(), merged);
-    let branch = branch_for(plan);
-    for pr in state.prs.iter_mut().filter(|pr| pr["head"] == branch) {
-        pr["state"] = json!("closed");
-        pr["merged_at"] = json!("2026-11-12T00:00:00Z");
-    }
 }
 
 #[test]

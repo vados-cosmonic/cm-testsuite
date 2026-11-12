@@ -14,7 +14,7 @@ Change them through the owning command, not by hand.
 | `metadata/catalog.toml` | Import plans | Same as the corpus; it records each file's source, revision, and digest |
 | `reports/` | `xtask results-import` | Admit a report with the command; never write one directly |
 | `registry/publishers.toml` | Maintainer review | Edit by hand only as an explicitly requested admission change |
-| `registry/participants.toml` | Maintainer review | Edit by hand only as an explicitly requested enrollment change |
+| `registry/participants.toml`, `registry/participants/` | Maintainer review | Edit by hand only as an explicitly requested enrollment change |
 | `examples/*/` | Hand-written | Edit directly; see below |
 | `.cm-testsuite.toml` | Hand-written | Follow the [manifest guide](../../../docs/src/manifest.md) |
 

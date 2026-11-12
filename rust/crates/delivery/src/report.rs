@@ -1,7 +1,7 @@
 //! Keep one issue describing the failures of a scheduled exchange run.
 
 use anyhow::{Context, Result, ensure};
-use cm_catalog::PARTICIPANTS_PATH;
+use cm_catalog::{PARTICIPANTS_DIR, PARTICIPANTS_PATH};
 use cm_github::{Api, repo_path, required};
 use serde_json::json;
 use std::collections::BTreeSet;
@@ -59,7 +59,8 @@ fn mentions<'a>(logins: impl IntoIterator<Item = &'a String>) -> String {
 fn body(task: &str, failures: &[Failure], maintainers: &[String], run: Option<&str>) -> String {
     let mut body = format!(
         "{}\nThe scheduled `{task}` run could not process {} of the enrolled repositories. \
-         Fix the cause, or remove the repository from `{PARTICIPANTS_PATH}` to stop trying. \
+         Fix the cause, or remove the repository's file under `{PARTICIPANTS_DIR}/` \
+         or its entry in `{PARTICIPANTS_PATH}` to stop trying. \
          This issue tracks the latest run and closes itself once a run succeeds.\n\n\
          | Repository | Failure | Contacts |\n| --- | --- | --- |\n",
         marker(task),

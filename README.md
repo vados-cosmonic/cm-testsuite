@@ -27,7 +27,7 @@ Joining the exchange takes these steps:
 3. Open an [enrollment issue](https://github.com/vados-cosmonic/cm-testsuite/issues/new?template=enroll-repository.yml)
    naming your repository and its maintainers.
 4. A maintainer checks the setup and merges a pull request
-   that adds your repository to `registry/participants.toml`.
+   that adds `registry/participants/OWNER/REPO.toml`.
 5. Every run after that, daily or started by a maintainer, does the following:
    - **Submitting:** your declared tests are read at one commit
      and proposed to the catalog in a single import pull request here.

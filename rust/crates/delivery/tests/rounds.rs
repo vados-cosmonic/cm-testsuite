@@ -91,7 +91,8 @@ fn failures_share_one_issue_that_closes_when_they_clear() {
         );
         assert!(body.contains("| `github:example/r2` | HTTP 403 | @owner |"));
         assert!(body.contains("cc @lead"));
-        assert!(body.contains("registry/participants.toml"));
+        assert!(body.contains("`registry/participants/`"));
+        assert!(body.contains("`registry/participants.toml`"));
         assert!(body.contains("https://example.invalid/run/1"));
     }
 
@@ -122,8 +123,8 @@ fn gathers_every_source_into_one_import_and_isolates_failures() {
     let names = [
         "example/a",
         "example/b",
-        "example/receiver",
         "example/broken",
+        "example/receiver",
     ];
     let hub = FakeGitHubs::new(&names);
     share(&hub, "example/a", "one");
@@ -137,8 +138,8 @@ fn gathers_every_source_into_one_import_and_isolates_failures() {
     let found: Vec<_> = gathered.sources.iter().map(|(_, source)| source).collect();
     assert!(matches!(found[0], Source::Acquired { tests: 1, .. }));
     assert!(matches!(found[1], Source::Acquired { tests: 1, .. }));
-    assert!(matches!(found[2], Source::NoTests));
-    assert!(matches!(found[3], Source::Failed(_)));
+    assert!(matches!(found[2], Source::Failed(_)));
+    assert!(matches!(found[3], Source::NoTests));
     let plan = gathered.plan.unwrap();
     assert_eq!(plan.changes().added, 2);
     assert_eq!(plan.subject, "github:example/a, github:example/b");

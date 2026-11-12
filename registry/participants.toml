@@ -1,10 +1,9 @@
-# Repositories enrolled in the exchange, approved during review.
-# Each repository's own manifest decides whether it shares tests, receives them, or both.
+# Settings shared by every enrolled repository, approved during review.
+# Each repository is enrolled by its own file, participants/OWNER/REPO.toml;
+# see participants/README.md.
+# [[participant]] tables below are still read, but new enrollments add a file instead.
 #
-# [[participant]]
-# repository = "github:OWNER/REPO"
-# manifest = ".cm-testsuite.toml" # optional
-# reference = "main"              # optional; gathered from the default branch when absent
+# maintainers = ["LOGIN"] # this repository's maintainers, mentioned on every failure report
 schema = 1
 
 [[participant]]

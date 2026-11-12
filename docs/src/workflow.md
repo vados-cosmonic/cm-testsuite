@@ -58,14 +58,11 @@ Publication supports branches in the destination repository and caps proposals a
 
 ## Gather and distribute
 
-`gather` and `distribute` run the import and receiving flows for every repository
-enrolled in `registry/participants.toml`:
+`gather` and `distribute` run the import and receiving flows for every enrolled repository.
+Each one has its own file, `registry/participants/OWNER/REPO.toml`:
 
 ```toml
 schema = 1
-maintainers = ["LOGIN"] # mentioned on every failure report
-
-[[participant]]
 repository = "github:OWNER/REPO"
 manifest = ".cm-testsuite.toml" # optional
 reference = "main"              # optional; gathered from the default branch when absent
@@ -74,6 +71,22 @@ maintainers = ["LOGIN"]         # optional; mentioned when this repository fails
 
 Enrollment only makes the exchange look at a repository.
 Its own manifest decides whether it shares tests, receives them, or both.
+
+- The path must spell the repository exactly as the `repository` field does;
+  a file that names another repository is an error.
+- A repository enrolled twice is an error, whatever the case of its name.
+- Files that do not end in `.toml` are ignored.
+- Repositories are processed in name order.
+
+`registry/participants.toml` holds the settings shared by all of them:
+
+```toml
+schema = 1
+maintainers = ["LOGIN"] # mentioned on every failure report
+```
+
+`[[participant]]` tables with the same fields are still read from that file
+and merged with the per-repository files.
 
 ```sh
 dotslash bins/just gather                 # report what the catalog would import
@@ -173,7 +186,7 @@ from the repository's **Settings → Actions → OIDC** page.
 
 Widening the exchange is therefore a configuration change on both sides:
 
-- A new receiving repository is enrolled in `registry/participants.toml` here
+- A new receiving repository is enrolled under `registry/participants/` here
   and commits the policy above there.
   Until it does, `distribute` reports that repository as failing and carries on with the rest.
 - A new source needs only enrollment, since gathering reads and writes nothing in the source.

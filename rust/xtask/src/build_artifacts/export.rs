@@ -11,6 +11,7 @@ use std::{
 
 #[derive(Deserialize)]
 struct Artifact {
+    manifest_path: PathBuf,
     filenames: Vec<PathBuf>,
     executable: Option<PathBuf>,
     target: Target,
@@ -129,6 +130,15 @@ pub fn export(work: &Path, sdk: &Path, out: &Path) -> Result<()> {
             path: path
                 .to_str()
                 .context("UTF-8 executable path")?
+                .replace('\\', "/"),
+            directory: artifact
+                .manifest_path
+                .canonicalize()?
+                .parent()
+                .context("package manifest directory")?
+                .strip_prefix(&work)?
+                .to_str()
+                .context("UTF-8 package directory")?
                 .replace('\\', "/"),
             integration: artifact.target.kind.iter().any(|kind| kind == "test"),
             live: artifact.target.name == "github_live",

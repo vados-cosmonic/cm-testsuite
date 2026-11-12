@@ -18,6 +18,8 @@ pub struct Bundle {
 pub struct TestBinary {
     pub name: String,
     pub path: String,
+    /// Owning package directory, relative to the bundle (not the target source).
+    pub directory: String,
     pub integration: bool,
     pub live: bool,
 }

@@ -1,7 +1,7 @@
 //! Verify suite filtering, failure propagation, and missing compiler outputs.
 
 use super::build_artifacts::{
-    Bundle, TestBinary, export,
+    Bundle, DocTest, TestBinary, export,
     run::{self, Suite},
 };
 use std::{fs, path::Path};
@@ -20,6 +20,7 @@ fn fixture(root: &Path, live: bool) {
             tests: vec![TestBinary {
                 name: "fixture".into(),
                 path: format!("harness{}", std::env::consts::EXE_SUFFIX),
+                directory: ".".into(),
                 integration: true,
                 live,
             }],
@@ -103,4 +104,150 @@ fn rustdoc_arguments_accept_mixed_separators_after_windows_relocation() {
         run::expanded("${SDK}/bin/rustc.exe", bundle, sdk),
         r"\\server\sdk/bin/rustc.exe"
     );
+}
+
+#[test]
+#[ignore = "child harness for checking Cargo's package context"]
+fn package_context_fixture() {
+    assert_eq!(
+        fs::read_to_string("fixture.txt").unwrap(),
+        "package fixture"
+    );
+    let directory = std::env::current_dir().unwrap().canonicalize().unwrap();
+    assert_eq!(
+        Path::new(&std::env::var_os("CARGO_MANIFEST_DIR").unwrap())
+            .canonicalize()
+            .unwrap(),
+        directory,
+    );
+    assert_eq!(
+        Path::new(&std::env::var_os("CARGO_MANIFEST_PATH").unwrap())
+            .canonicalize()
+            .unwrap(),
+        directory.join("Cargo.toml"),
+    );
+}
+
+#[test]
+fn exported_harness_preserves_package_context_after_relocation() {
+    let temp = tempfile::tempdir().unwrap();
+    let work = temp.path().join("work");
+    let source = work.join("source");
+    let package = source.join("crates/example");
+    fs::create_dir_all(&package).unwrap();
+    fs::write(package.join("Cargo.toml"), "[package]\nname = 'example'\n").unwrap();
+    fs::write(package.join("fixture.txt"), "package fixture").unwrap();
+    // A target's source need not be below its owning package directory.
+    fs::create_dir_all(source.join("shared-tests")).unwrap();
+    let src_path = source.join("shared-tests/context.rs");
+    fs::write(&src_path, "").unwrap();
+    let executable = work.join(format!("harness{}", std::env::consts::EXE_SUFFIX));
+    fs::copy(std::env::current_exe().unwrap(), &executable).unwrap();
+    fs::write(
+        work.join("artifacts.jsonl"),
+        serde_json::to_vec(&serde_json::json!({
+            "reason": "compiler-artifact",
+            "manifest_path": package.join("Cargo.toml"),
+            "filenames": [],
+            "executable": executable,
+            "profile": {"test": true},
+            "target": {"name": "context", "kind": ["test"], "src_path": src_path},
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    fs::create_dir_all(work.join("target/debug/build")).unwrap();
+    fs::copy(
+        std::env::var_os("CM_TESTSUITE_XTASK")
+            .unwrap_or_else(|| env!("CARGO_BIN_EXE_xtask").into()),
+        work.join(format!(
+            "target/debug/xtask{}",
+            std::env::consts::EXE_SUFFIX
+        )),
+    )
+    .unwrap();
+    fs::create_dir_all(work.join("doctests")).unwrap();
+    fs::write(
+        work.join("doctests/example.json"),
+        serde_json::to_vec(&DocTest {
+            args: vec![],
+            directory: source.to_str().unwrap().into(),
+            env: Default::default(),
+        })
+        .unwrap(),
+    )
+    .unwrap();
+    let original = temp.path().join("original");
+    export::export(&work, temp.path(), &original).unwrap();
+    let moved = temp.path().join("relocated bundle café");
+    fs::rename(original, &moved).unwrap();
+    fs::remove_dir_all(work).unwrap();
+    let output = super::common::cli(temp.path())
+        .current_dir(temp.path())
+        .args([
+            "buck-artifacts",
+            "test",
+            "--suite",
+            "integration",
+            "--bundle",
+        ])
+        .arg(&moved)
+        .arg("--sdk")
+        .arg(temp.path())
+        .args([
+            "--",
+            "--ignored",
+            "--exact",
+            "scenarios::package_context_fixture",
+        ])
+        .output()
+        .unwrap();
+    super::common::success(output);
+}
+
+#[test]
+#[ignore = "child harness for checking offline credentials"]
+fn offline_environment_fixture() {
+    assert!(std::env::var_os("GH_TOKEN").is_none());
+    assert!(std::env::var_os("GITHUB_TOKEN").is_none());
+}
+
+#[test]
+fn documentation_suite_removes_publication_credentials() {
+    let temp = tempfile::tempdir().unwrap();
+    let sdk = temp.path().join("sdk");
+    fs::create_dir_all(sdk.join("bin")).unwrap();
+    // Stand in for rustdoc with a harness that checks its inherited environment.
+    fs::copy(
+        std::env::current_exe().unwrap(),
+        sdk.join(format!("bin/rustdoc{}", std::env::consts::EXE_SUFFIX)),
+    )
+    .unwrap();
+    fs::write(
+        temp.path().join("manifest.json"),
+        serde_json::to_vec(&Bundle {
+            tests: vec![],
+            docs: vec![DocTest {
+                args: vec![
+                    "--ignored".into(),
+                    "--exact".into(),
+                    "scenarios::offline_environment_fixture".into(),
+                ],
+                directory: "${BUNDLE}".into(),
+                env: Default::default(),
+            }],
+        })
+        .unwrap(),
+    )
+    .unwrap();
+    let output = super::common::cli(temp.path())
+        .env("GH_TOKEN", "dummy-gh-token")
+        .env("GITHUB_TOKEN", "dummy-github-token")
+        .args(["buck-artifacts", "test", "--suite", "doc", "--bundle"])
+        .arg(temp.path())
+        .arg("--sdk")
+        .arg(sdk)
+        .output()
+        .unwrap();
+    super::common::success(output);
 }

@@ -57,9 +57,13 @@ pub fn run(bundle: &Path, sdk: &Path, suite: Suite, args: &[String]) -> Result<(
         }
         count += 1;
         println!("Running {}", test.name);
+        let directory = bundle.join(&test.directory);
         let mut command = Command::new(bundle.join(&test.path));
         command
+            .current_dir(&directory)
             .args(args)
+            .env("CARGO_MANIFEST_DIR", &directory)
+            .env("CARGO_MANIFEST_PATH", directory.join("Cargo.toml"))
             .env("CM_TESTSUITE_XTASK", bundle.join(format!("xtask{suffix}")))
             .env("CM_TESTSUITE_EXAMPLES", bundle.join("source/examples"));
         if !matches!(suite, Suite::Live) {
@@ -97,7 +101,9 @@ pub fn run(bundle: &Path, sdk: &Path, suite: Suite, args: &[String]) -> Result<(
                         .iter()
                         .map(|(key, value)| (key, expanded(value, &bundle, &sdk))),
                 )
-                .env("RUSTC", sdk.join(format!("bin/rustc{suffix}")));
+                .env("RUSTC", sdk.join(format!("bin/rustc{suffix}")))
+                .env_remove("GITHUB_TOKEN")
+                .env_remove("GH_TOKEN");
             let mut paths = vec![sdk.join("bin")];
             paths.extend(env::split_paths(&env::var_os("PATH").unwrap_or_default()));
             command.env("PATH", env::join_paths(paths)?);

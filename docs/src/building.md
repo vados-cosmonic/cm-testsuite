@@ -107,6 +107,9 @@ invocation reuses compilation but executes the suites again. Cargo supplies the
 exact rustdoc arguments during compilation; rustdoc builds and runs documentation
 examples only when the documentation suite executes. The live GitHub suite is
 excluded and remains behind `just test-github` and its explicit opt-in.
+Harnesses run from their owning package directory in the bundle, with relocated
+`CARGO_MANIFEST_DIR` and `CARGO_MANIFEST_PATH` values. All offline suites, including
+documentation tests, remove `GH_TOKEN` and `GITHUB_TOKEN` from child environments.
 
 Cargo retains responsibility for individual crate compilation. Buck owns the
 workspace artifact and test-suite graph; this does not yet provide per-crate

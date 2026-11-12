@@ -11,7 +11,7 @@ use std::{
 pub struct Args {
     #[arg(long)]
     pub(crate) report: PathBuf,
-    #[arg(long, default_value = "registry/publishers.toml")]
+    #[arg(long, default_value = cm_results::PUBLISHERS_PATH)]
     pub(crate) publishers: PathBuf,
 }
 

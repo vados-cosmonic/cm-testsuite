@@ -19,7 +19,7 @@ Change them through the owning command, not by hand.
 | `.cm-testsuite.toml` | Hand-written | Follow the [manifest guide](../../../docs/src/manifest.md) |
 
 - Editing an imported snapshot makes it diverge from its catalog digest and fails validation.
-- Run `dotslash bins/just xtask validate` after any change to the corpus, catalog, or manifests.
+- Run `dotslash bins/just xtask validate` after any change to the corpus, catalog, registries, or manifests.
 - `.wat` and `.wast` files are stored without line-ending conversion because digests cover exact bytes.
   Do not reformat or normalize them.
 - The [workflow guide](../../../docs/src/workflow.md) documents acquire, plan-import, plan-receive, and apply.

@@ -4,7 +4,7 @@ mod publishers;
 mod render;
 mod report;
 
-pub use publishers::Publishers;
+pub use publishers::{PUBLISHERS_PATH, Publishers};
 pub use render::{escape, render};
 pub use report::{Observation, Report, Status};
 

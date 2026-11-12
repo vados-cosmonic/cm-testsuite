@@ -11,7 +11,28 @@ dotslash bins/just xtask apply --plan /tmp/import.toml
 dotslash bins/just xtask validate
 ```
 
-Repeat `--snapshot` to combine sources in one plan. A source snapshot is complete or fails; a failed download cannot retire tests. Each test can specify its own immutable revision. The import records exact bytes under `corpus/wast/OWNER/REPO/NAME.wast` and metadata under `metadata/catalog.toml`.
+Repeat `--snapshot` to combine sources in one plan. A source snapshot is complete or fails; a failed download cannot retire tests. Each test can specify its own immutable revision. The import records exact bytes under `corpus/wast/OWNER/REPO/NAME.wast` and metadata under `metadata/catalog/OWNER/REPO.toml`.
+
+Each source has its own catalog file, holding its snapshot record, its tests, and its retired identities.
+An import writes only the files of the sources it covers,
+so import pull requests for different sources do not conflict and can merge in any order.
+
+- The path must spell the source exactly as its records do;
+  a file that records another source is an error.
+- A source recorded twice is an error, whatever the case of its name.
+- Files that do not end in `.toml` are ignored.
+- A source that retires every test keeps its file, which records the retirements.
+- `metadata/catalog.toml` is still read and may record any number of sources.
+  A source recorded there moves to its own file the next time it is imported,
+  and nothing is ever added to that file.
+- The catalog digest covers the merged records, not the files,
+  so moving a source between files changes neither the digest nor what is delivered.
+
+An import plan is stale once the catalog file of a source it covers has changed,
+or `metadata/catalog.toml` when that file recorded one of its sources.
+Changes to other sources leave it valid.
+Two plans for one source compete, and the second must be planned again.
+`validate` checks what no single plan can see, such as two files that spell one source differently.
 
 For local fixtures, add `--local /path/to/source/git/repo` to acquisition. `--manifest config/custom.toml` selects a nondefault manifest. Local Git reads committed blobs only. Neither backend invokes a producer's build process.
 

@@ -1,7 +1,7 @@
 # Curated WAST
 
 Reviewed imports populate `wast/OWNER/REPOSITORY/NAME.wast`.
-The [catalog](../metadata/catalog.toml) records each file's source repository,
+The [catalog](../metadata/catalog/README.md) records each file's source repository,
 immutable revision, and content digest.
 
 > [!WARNING]

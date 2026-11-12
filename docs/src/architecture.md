@@ -17,7 +17,7 @@ The workspace lives under `rust/`. Library boundaries follow responsibilities in
 
 Libraries accept explicit inputs and return structured values/errors. They do not depend on xtask or GitHub Actions. Catalog types support analysis/acquisition/planning; delivery consumes plans; results consumes the catalog. The GitHub transport is shared by acquisition and delivery, with an injectable API boundary for tests.
 
-An acquisition snapshot contains exact source bytes plus provenance. It is not applied automatically. A plan records each expected prior file digest, proposed new bytes or deletion, and policy/catalog guards. Application checks the full plan before mutation. Only registered sources supplied in a successful snapshot can cause central retirements; fetch errors are errors, not empty sources.
+An acquisition snapshot contains exact source bytes plus provenance. It is not applied automatically. A plan records each expected prior file digest, proposed new bytes or deletion, and policy/catalog guards. The catalog is stored as one file per source, and an import plan guards only the files of its own sources. Application checks the full plan before mutation. Only registered sources supplied in a successful snapshot can cause central retirements; fetch errors are errors, not empty sources.
 
 A source/name identity is independent of its Git revision. The catalog holds the file SHA-256, source file and commit, and the manifest commit/hash. Source-path moves preserve a declared name. Identity-name changes need manual treatment; alias migrations are not implemented.
 

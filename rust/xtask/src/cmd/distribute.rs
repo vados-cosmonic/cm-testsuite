@@ -1,5 +1,5 @@
 //! Propose catalog updates to every enrolled repository that receives tests.
-use crate::exchange::{participants, planned, published, require_token, settle, token};
+use crate::exchange::{Access, Credentials, Selection, participants, planned, published, settle};
 use anyhow::Result;
 use cm_catalog::{Catalog, PARTICIPANTS_PATH};
 use cm_delivery::{Delivery, Failure};
@@ -10,14 +10,15 @@ pub struct Args {
     /// Registry of enrolled repositories, relative to --root.
     #[arg(long, default_value = PARTICIPANTS_PATH)]
     pub(crate) registry: PathBuf,
-    /// Check only this enrolled repository; repeat to name several.
-    #[arg(long)]
-    pub(crate) only: Vec<String>,
+    #[command(flatten)]
+    pub(crate) selection: Selection,
     /// Open, update, or withdraw each repository's single draft pull request.
     #[arg(long)]
     pub(crate) publish: bool,
+    #[command(flatten)]
+    pub(crate) credentials: Credentials,
     /// File failures as one issue in this repository instead of failing the run.
-    #[arg(long, conflicts_with = "only")]
+    #[arg(long, conflicts_with_all = ["only", "except"])]
     pub(crate) report_to: Option<String>,
 }
 
@@ -27,19 +28,17 @@ pub struct Args {
 pub fn run(root: &Path, args: Args) -> Result<()> {
     let Args {
         registry: path,
-        only,
+        selection,
         publish,
+        credentials,
         report_to,
     } = args;
 
-    let registry = participants(root, &path, &only)?;
-    let token = token();
-    if publish && !registry.participant.is_empty() {
-        require_token(&token)?;
-    }
+    let registry = participants(root, &path, &selection)?;
+    let access = Access::new(&credentials, publish && !registry.participant.is_empty())?;
     let catalog = Catalog::load(root)?;
     let files = cm_acquisition::load_catalog_files(root, &catalog)?;
-    let api = cm_github::Client::new(token)?;
+    let api = access.api();
 
     // One repository's failure must not keep the others from their updates.
     let mut failures = vec![];

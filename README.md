@@ -16,6 +16,29 @@ Both roles are configured by a committed `.cm-testsuite.toml` at your repository
 
 See the [manifest reference](docs/src/manifest.md) and the [example projects](examples/README.md).
 
+Joining the exchange takes these steps:
+
+1. Commit `.cm-testsuite.toml` at the root of your repository (`OWNER/REPO`),
+   declaring the tests you [submit](#submit-tests), how you [receive](#receive-tests), or both.
+2. To receive tests, also install the [Octo STS app](https://github.com/apps/octo-sts/installations/new)
+   on your repository and commit the [trust policy](docs/src/workflow.md#credentials-in-github-actions)
+   that lets this repository open pull requests there.
+   Submitting needs no access to your repository.
+3. Open an [enrollment issue](https://github.com/vados-cosmonic/cm-testsuite/issues/new?template=enroll-repository.yml)
+   naming your repository and its maintainers.
+4. A maintainer checks the setup and merges a pull request
+   that adds your repository to `registry/participants.toml`.
+5. Every run after that, daily or started by a maintainer, does the following:
+   - **Submitting:** your declared tests are read at one commit
+     and proposed to the catalog in a single import pull request here.
+     Once a maintainer merges it, receiving projects are offered those tests.
+   - **Receiving:** *one* draft pull request in your repository is opened, or updated in place,
+     with the catalog tests your routes accept
+     that you do not already have and have not excluded.
+     Review and merge it like any other change.
+6. A run that fails for your repository does not stop the others.
+   The failure is listed in an issue here that mentions your maintainers.
+
 ### Submit tests
 
 Declare each test in your manifest and commit it with the WAST files:
@@ -31,8 +54,7 @@ requires = ["component-model", "resources"]
 covers = ["resource-lifetime"]
 ```
 
-Then open a "Propose a hand-written WAST test" issue naming your repository.
-Once it is enrolled in `registry/participants.toml`,
+Once your repository is enrolled,
 the scheduled `gather` run picks up later changes on its own.
 A maintainer can also import it by hand, locally or through the `propose-source-import` workflow:
 

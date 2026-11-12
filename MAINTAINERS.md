@@ -10,6 +10,10 @@ requirements; running a build or test does not publish a proposal.
 
 ## Running the scheduled exchange
 
+Projects ask to join through the "Enroll a repository" issue form.
+Check that the manifest is committed and, for a receiving repository,
+that `.github/chainguard/cm-testsuite.sts.yaml` is on its default branch;
+a dispatched `distribute-updates` run with `only` set to that repository confirms the policy works.
 Enroll a repository by adding it to `registry/participants.toml` through review,
 with the GitHub logins of the people who can fix it under `maintainers`.
 List this repository's own maintainers in the top-level `maintainers` array.

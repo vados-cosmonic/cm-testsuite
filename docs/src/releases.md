@@ -30,12 +30,19 @@ dotslash bins/just xtask lint-commits --from origin/main --to HEAD
 printf '%s\n' 'fix(catalog): preserve identity' | npm exec --no -- commitlint
 ```
 
-The hygiene workflow checks every proposed commit and the PR title (which may
-become a squash commit), including merge-queue ranges. Existing history outside
-the proposed range is not re-linted. The separate `audit-workflows` workflow
-runs Zizmor. Dependabot groups weekly GitHub Actions and commitlint updates.
-Branch protection can require `commits`, `zizmor`, and the six `check (RUNNER)`
-matrix jobs; installing these workflows does not change repository protection settings.
+The `repository-hygiene` workflow lints every proposed commit, including merge-queue ranges.
+Existing history outside the proposed range is not re-linted.
+The `pull-request-title` workflow lints the PR title as a Conventional Commit header.
+The repository merges by rebase, so the title never becomes a commit;
+the check keeps titles consistent with the commits and with the titles automation generates.
+Editing a PR's title or description re-runs only the title check, never the commit lint.
+The separate `audit-workflows` workflow runs Zizmor.
+Dependabot groups weekly GitHub Actions and commitlint updates.
+
+Branch protection can require `ci`, `commits`, `title`, and `zizmor`.
+`ci` succeeds only when every job the `check` workflow selected for the change succeeded,
+so require it instead of the `check (RUNNER)` jobs, whose set depends on the changed paths.
+Installing these workflows does not change repository protection settings.
 
 ## Release lifecycle
 

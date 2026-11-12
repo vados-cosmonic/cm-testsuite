@@ -1,12 +1,12 @@
 name: repository-hygiene
 
 on:
+  # No `edited` trigger: a title or description edit cannot change the commits.
   pull_request:
     types:
       - opened
       - synchronize
       - reopened
-      - edited
   merge_group:
 
 permissions: {}
@@ -42,9 +42,3 @@ jobs:
           START_REF: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
           END_REF: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
         run: npm exec --no -- commitlint --from "$START_REF" --to "$END_REF" --verbose
-
-      - name: Validate the squash-merge title
-        if: github.event_name == 'pull_request'
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: printf '%s\n' "$PR_TITLE" | npm exec --no -- commitlint --verbose

@@ -94,10 +94,3 @@ jobs:
           path: .ci-results/
           include-hidden-files: true
           if-no-files-found: ignore
-
-      - name: Show the action cache server log
-        if: always()
-        run: |
-          tail -n 60 "$RUNNER_TEMP/buck-action-cache.log" || true
-          ls -la "$HOME/.cache/cm-testsuite-buck" || true
-          du -sh "$HOME/.cache/cm-testsuite-buck" || true

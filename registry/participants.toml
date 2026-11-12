@@ -6,3 +6,8 @@
 # manifest = ".cm-testsuite.toml" # optional
 # reference = "main"              # optional; gathered from the default branch when absent
 schema = 1
+
+[[participant]]
+repository = "github:vados-cosmonic/cm-testsuite-test-source"
+reference = "main"
+maintainers = ["vados-cosmonic"]

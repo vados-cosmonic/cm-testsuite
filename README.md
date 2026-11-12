@@ -30,7 +30,7 @@ Joining the exchange takes these steps:
    that adds your repository to `registry/participants.toml`.
 5. Every run after that, daily or started by a maintainer, does the following:
    - **Submitting:** your declared tests are read at one commit
-     and proposed to the catalog in a single import pull request here.
+     and proposed to the catalog in one import pull request of their own here.
      Once a maintainer merges it, receiving projects are offered those tests.
    - **Receiving:** *one* draft pull request in your repository is opened, or updated in place,
      with the catalog tests your routes accept

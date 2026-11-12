@@ -71,7 +71,7 @@ dotslash bins/just xtask publish --repository github:OWNER/TARGET --plan /tmp/re
 
 The token's origin is up to the caller; no GitHub App is required. Reading private sources needs repository read access. Publishing needs contents and pull-request write permissions for the target. GitHub's workflow event behavior also depends on the token used; a repository `GITHUB_TOKEN` is not a general cross-repository credential. Tokens are not included in plans or logs. Inside GitHub Actions, `--sts-identity NAME` publishes with an [Octo STS](#credentials-in-github-actions) token instead.
 
-Publication uses the target's default branch, verifies plan guards against its committed state, and creates or updates one stable **draft** PR per destination repository: each import subject has its own branch in the catalog repository, a whole-registry `gather` shares `cm-testsuite/gather`, and each receiving repository has its own. A later plan replaces the contents of that PR. It preserves unrelated files through the base tree. It does not auto-merge. A declined identical plan is suppressed; permanent exclusions remain the durable way to decline future versions. When the proposed changes disappear, publication closes the owned PR after checking its branch, retaining the branch for inspection. Unexpected branch edits and non-fast-forward races fail without force-pushing.
+Publication uses the target's default branch, verifies plan guards against its committed state, and creates or updates one stable **draft** PR per subject: each imported source has its own branch in the catalog repository, `cm-testsuite/sources/OWNER/REPO`, however the import was planned; a plan that imports several sources at once has a branch of its own; and each receiving repository has its own. A later plan replaces the contents of that PR. It preserves unrelated files through the base tree. It does not auto-merge. A declined identical plan is suppressed; permanent exclusions remain the durable way to decline future versions. When the proposed changes disappear, publication closes the owned PR after checking its branch, retaining the branch for inspection. Unexpected branch edits and non-fast-forward races fail without force-pushing.
 
 Automatic withdrawals are marked separately from maintainer declines, so a withdrawn proposal can be offered again if it becomes relevant. Empty plans must still match their policy/catalog guards before withdrawing a PR. Retrying an already-applied plan can close only that exact proposal, leaving newer proposals for the same subject open.
 
@@ -116,24 +116,31 @@ A GitHub Actions run passes `--sts-identity NAME` to use [Octo STS](#credentials
 outside GitHub Actions the flag is ignored, so a workflow's command line also runs locally.
 
 - `gather` acquires every enrolled repository that shares tests
-  and plans one import covering all of them.
-  A repository that cannot be read is left out,
-  so it neither blocks the others nor retires its own tests.
+  and plans one import for each.
+  Imports of different sources write different catalog files,
+  so their pull requests are reviewed and merged independently, in any order.
+- Each source has one import pull request, on the branch `cm-testsuite/sources/OWNER/REPO` in lower case.
+  A scheduled run, a run narrowed by `--only` or `--except`,
+  and a manual import of that source alone all update the same one.
+  A name Git refuses as a branch, such as `.github`, uses `cm-testsuite/import/HASH` instead.
+- A repository that cannot be read, planned, or published fails alone and is reported by name.
+  Its open pull request is left exactly as it is,
+  none of its tests is retired, and the other repositories carry on.
 - `distribute` plans against each repository's default branch through the GitHub API;
   no checkout of the recipient is needed.
   A repository whose manifest does not enable receiving is skipped.
 - Each destination has one draft pull request.
   A repeated run updates that pull request in place,
   and withdraws it when nothing is left to propose.
-- A `gather` narrowed by `--only` or `--except` publishes a separate import pull request,
-  so it cannot narrow or withdraw the shared one.
-- A source commit that changes no shared test proposes nothing.
-- While a repository cannot be read, `gather` never withdraws the shared pull request.
-  New changes from the others still update it,
-  and the unread repository's pending changes return once it can be read again.
-- One import is limited to 200 file edits.
-  A larger round fails as a whole and is reported as `catalog import`;
-  import the largest repository alone with `--only` first.
+- A source commit that changes no shared test proposes nothing,
+  and withdraws that source's pull request when one is open.
+- A repository removed from the registry is no longer looked at;
+  close its open import pull request by hand.
+- One import is limited to 200 file edits, counted per source.
+  A larger one fails for that source alone;
+  apply it locally with `gather --only OWNER/REPO --apply` and open the pull request by hand.
+- API requests grow with the number of sources and of edited files;
+  every write goes to the catalog repository with one token.
 - Pull request descriptions give the change counts,
   one row per test with its source revision and summary,
   and collapsed sections for declining tests and for warnings.

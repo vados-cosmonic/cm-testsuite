@@ -17,7 +17,7 @@ on:
         type: string
 
       publish:
-        description: 'Open or update the draft import PR'
+        description: 'Open, update, or withdraw one draft import PR per source'
         default: false
         type: boolean
 

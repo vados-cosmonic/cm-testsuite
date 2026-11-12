@@ -11,13 +11,28 @@ requirements; running a build or test does not publish a proposal.
 ## Running the scheduled exchange
 
 Projects ask to join through the "Enroll a repository" issue form.
-Check that the manifest is committed and, for a receiving repository,
-that `.github/chainguard/cm-testsuite.sts.yaml` is on its default branch;
-a `propose-receiving-update` run for that repository with `publish` enabled confirms the policy works,
+To act on a request, apply the `enroll` label to the issue,
+or dispatch the `enroll-repository` workflow with the issue number.
+The run validates the form, checks that the manifest is committed and parses,
+and opens one draft pull request that adds the repository to `registry/participants.toml`
+and closes the issue when merged.
+The pull request lists what the run found;
+for a receiving repository, a warning there means
+`.github/chainguard/cm-testsuite.sts.yaml` is missing on its default branch.
+Whether that policy works is not checked:
+a `propose-receiving-update` run for the repository with `publish` enabled confirms it,
 and needs no enrollment.
-Enroll a repository by adding it to `registry/participants.toml` through review,
-with the GitHub logins of the people who can fix it under `maintainers`.
-List this repository's own maintainers in the top-level `maintainers` array.
+Review the diff, mark the pull request ready, and merge it.
+A run that fails says why in its log; nothing is proposed until the issue or the repository is fixed.
+`dotslash bins/just enroll --issue NUMBER --repository OWNER/CATALOG` reports the same locally;
+see [Enroll from an issue](docs/src/workflow.md#enroll-from-an-issue).
+
+The `enroll` label must exist in this repository,
+and `.github/chainguard/enroll.sts.yaml` grants the workflow its pull-request token.
+Anyone with triage access can apply the label, so can ask for the draft pull request;
+merging still needs review.
+
+List this repository's own maintainers in the top-level `maintainers` array of the registry, by hand.
 The [workflow guide](docs/src/workflow.md#gather-and-distribute) documents the format
 and the `gather` and `distribute` commands, which run locally exactly as they do in CI.
 
@@ -25,6 +40,7 @@ No exchange workflow uses a stored token.
 Each one publishes with a short-lived Octo STS token scoped to a single repository,
 granted by a trust policy committed in that repository:
 `.github/chainguard/import.sts.yaml` here for the import pull request,
+`.github/chainguard/enroll.sts.yaml` here for enrollment pull requests,
 and `.github/chainguard/cm-testsuite.sts.yaml` in every receiving repository.
 Adding a receiving repository, or a workflow that publishes, means editing those policies;
 see [Credentials in GitHub Actions](docs/src/workflow.md#credentials-in-github-actions).

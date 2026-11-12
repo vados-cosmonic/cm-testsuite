@@ -106,6 +106,11 @@ gather *args: doctor
 distribute *args: doctor
     {{buck}} run {{host_config}} //:xtask -- distribute "$@"
 
+# Turn an "Enroll a repository" issue into its registry entry; a dry run unless --apply or --publish.
+[group('exchange')]
+enroll *args: doctor
+    {{buck}} run {{host_config}} //:xtask -- enroll "$@"
+
 # Regenerate Buck's pinned registry inputs after updating Cargo.lock.
 [group('build')]
 buck-lock: doctor

@@ -1,3 +1,5 @@
+# `xtask enroll` reads submitted forms: keep the title prefix, the field labels and their order,
+# and the required Setup labels in step with rust/crates/delivery/src/enroll/form.rs.
 name: Enroll a repository
 description: Ask for a repository to submit tests to the catalog, receive tests from it, or both.
 title: '[Enroll] OWNER/REPO'

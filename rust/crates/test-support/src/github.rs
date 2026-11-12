@@ -63,9 +63,10 @@ pub struct State {
     /// Releases by tag name.
     pub releases: BTreeMap<String, Value>,
     /// Issue numbers that answer with this HTTP status instead of an issue.
-    /// Every other number exists, as a PR when [`State::prs`] lists it.
+    /// Every other number exists: as a PR when [`State::prs`] lists it, as the
+    /// issue in [`State::issues`] with that number, or else as a bare issue.
     pub unavailable: BTreeMap<u64, u16>,
-    /// Issues created through the API, as the issues API returns them.
+    /// Issues, created through the API or arranged, as the issues API returns them.
     pub issues: Vec<Value>,
     /// Comments of each issue or PR, by number.
     pub comments: BTreeMap<u64, Vec<Value>>,
@@ -223,6 +224,17 @@ impl FakeGitHub {
             .entry(sha.into())
             .or_default()
             .push(json!({"number": number}));
+    }
+
+    /// Add an open issue numbered `number`, as someone would file it.
+    pub fn add_issue(&self, number: u64, title: &str, body: &str) {
+        self.state_mut().issues.push(json!({
+            "number": number,
+            "title": title,
+            "body": body,
+            "state": "open",
+            "html_url": format!("https://example.invalid/issues/{number}"),
+        }));
     }
 
     /// Publish (or replace) the release for `tag`.
@@ -472,7 +484,10 @@ impl Api for FakeGitHub {
                     None if s.prs.iter().any(|pr| pr["number"] == number) => {
                         json!({"number": number, "pull_request": {}})
                     }
-                    None => json!({"number": number}),
+                    None => match s.issues.iter().find(|issue| issue["number"] == number) {
+                        Some(issue) => issue.clone(),
+                        None => json!({"number": number}),
+                    },
                 }
             }
             ("GET", ["issues", number, "comments"]) => {

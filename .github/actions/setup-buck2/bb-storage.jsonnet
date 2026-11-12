@@ -36,7 +36,15 @@ local store(name, mapBytes, blockBytes, newBlocks) = {
   maximumMessageSizeBytes: 16 * mebibyte,
   contentAddressableStorageServer: {
     contentAddressableStorage: {
-      chunkStorage: store('chunks', 8 * mebibyte, 256 * mebibyte, 2),
+      // The server splits blobs into chunks and refuses to store them otherwise.
+      chunkStorage: store('chunks', 8 * mebibyte, 256 * mebibyte, 2) + {
+        'local'+: {
+          chunkingParameters: {
+            minChunkSizeBytes: 256 * 1024,
+            horizonSizeBytes: 8 * 256 * 1024,
+          },
+        },
+      },
       chunkMappingStorage: store('chunk-mappings', mebibyte, 4 * mebibyte, 1),
     },
     getAuthorizer: allow,

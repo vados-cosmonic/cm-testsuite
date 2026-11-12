@@ -50,7 +50,7 @@ dotslash bins/just xtask publish --repository github:OWNER/TARGET --plan /tmp/re
 
 The token's origin is up to the caller; no GitHub App is required. Reading private sources needs repository read access. Publishing needs contents and pull-request write permissions for the target. GitHub's workflow event behavior also depends on the token used; a repository `GITHUB_TOKEN` is not a general cross-repository credential. Tokens are not included in plans or logs. Inside GitHub Actions, `--sts-identity NAME` publishes with an [Octo STS](#credentials-in-github-actions) token instead.
 
-Publication uses the target's default branch, verifies plan guards against its committed state, and creates or updates one stable **draft** PR per destination repository: every import shares one branch in the catalog repository, and each receiving repository has its own. A later plan replaces the contents of that PR. It preserves unrelated files through the base tree. It does not auto-merge. A declined identical plan is suppressed; permanent exclusions remain the durable way to decline future versions. When the proposed changes disappear, publication closes the owned PR after checking its branch, retaining the branch for inspection. Unexpected branch edits and non-fast-forward races fail without force-pushing.
+Publication uses the target's default branch, verifies plan guards against its committed state, and creates or updates one stable **draft** PR per destination repository: each import subject has its own branch in the catalog repository, a whole-registry `gather` shares `cm-testsuite/gather`, and each receiving repository has its own. A later plan replaces the contents of that PR. It preserves unrelated files through the base tree. It does not auto-merge. A declined identical plan is suppressed; permanent exclusions remain the durable way to decline future versions. When the proposed changes disappear, publication closes the owned PR after checking its branch, retaining the branch for inspection. Unexpected branch edits and non-fast-forward races fail without force-pushing.
 
 Automatic withdrawals are marked separately from maintainer declines, so a withdrawn proposal can be offered again if it becomes relevant. Empty plans must still match their policy/catalog guards before withdrawing a PR. Retrying an already-applied plan can close only that exact proposal, leaving newer proposals for the same subject open.
 
@@ -104,6 +104,15 @@ outside GitHub Actions the flag is ignored, so a workflow's command line also ru
 - Each destination has one draft pull request.
   A repeated run updates that pull request in place,
   and withdraws it when nothing is left to propose.
+- A `gather` narrowed by `--only` or `--except` publishes a separate import pull request,
+  so it cannot narrow or withdraw the shared one.
+- A source commit that changes no shared test proposes nothing.
+- While a repository cannot be read, `gather` never withdraws the shared pull request.
+  New changes from the others still update it,
+  and the unread repository's pending changes return once it can be read again.
+- One import is limited to 200 file edits.
+  A larger round fails as a whole and is reported as `catalog import`;
+  import the largest repository alone with `--only` first.
 - Pull request descriptions give the change counts,
   one row per test with its source revision and summary,
   and collapsed sections for declining tests and for warnings.
@@ -116,7 +125,7 @@ a partial run would close an issue that still describes repositories it skipped.
 The issue lists each failing repository, its error, and its maintainers,
 is rewritten in place by later failing runs,
 and is closed by the next clean run.
-Reporting uses `REPORT_TOKEN` when set and the publishing credentials otherwise;
+Reporting uses `REPORT_TOKEN` when set, then `GITHUB_TOKEN`, `GH_TOKEN`, or the GitHub CLI login, and never an Octo STS token;
 the token needs issue write access.
 
 The `gather-updates` and `distribute-updates` workflows run these commands daily.
@@ -143,6 +152,7 @@ and commits a trust policy naming the calling workflow.
 | This repository (import PR) | `.github/chainguard/import.sts.yaml` | `import` | `gather.yml`, `import.yml` |
 | Each receiving repository | `.github/chainguard/cm-testsuite.sts.yaml` | `cm-testsuite` | `distribute.yml`, `receive.yml` |
 
+This repository needs the app installed as well, for its own import pull request.
 A receiving repository installs the
 [Octo STS app](https://github.com/apps/octo-sts/installations/new) and adds:
 

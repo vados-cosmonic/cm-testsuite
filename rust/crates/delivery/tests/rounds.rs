@@ -3,8 +3,8 @@
 use cm_acquisition::load_catalog_files;
 use cm_catalog::{Catalog, Participant, Participants};
 use cm_delivery::{
-    Delivery, Failure, Publication, Report, Source, apply, branch_for, distribute, gather, publish,
-    report,
+    Delivery, Failure, GATHER_BRANCH, Publication, Report, Source, apply, branch_for, distribute,
+    gather, publish, publish_on, report,
 };
 use cm_test_support::github::FakeGitHubs;
 use serde_json::json;
@@ -149,6 +149,24 @@ fn gathers_every_source_into_one_import_and_isolates_failures() {
     assert!(repeat.plan.unwrap().edits.is_empty());
     assert_eq!(Catalog::load(catalog.path()).unwrap().tests.len(), 2);
 
+    // A commit that touches no shared test proposes nothing, although the
+    // source's head moved.
+    hub.push("example/a", &[("README.md", "unrelated\n")]);
+    let unrelated = gather(&hub, catalog.path(), &participants).unwrap();
+    assert!(matches!(
+        unrelated.sources[0].1,
+        Source::Acquired { tests: 1, .. }
+    ));
+    assert!(unrelated.plan.unwrap().edits.is_empty());
+
+    // An edit to a shared test is proposed.
+    hub.push(
+        "example/a",
+        &[("tests/one.wast", ";; intent\n(component)\n")],
+    );
+    let edited = gather(&hub, catalog.path(), &participants).unwrap();
+    assert_eq!(edited.plan.unwrap().changes().updated, 1);
+
     // A source that drops its tests retires them instead of being skipped.
     hub.push("example/b", &[(MANIFEST, "schema=1\n")]);
     let retiring = gather(&hub, catalog.path(), &participants).unwrap();
@@ -156,7 +174,7 @@ fn gathers_every_source_into_one_import_and_isolates_failures() {
 }
 
 #[test]
-fn imports_from_any_sources_share_one_catalog_pull_request() {
+fn whole_registry_imports_share_one_pull_request_that_partial_plans_leave_alone() {
     let hub = FakeGitHubs::new(&["example/a", "example/b", "example/catalog"]);
     share(&hub, "example/a", "one");
     share(&hub, "example/b", "two");
@@ -168,14 +186,26 @@ fn imports_from_any_sources_share_one_catalog_pull_request() {
             .unwrap()
     };
 
+    // Whole-registry runs replace each other in one pull request as the registry grows.
     let first = plan(&["example/a"]);
     let both = plan(&["example/a", "example/b"]);
-    assert_eq!(branch_for(&first), branch_for(&both));
+    publish_on(&hub, "github:example/catalog", &first, GATHER_BRANCH).unwrap();
+    publish_on(&hub, "github:example/catalog", &both, GATHER_BRANCH).unwrap();
+    assert_eq!(hub.repository("example/catalog").state().prs.len(), 1);
+
+    // A plan for some repositories has its own branch, so it leaves the shared
+    // pull request alone instead of narrowing it.
+    assert_ne!(branch_for(&first), GATHER_BRANCH);
+    let partial = publish(&hub, "github:example/catalog", &first).unwrap();
+    assert!(
+        matches!(partial, Publication::PullRequest(_)),
+        "{partial:?}"
+    );
     publish(&hub, "github:example/catalog", &first).unwrap();
-    publish(&hub, "github:example/catalog", &both).unwrap();
 
     let state = hub.repository("example/catalog").state();
-    assert_eq!(state.prs.len(), 1);
+    assert_eq!(state.prs.len(), 2);
+    assert!(state.prs.iter().all(|pr| pr["state"] == "open"));
     let pr = &state.prs[0];
     assert_eq!(
         pr["title"],

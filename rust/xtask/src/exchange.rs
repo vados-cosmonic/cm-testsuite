@@ -18,6 +18,11 @@ pub struct Selection {
 }
 
 impl Selection {
+    /// Whether the run was narrowed to part of the registry.
+    pub fn is_partial(&self) -> bool {
+        !self.only.is_empty() || !self.except.is_empty()
+    }
+
     /// Keep the selected participants, rejecting names that are not enrolled
     /// so a typo cannot silently widen or empty a run.
     fn apply(&self, registry: &mut Participants) -> Result<()> {
@@ -31,6 +36,11 @@ impl Selection {
                 .collect()
         };
         let (only, except) = (names(&self.only), names(&self.except));
+        // A list of nothing but commas or blanks must not fall back to every repository.
+        ensure!(
+            only.is_empty() == self.only.is_empty() && except.is_empty() == self.except.is_empty(),
+            "--only and --except need at least one repository name"
+        );
         for repository in only.iter().chain(&except) {
             ensure!(
                 registry
@@ -192,7 +202,7 @@ fn run_url() -> Option<String> {
 ///
 /// With a target, per-repository failures leave the exit status clean. The
 /// issue there is opened, rewritten, or closed to match this run, using
-/// REPORT_TOKEN when set and the publishing credentials otherwise.
+/// REPORT_TOKEN when set, then the environment or GitHub CLI token; never an Octo STS token.
 pub fn settle(
     task: &str,
     report_to: Option<&str>,
@@ -267,6 +277,9 @@ mod tests {
         assert_eq!(selected(&[], &["example/b"]).unwrap(), [all[0], all[2]]);
         // Padding and empty entries left by a hand-typed list are ignored.
         assert_eq!(selected(&[" example/b", ""], &[]).unwrap(), [all[1]]);
+        // A list that names nothing is an error, not the whole registry.
+        assert!(selected(&[" ", ""], &[]).is_err());
+        assert!(selected(&[], &[""]).is_err());
         assert!(selected(&["example/missing"], &[]).is_err());
         assert!(selected(&[], &["example/missing"]).is_err());
     }

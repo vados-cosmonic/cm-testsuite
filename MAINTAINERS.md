@@ -13,7 +13,8 @@ requirements; running a build or test does not publish a proposal.
 Projects ask to join through the "Enroll a repository" issue form.
 Check that the manifest is committed and, for a receiving repository,
 that `.github/chainguard/cm-testsuite.sts.yaml` is on its default branch;
-a dispatched `distribute-updates` run with `only` set to that repository confirms the policy works.
+a `propose-receiving-update` run for that repository with `publish` enabled confirms the policy works,
+and needs no enrollment.
 Enroll a repository by adding it to `registry/participants.toml` through review,
 with the GitHub logins of the people who can fix it under `maintainers`.
 List this repository's own maintainers in the top-level `maintainers` array.
@@ -37,7 +38,7 @@ mentions their maintainers and this repository's, and closes itself after a clea
 Fix the cause, or remove the repository from the registry to stop trying.
 To stop a workflow altogether, disable it in the repository's Actions settings.
 
-Gathered imports arrive as one draft pull request on the `cm-testsuite/import` branch.
+Gathered imports arrive as one draft pull request on the `cm-testsuite/gather` branch.
 Review and merge it like any other import;
 `distribute-updates` then offers the merged changes to receiving repositories.
 

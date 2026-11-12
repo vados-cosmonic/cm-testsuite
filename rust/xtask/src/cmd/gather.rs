@@ -4,7 +4,7 @@ use crate::exchange::{
 };
 use anyhow::{Context, Result};
 use cm_catalog::PARTICIPANTS_PATH;
-use cm_delivery::{Failure, Gathered, Source};
+use cm_delivery::{Failure, GATHER_BRANCH, Gathered, Source};
 use cm_github::Api;
 use std::path::{Path, PathBuf};
 
@@ -18,7 +18,8 @@ pub struct Args {
     /// Write the import into the catalog checkout at --root.
     #[arg(long, conflicts_with = "publish")]
     pub(crate) apply: bool,
-    /// Open or update the catalog repository's single draft import pull request.
+    /// Open or update the catalog repository's draft import pull request: the shared one
+    /// for a whole-registry run, a separate one for a run narrowed by --only or --except.
     #[arg(long)]
     pub(crate) publish: bool,
     /// Catalog repository to publish to; defaults to GITHUB_REPOSITORY.
@@ -35,7 +36,11 @@ pub struct Args {
 enum Mode {
     DryRun,
     Apply,
-    Publish(Option<String>),
+    /// Publish to `repository`, on the shared branch when the run covers the whole registry.
+    Publish {
+        repository: Option<String>,
+        shared: bool,
+    },
 }
 
 /// Act on the combined import and say in one phrase what happened.
@@ -52,14 +57,30 @@ fn conclude(api: &dyn Api, root: &Path, gathered: &Gathered, mode: &Mode) -> Res
             cm_delivery::apply(root, plan)?;
             Ok(format!("applied {}", planned(plan)))
         }
-        Mode::Publish(repository) => {
+        Mode::Publish { repository, shared } => {
             let target = repository
                 .clone()
                 .or_else(|| std::env::var("GITHUB_REPOSITORY").ok())
                 .map(|name| github_name(&name))
                 .context("--publish needs --repository or GITHUB_REPOSITORY")?;
-            let publication = cm_delivery::publish(api, &target, plan)
-                .with_context(|| format!("publishing the import to {target}"))?;
+            let unread = gathered
+                .sources
+                .iter()
+                .any(|(_, source)| matches!(source, Source::Failed(_)));
+            // An empty plan withdraws the open proposal. That is wrong while a
+            // repository could not be read: its pending changes are still wanted.
+            if plan.edits.is_empty() && unread {
+                return Ok("nothing new from the repositories that could be read; \
+                           any open import pull request is left as it is"
+                    .into());
+            }
+            // Only a run over the whole registry speaks for the shared proposal.
+            let publication = if *shared {
+                cm_delivery::publish_on(api, &target, plan, GATHER_BRANCH)
+            } else {
+                cm_delivery::publish(api, &target, plan)
+            }
+            .with_context(|| format!("publishing the import to {target}"))?;
             Ok(published(plan, &publication))
         }
     }
@@ -83,7 +104,10 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
     let access = Access::new(&credentials, publish)?;
     let mode = match (apply, publish) {
         (true, _) => Mode::Apply,
-        (_, true) => Mode::Publish(repository),
+        (_, true) => Mode::Publish {
+            repository,
+            shared: !selection.is_partial(),
+        },
         _ => Mode::DryRun,
     };
     let api = access.api();

@@ -22,6 +22,7 @@ pub enum Source {
 #[derive(Debug)]
 pub struct Gathered {
     /// One plan covering every acquired repository; absent when none was acquired.
+    /// The plan is empty when no repository changed a test it shares.
     pub plan: Option<Plan>,
     /// Findings in registry order, by repository.
     pub sources: Vec<(String, Source)>,
@@ -84,7 +85,40 @@ pub fn gather(api: &dyn Api, root: &Path, participants: &[Participant]) -> Resul
     let plan = if snapshots.is_empty() {
         None
     } else {
-        Some(import(root, &snapshots)?)
+        let mut plan = import(root, &snapshots)?;
+        // Commits that touch no shared test would otherwise advance the
+        // recorded revisions, proposing an import on every run and a receipt
+        // update in every receiving repository after it.
+        if snapshots.iter().all(|snapshot| current(&catalog, snapshot)) {
+            plan.edits.clear();
+            plan.provenance.clear();
+        }
+        Some(plan)
     };
     Ok(Gathered { plan, sources })
+}
+
+/// Whether the catalog already holds everything in a snapshot, apart from
+/// the commit the snapshot was read at.
+fn current(catalog: &Catalog, snapshot: &Snapshot) -> bool {
+    let Some(recorded) = catalog.sources.get(&snapshot.source) else {
+        return false;
+    };
+    let held = || {
+        catalog
+            .tests
+            .iter()
+            .filter(|(_, test)| test.source == snapshot.source)
+    };
+    recorded.manifest_path == snapshot.metadata.manifest_path
+        && recorded.manifest_sha256 == snapshot.metadata.manifest_sha256
+        && held().count() == snapshot.tests.len()
+        && held().all(|(id, old)| {
+            snapshot.tests.get(id).is_some_and(|new| {
+                let mut new = new.clone();
+                new.revision.clone_from(&old.revision);
+                new.manifest_revision.clone_from(&old.manifest_revision);
+                &new == old
+            })
+        })
 }

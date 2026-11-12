@@ -67,6 +67,12 @@ Just and DotSlash by operating system, architecture, and version. On a cache mis
 cargo-binstall installs upstream prebuilt binaries, selecting DotSlash's release
 filename for each host. Workflows invoke the installed `just` directly.
 
+Every job that builds with Buck calls `.github/actions/setup-buck2`,
+which restores and serves the [Buck action cache](docs/src/building.md#action-cache).
+Only the `check` job on the default branch saves that cache.
+Pass `action-cache: "false"` in a job that publishes what it builds,
+or that holds write access while running in a pull request's cache scope.
+
 CI runs Zizmor with its read-only GitHub token. For a local audit, run
 `dotslash bins/just zizmor --offline`, or set `GH_TOKEN` to include online checks.
 

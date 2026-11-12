@@ -27,6 +27,11 @@ Read the sections that match the files being changed.
 - Keep tool installation and caching in `.github/actions/setup-tools` and Buck setup in
   `.github/actions/setup-buck2`, so every workflow shares one implementation.
   Update the cache keys there when a tool pin changes.
+- Every job that builds with Buck goes through `setup-buck2`, which restores and serves the Buck action cache.
+  Do not add a separate cache step or cache `buck-out`.
+  Only the `check` job in `ci.yml` sets `action-cache-save: "true"`.
+  Set `action-cache: "false"` in a job that publishes what it builds,
+  or that has write access while triggered by `pull_request`.
 - Workflows that publish, tag, or release are manually invoked or tightly guarded.
   Do not widen their triggers or permissions without being asked.
 - Do not add stored tokens. Cross-repository and PR-opening writes use Octo STS:

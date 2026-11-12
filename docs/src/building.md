@@ -55,6 +55,7 @@ DotSlash verifies launcher downloads, and Buck verifies Rust and crate inputs.
 | mdBook | 0.5.4 | Documentation builds |
 | git-cliff | 2.14.2 | Release changelog generation |
 | Zizmor | 1.32.0 | Local and CI workflow audits |
+| bazel-remote | 2.6.1 | CI action cache server on Linux and macOS |
 | Wasmono | `5cb97a58be3853916a0fcb7f27eeca2524d58ea5` | Buck build utilities |
 | DotSlash | 0.5.7 | CI; installed separately for local use |
 | cargo-binstall | 1.27.0 | CI tool installation on cache misses |
@@ -133,17 +134,36 @@ Buck2 launcher. Cache keys include the operating system, architecture, and launc
 contents. It deliberately uses the repository pin: the [installer linked by Buck2](https://github.com/dtolnay/install-buck2)
 currently downloads a floating release and selects x86_64 on Windows.
 
-Linux and macOS jobs also use commit-pinned [Rebuck](https://github.com/gilescope/rebuck)
-to run a loopback-only bazel-remote cache and persist its contents through Actions cache.
-The cache has a 4 GiB disk limit per runner variant.
+### Action cache
+
+On Linux and macOS the setup action also restores a Buck action cache
+and serves it on loopback with the pinned [bazel-remote](https://github.com/buchgr/bazel-remote) launcher.
+Every workflow that calls the setup action gets the cache; no workflow configures it separately.
 The `//.buck/platforms:ci-cache` execution platform keeps compilation local while allowing
 Buck to download and upload action results through REAPI.
 The setup action writes `.buckconfig.local` before starting Buck;
 local development continues to use the default execution platform.
-Windows keeps the shared build/test flow without this persistent action cache,
-because Rebuck does not support Windows yet.
+Windows jobs build without the action cache, because bazel-remote does not run on Windows.
 
-Cache namespaces include the matrix runner and Buck launcher pin.
+The store is an Actions cache entry of at most 1 GiB per runner image.
+Its key holds the runner OS, architecture, image name, and image version,
+then a hash of the Buck inputs: `.buckconfig`, `BUCK`, `.buck/`, `bins/buck2`, `rust/`, and `examples/`.
+Jobs on the same runner image share one store, whichever workflow they belong to.
+A run restores the entry for its exact inputs, or else the newest entry for its runner image.
+
+Only the `check` job of `ci.yml` saves the store, and only when it succeeds on the default branch.
+That job builds every cached target, so the saved store serves every other workflow.
+Unchanged Buck inputs match an existing key and save nothing.
+Pull requests, merge-queue branches, and scheduled or dispatched workflows restore without saving:
+an Actions cache saved outside the default branch is visible only to its own ref,
+and a copy per run would evict the default branch's entries from the 10 GB repository budget.
+A new job that should publish the store sets `action-cache-save: "true"` on the setup action.
+
+Two workflows pass `action-cache: "false"` and compile from source.
+`release.yml` builds the artifacts that are published.
+`tag-release.yml` runs with write access inside a merged pull request's cache scope,
+which that pull request was able to write.
+
 The setup action also records the hosted runner's OS, architecture, image name,
 and image version in the environment of SDK and Cargo actions.
 That environment participates in Buck's action keys, preventing reuse across host

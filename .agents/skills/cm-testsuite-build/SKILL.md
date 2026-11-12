@@ -29,6 +29,10 @@ The [build guide](../../../docs/src/building.md) is the reference for prerequisi
 - CI runs more than `check`.
   Reproduce the `check` job by running the steps in [ci.yml](../../../.github/workflows/ci.yml) in order.
 - Test suites execute on every invocation; only compilation is cached.
+- In CI, every workflow that builds with Buck goes through `.github/actions/setup-buck2`
+  so that it gets the [action cache](../../../docs/src/building.md#action-cache).
+  The cache key hashes `.buckconfig`, `BUCK`, `.buck/`, `bins/buck2`, `rust/`, and `examples/`;
+  extend the `hashFiles` lists in that action when a new path becomes a Buck input.
 - With a local Rust matching `rust/rust-toolchain.toml`, Cargo works from `rust/`
   and is faster for iteration, for example `cargo test -p xtask --test local`.
   Buck remains the check that CI runs, so finish with the Just recipes.

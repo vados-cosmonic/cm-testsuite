@@ -111,8 +111,10 @@ impl Plan {
                     .split(", ")
                     .map(|source| source.trim_start_matches("github:"))
                     .collect();
-                if sources.len() <= 2 {
-                    format!("feat(corpus): import tests from {}", sources.join(" and "))
+                let named = format!("feat(corpus): import tests from {}", sources.join(" and "));
+                // The title lint caps headers at 100 characters; long names fall back to a count.
+                if sources.len() <= 2 && named.len() <= 100 {
+                    named
                 } else {
                     format!(
                         "feat(corpus): import tests from {} repositories",

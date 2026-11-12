@@ -20,17 +20,24 @@ fn remote_hash(api: &dyn Api, source: &str, rev: &str, path: &str) -> Result<Opt
     Ok(read_file(api, source, rev, path)?.map(|b| sha256(&b)))
 }
 
-/// One stable branch per destination repository and direction, so every plan
-/// updates the same pull request. Publication never auto-merges.
+/// The branch of the single import proposal that covers the whole registry.
+///
+/// Only a run over every enrolled repository publishes here. A plan for some
+/// of them keeps its own branch, so it can neither replace nor withdraw the
+/// shared proposal.
+pub const GATHER_BRANCH: &str = "cm-testsuite/gather";
+
+/// A stable branch per workflow subject. Publication never auto-merges.
 pub fn branch_for(plan: &Plan) -> String {
-    match plan.kind {
-        // Any set of sources shares the catalog's single import proposal.
-        Kind::Import => "cm-testsuite/import".into(),
-        Kind::Receive => format!(
-            "cm-testsuite/receive/{}",
-            &sha256(plan.subject.as_bytes())[..20]
-        ),
-    }
+    format!(
+        "cm-testsuite/{}/{}",
+        if plan.kind == Kind::Import {
+            "import"
+        } else {
+            "receive"
+        },
+        &sha256(plan.subject.as_bytes())[..20]
+    )
 }
 
 const MARKER: &str = "\n\nCM-TESTSUITE-PLAN\n";
@@ -109,7 +116,7 @@ fn verify_owned_branch(api: &dyn Api, source: &str, head: &str, branch: &str) ->
 }
 
 /// Withdraw a now-unnecessary owned proposal, retaining its branch for inspection.
-fn withdraw(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publication> {
+fn withdraw(api: &dyn Api, repository: &str, plan: &Plan, branch: &str) -> Result<Publication> {
     let repo = repo_path(repository)?;
     let info = required(api, "GET", &repo, None)?;
     let base_name = info["default_branch"]
@@ -137,7 +144,7 @@ fn withdraw(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publication>
             );
         }
     }
-    let branch = branch_for(plan);
+
     let owner = repository
         .strip_prefix("github:")
         .unwrap()
@@ -172,7 +179,7 @@ fn withdraw(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publication>
     let head = reference["object"]["sha"]
         .as_str()
         .context("missing proposal head")?;
-    verify_owned_branch(api, repository, head, &branch)?;
+    verify_owned_branch(api, repository, head, branch)?;
     ensure!(
         resolve(api, repository, base_name)? == base,
         "default branch moved during withdrawal; retry with a fresh plan"
@@ -200,7 +207,24 @@ fn withdraw(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publication>
 /// Explicit mutation API. Caller must deliberately invoke it with a reviewed plan and token.
 /// First draft supports same-repository proposal branches, not fork delivery.
 pub fn publish(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publication> {
+    publish_on(api, repository, plan, &branch_for(plan))
+}
+
+/// Publish like [`publish`], on a branch the caller names instead of the plan's own.
+///
+/// Plans published on one branch replace each other in a single pull request,
+/// so use this only for plans that describe the same scope every time.
+pub fn publish_on(
+    api: &dyn Api,
+    repository: &str,
+    plan: &Plan,
+    branch: &str,
+) -> Result<Publication> {
     plan.validate()?;
+    ensure!(
+        branch.starts_with("cm-testsuite/") && !branch.contains(['\r', '\n', ' ']),
+        "proposal branches live under cm-testsuite/"
+    );
     validate_source(repository)?;
     ensure!(
         plan.edits.len() <= 200,
@@ -213,7 +237,7 @@ pub fn publish(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publicati
         );
     }
     if plan.edits.is_empty() {
-        return withdraw(api, repository, plan);
+        return withdraw(api, repository, plan, branch);
     }
     let body = format!("<!-- cm-testsuite -->\n{}", plan.body()?);
     let title = plan.title();
@@ -227,7 +251,7 @@ pub fn publish(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publicati
         .as_str()
         .context("missing default branch")?;
     let base = resolve(api, repository, base_name)?;
-    let branch = branch_for(plan);
+
     let key = plan.key()?;
     let mut all_match = true;
     for e in &plan.edits {
@@ -235,7 +259,7 @@ pub fn publish(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publicati
             == e.after.as_ref().map(|s| sha256(s.as_bytes()));
     }
     if all_match {
-        return withdraw(api, repository, plan);
+        return withdraw(api, repository, plan, branch);
     }
     for guard in &plan.guards {
         ensure!(
@@ -305,7 +329,7 @@ pub fn publish(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publicati
         .and_then(|v| v["object"]["sha"].as_str())
         .map(str::to_owned);
     if let Some(head) = &head {
-        verify_owned_branch(api, repository, head, &branch)?;
+        verify_owned_branch(api, repository, head, branch)?;
     }
     // Build from the current default tree, preserving unrelated repository files.
     let base_tree = tree_sha(api, repository, &base)?;

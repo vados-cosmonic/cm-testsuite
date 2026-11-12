@@ -361,12 +361,27 @@ impl Api for FakeGitHub {
             }
 
             // Pull requests.
-            ("GET", ["pulls"]) => json!(
-                s.prs
-                    .iter()
-                    .filter(|pr| !query.contains("state=open") || pr["state"] == "open")
-                    .collect::<Vec<_>>()
-            ),
+            ("GET", ["pulls"]) => {
+                // `head=owner:branch` narrows the listing to one proposal branch.
+                let head = query
+                    .split('&')
+                    .find_map(|pair| pair.strip_prefix("head="))
+                    .map(|value| {
+                        percent_encoding::percent_decode_str(value)
+                            .decode_utf8_lossy()
+                            .into_owned()
+                    });
+                let branch = head
+                    .as_deref()
+                    .map(|head| head.split_once(':').map_or(head, |(_, branch)| branch));
+                json!(
+                    s.prs
+                        .iter()
+                        .filter(|pr| !query.contains("state=open") || pr["state"] == "open")
+                        .filter(|pr| branch.is_none_or(|branch| pr["head"] == branch))
+                        .collect::<Vec<_>>()
+                )
+            }
             ("GET", ["pulls", number]) => {
                 let number = number.parse::<u64>()?;
                 match s.prs.iter().find(|pr| pr["number"] == number) {

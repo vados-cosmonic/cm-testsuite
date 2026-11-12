@@ -12,6 +12,7 @@ The workspace lives under `rust/`. Library boundaries follow responsibilities in
 | `cm-delivery` | Guarded local application and explicit GitHub draft-PR reconciliation |
 | `cm-results` | Submitted-report validation and HTML presentation |
 | `cm-release` | Workspace release preparation, exact-commit tagging, and issue/PR notification planning |
+| `cm-test-support` | Test-only fixtures: an in-memory GitHub repository behind the API boundary and isolated local Git repositories |
 | `xtask` | Argument parsing, configuration/credentials, task wiring, progress and exit reporting |
 
 Libraries accept explicit inputs and return structured values/errors. They do not depend on xtask or GitHub Actions. Catalog types support analysis/acquisition/planning; delivery consumes plans; results consumes the catalog. The GitHub transport is shared by acquisition and delivery, with an injectable API boundary for tests.

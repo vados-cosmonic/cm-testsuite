@@ -1,40 +1,8 @@
 //! Release history, tag targets, and merge checks against throwaway Git repositories.
 
 use cm_release::{Metadata, history};
-use std::{fs, path::Path, process::Command};
-
-/// Run Git in a fixture repository without the developer's identity or
-/// configuration, returning trimmed standard output.
-fn git(root: &Path, args: &[&str]) -> String {
-    let out = Command::new("git")
-        .arg("-C")
-        .arg(root)
-        .args(args)
-        .env("GIT_CONFIG_NOSYSTEM", "1")
-        .env(
-            "GIT_CONFIG_GLOBAL",
-            if cfg!(windows) { "NUL" } else { "/dev/null" },
-        )
-        .env("GIT_AUTHOR_NAME", "Release test")
-        .env("GIT_AUTHOR_EMAIL", "release@example.invalid")
-        .env("GIT_COMMITTER_NAME", "Release test")
-        .env("GIT_COMMITTER_EMAIL", "release@example.invalid")
-        .output()
-        .unwrap();
-    assert!(
-        out.status.success(),
-        "{}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    String::from_utf8(out.stdout).unwrap().trim().into()
-}
-
-/// Commit the whole working tree (or nothing) and return the new commit.
-fn commit(root: &Path, message: &str) -> String {
-    git(root, &["add", "."]);
-    git(root, &["commit", "--allow-empty", "-m", message]);
-    git(root, &["rev-parse", "HEAD"])
-}
+use cm_test_support::git::{commit, git};
+use std::{fs, path::Path};
 
 /// Write release files for `version` with the given changelog section body,
 /// then commit and tag them as that release.

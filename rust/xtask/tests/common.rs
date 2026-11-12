@@ -46,52 +46,11 @@ pub fn failure(output: Output, diagnostic: &str) {
     );
 }
 
-/// Run Git without user hooks, signing, line-ending conversion, or global config.
-pub fn git(root: &Path, args: &[&str]) -> String {
-    success(
-        Command::new("git")
-            .arg("-C")
-            .arg(root)
-            .args([
-                "-c",
-                "core.autocrlf=false",
-                "-c",
-                "core.hooksPath=",
-                "-c",
-                "commit.gpgsign=false",
-                "-c",
-                "user.name=cm-testsuite tests",
-                "-c",
-                "user.email=tests@example.invalid",
-            ])
-            .args(args)
-            .env("GIT_CONFIG_NOSYSTEM", "1")
-            .env(
-                "GIT_CONFIG_GLOBAL",
-                if cfg!(windows) { "NUL" } else { "/dev/null" },
-            )
-            .env_remove("GIT_DIR")
-            .env_remove("GIT_WORK_TREE")
-            .env_remove("GIT_INDEX_FILE")
-            .output()
-            .unwrap(),
-    )
-}
+pub use cm_test_support::git::git;
 
 /// Commit all fixture changes and return the immutable revision.
 pub fn commit(root: &Path) -> String {
-    git(root, &["add", "--all"]);
-    git(
-        root,
-        &[
-            "commit",
-            "--quiet",
-            "--allow-empty",
-            "-m",
-            "test: update fixture",
-        ],
-    );
-    git(root, &["rev-parse", "HEAD"]).trim().to_owned()
+    cm_test_support::git::commit(root, "test: update fixture")
 }
 
 /// Build an offline command that cannot accidentally inherit publication credentials.

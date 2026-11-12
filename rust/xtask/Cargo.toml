@@ -24,3 +24,5 @@ cm-release = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true, features = ["getrandom"] }
+
+cm-test-support = { workspace = true }

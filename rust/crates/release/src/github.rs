@@ -14,18 +14,26 @@ const PAGE_SIZE: usize = 100;
 /// Upper bound on pages read from one listing before giving up.
 const MAX_PAGES: usize = 100;
 
-/// Plan, and with `apply` create, the release tag at `sha`.
-///
-/// Returns whether the tag is missing: `true` means it was created (or, without
-/// `apply`, would be), and `false` means it already points at `sha`. An existing
-/// tag at another commit is an error; tags are never moved.
+/// What [`create_tag`] did, or without `apply` would do, about a release tag.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TagOutcome {
+    /// The tag was missing and has been created.
+    Created,
+    /// The tag is missing; applying would create it.
+    Planned,
+    /// The tag already points at the requested commit.
+    Unchanged,
+}
+
+/// Plan, and with `apply` create, the release tag at `sha`. An existing tag at
+/// another commit is an error; tags are never moved.
 pub fn create_tag(
     api: &dyn Api,
     repository: &str,
     meta: &Metadata,
     sha: &str,
     apply: bool,
-) -> Result<bool> {
+) -> Result<TagOutcome> {
     validate_revision(sha)?;
     let source = source(repository);
     let repo = repo_path(&source)?;
@@ -39,17 +47,18 @@ pub fn create_tag(
             resolve(api, &source, &meta.tag)? == sha,
             "release tag already points at a different commit"
         );
-        return Ok(false);
+        return Ok(TagOutcome::Unchanged);
     }
-    if apply {
-        required(
-            api,
-            "POST",
-            &format!("{repo}/git/refs"),
-            Some(json!({"ref": format!("refs/tags/{}", meta.tag), "sha": sha})),
-        )?;
+    if !apply {
+        return Ok(TagOutcome::Planned);
     }
-    Ok(true)
+    required(
+        api,
+        "POST",
+        &format!("{repo}/git/refs"),
+        Some(json!({"ref": format!("refs/tags/{}", meta.tag), "sha": sha})),
+    )?;
+    Ok(TagOutcome::Created)
 }
 
 /// Trailing marker that identifies a comment as this tool's release comment.

@@ -1,0 +1,16 @@
+[package]
+name = "cm-test-support"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow = { workspace = true, features = ["std"] }
+base64 = { workspace = true, features = ["std"] }
+percent-encoding = { workspace = true, features = ["std"] }
+serde_json = { workspace = true, features = ["std"] }
+
+cm-catalog = { workspace = true }
+cm-github = { workspace = true }

@@ -256,12 +256,12 @@ name = "cm-delivery"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "base64 0.22.1",
  "cm-acquisition",
  "cm-catalog",
  "cm-exchange-plan",
  "cm-github",
  "cm-results",
+ "cm-test-support",
  "serde_json",
  "tempfile",
  "toml",
@@ -298,6 +298,7 @@ dependencies = [
  "cm-acquisition",
  "cm-catalog",
  "cm-github",
+ "cm-test-support",
  "semver",
  "serde",
  "serde_json",
@@ -312,6 +313,18 @@ dependencies = [
  "anyhow",
  "cm-catalog",
  "serde",
+]
+
+[[package]]
+name = "cm-test-support"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "cm-catalog",
+ "cm-github",
+ "percent-encoding",
+ "serde_json",
 ]
 
 [[package]]
@@ -2255,6 +2268,7 @@ dependencies = [
  "cm-github",
  "cm-release",
  "cm-results",
+ "cm-test-support",
  "cm-wast-analysis",
  "serde",
  "serde_json",

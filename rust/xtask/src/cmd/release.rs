@@ -212,7 +212,9 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
         } => {
             let meta = Metadata::new(&version)?;
             let sha = history::tag_target(root, &meta, &reference)?;
-            let create = github::create_tag(&client(apply)?, &repository, &meta, &sha, apply)?;
+            let outcome = github::create_tag(&client(apply)?, &repository, &meta, &sha, apply)?;
+            // `create` reports whether the tag was missing before this run.
+            let create = outcome != github::TagOutcome::Unchanged;
             println!(
                 "{}",
                 serde_json::json!({"tag": meta.tag, "sha": sha, "apply": apply, "create": create})

@@ -54,6 +54,12 @@ Each scenario creates isolated temporary directories and real Git history; no
 network credentials are needed. Group new scenarios by behavior and reuse the
 fixtures rather than copying command setup.
 
+Fixtures used by more than one crate live in `rust/crates/test-support`
+(`cm-test-support`): `github::FakeGitHub`, an in-memory GitHub repository behind
+the `cm_github::Api` boundary, and `git`, which runs Git in throwaway
+repositories without the developer's configuration. Depend on it only from
+`[dev-dependencies]`, and extend the fake there instead of writing another mock.
+
 The live GitHub scenario is ignored by default. See
 [MAINTAINERS.md](MAINTAINERS.md#live-github-tests) for its opt-in command,
 credentials, temporary repositories, and cleanup behavior.

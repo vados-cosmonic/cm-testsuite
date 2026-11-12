@@ -12,6 +12,7 @@ on:
       - metadata/catalog.toml
       - corpus/**
       - registry/participants.toml
+      - registry/participants/**/*.toml
 
   workflow_dispatch:
     inputs:

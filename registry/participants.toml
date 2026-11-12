@@ -11,3 +11,7 @@ schema = 1
 repository = "github:vados-cosmonic/cm-testsuite-test-source"
 reference = "main"
 maintainers = ["vados-cosmonic"]
+
+[[participant]]
+repository = "github:vados-cosmonic/cm-testsuite-test-receiver"
+maintainers = ["vados-cosmonic"]

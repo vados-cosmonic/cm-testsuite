@@ -66,8 +66,19 @@ pub(crate) fn edit(
 
 /// Compare serialized metadata with its current bytes before proposing a write.
 pub(crate) fn metadata_edit(tree: &dyn Tree, path: &str, after: String) -> Result<Option<Edit>> {
+    moved_edit(tree, path, None, after)
+}
+
+/// Plan a metadata write like [`metadata_edit`]. A record that does not exist
+/// yet takes its comments from `origin`, the text its fields are moving out of.
+pub(crate) fn moved_edit(
+    tree: &dyn Tree,
+    path: &str,
+    origin: Option<&[u8]>,
+    after: String,
+) -> Result<Option<Edit>> {
     let existing = tree.read(path)?;
-    let after = match &existing {
+    let after = match existing.as_deref().or(origin) {
         Some(bytes) => records::preserve(std::str::from_utf8(bytes)?, &after)?,
         None => after,
     };

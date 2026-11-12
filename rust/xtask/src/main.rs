@@ -3,6 +3,7 @@
 mod build_artifacts;
 mod cmd;
 mod io;
+mod tools;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};

@@ -11,11 +11,13 @@ anyhow = { workspace = true, features = ["std"] }
 serde = { workspace = true, features = ["std", "derive"] }
 serde_json = { workspace = true, features = ["std"] }
 semver = { workspace = true, features = ["std"] }
-toml = { workspace = true, features = ["std", "serde", "parse", "display"] }
 toml_edit = { workspace = true, features = ["parse", "display"] }
 
+cm-acquisition = { workspace = true }
 cm-catalog = { workspace = true }
 cm-github = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true, features = ["getrandom"] }
+
+cm-test-support = { workspace = true }

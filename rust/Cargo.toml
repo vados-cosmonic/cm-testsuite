@@ -33,6 +33,7 @@ cm-exchange-plan = { path = "crates/exchange-plan", default-features = false }
 cm-delivery = { path = "crates/delivery", default-features = false }
 cm-results = { path = "crates/results", default-features = false }
 cm-release = { path = "crates/release", default-features = false }
+cm-test-support = { path = "crates/test-support", default-features = false }
 
 [profile.dev]
 debug = 0

@@ -70,28 +70,48 @@ impl Api for Client {
         self.runtime.block_on(async {
             let request = async {
                 match method {
-                    "GET" => self.client.get::<Value, _, Value>(path, body.as_ref()).await,
+                    "GET" => {
+                        self.client
+                            .get::<Value, _, Value>(path, body.as_ref())
+                            .await
+                    }
                     "POST" => self.client.post::<Value, Value>(path, body.as_ref()).await,
-                    "PATCH" => self.client.patch::<Value, _, Value>(path, body.as_ref()).await,
+                    "PATCH" => {
+                        self.client
+                            .patch::<Value, _, Value>(path, body.as_ref())
+                            .await
+                    }
                     _ => bail!("unsupported GitHub API method: {method}"),
-                }.map_err(anyhow::Error::from)
+                }
+                .map_err(anyhow::Error::from)
             };
             let response = tokio::time::timeout(Duration::from_secs(60), request)
-                .await.context("GitHub request exceeded 60 seconds")?;
+                .await
+                .context("GitHub request exceeded 60 seconds")?;
             match response {
                 Ok(value) => Ok(Some(value)),
                 Err(error) => {
                     // Release notifications distinguish moved/deleted targets from
                     // authentication and transport failures without parsing messages.
-                    if let Some(octocrab::Error::GitHub { source, .. }) = error.downcast_ref::<octocrab::Error>() {
-                        let status = source.status_code.as_u16();
-                        if status == 404 {
-                            return Ok(None);
+                    let Some(octocrab::Error::GitHub { source, .. }) =
+                        error.downcast_ref::<octocrab::Error>()
+                    else {
+                        // Avoid including response bodies or caller credentials in errors.
+                        bail!(
+                            "GitHub {method} {path} failed; check connectivity, \
+                             token permissions, rate limits, and branch state"
+                        )
+                    };
+                    match source.status_code.as_u16() {
+                        404 => Ok(None),
+                        status => Err(HttpStatus {
+                            method: method.into(),
+                            path: path.into(),
+                            status,
                         }
-                        return Err(HttpStatus { method: method.into(), path: path.into(), status }.into());
+                        .into()),
                     }
-                    bail!("GitHub {method} {path} failed; check connectivity, token permissions, rate limits, and branch state")
-                },
+                }
             }
         })
     }

@@ -32,7 +32,8 @@ printf '%s\n' 'fix(catalog): preserve identity' | npm exec --no -- commitlint
 
 The hygiene workflow checks every proposed commit and the PR title (which may
 become a squash commit), including merge-queue ranges. Existing history outside
-the proposed range is not re-linted. The separate `audit-workflows` workflow runs Zizmor. Dependabot groups weekly GitHub Actions and commitlint updates.
+the proposed range is not re-linted. The separate `audit-workflows` workflow
+runs Zizmor. Dependabot groups weekly GitHub Actions and commitlint updates.
 Branch protection can require `commits`, `zizmor`, and the six `check (RUNNER)`
 matrix jobs; installing these workflows does not change repository protection settings.
 
@@ -122,10 +123,12 @@ intervening prereleases; prerelease notes start after the previous release.
 dotslash bins/just xtask release metadata --version 0.2.0-rc.1
 dotslash bins/just xtask release prepare --version 0.2.0-rc.1
 dotslash bins/just xtask release extract-latest-changelog-section --version 0.2.0-rc.1 --out /tmp/notes.md
-dotslash bins/just xtask release semver-is-prerelease 0.2.0-rc.1
-dotslash bins/just xtask release semver-get-prerelease 0.2.0-rc.1
-dotslash bins/just xtask release semver-lt 0.2.0-rc.1 0.2.0
 ```
+
+`release metadata` prints whether a version is a prerelease and its channel
+(`rc` for `0.2.0-rc.1`). A release section must list at least one change:
+preparation, tagging, and publication all refuse a version whose changelog
+section is empty.
 
 `release from-event` validates a merged-PR event JSON file. `release validate`
 checks the current checkout against an existing release tag. Metadata commands
@@ -147,7 +150,8 @@ notifies issues referenced by closing keywords in their bodies. Recognized
 forms include `Fixes #123`, `Closes OWNER/REPO#123`, and
 `Resolves https://github.com/OWNER/REPO/issues/123`. Cross-repository references,
 code fences, and inline code are ignored. A PR without recognized issue
-references receives the notification itself. Issues are not closed or reopened.
+references receives the notification itself. Release preparation PRs are never
+notified. Issues are not closed or reopened.
 A linked reference that is a PR is described as a PR.
 
 Some references are skipped with a warning instead of failing the run:

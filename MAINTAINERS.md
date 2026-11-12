@@ -21,7 +21,7 @@ The [workflow guide](docs/src/workflow.md#gather-and-distribute) documents the f
 and the `gather` and `distribute` commands, which run locally exactly as they do in CI.
 
 No exchange workflow uses a stored token.
-Each one publishes with a short-lived [Octo STS](https://github.com/octo-sts/app) token scoped to a single repository,
+Each one publishes with a short-lived Octo STS token scoped to a single repository,
 granted by a trust policy committed in that repository:
 `.github/chainguard/import.sts.yaml` here for the import pull request,
 and `.github/chainguard/cm-testsuite.sts.yaml` in every receiving repository.

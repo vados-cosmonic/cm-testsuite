@@ -135,7 +135,7 @@ which covers this repository and public ones;
 private participants are out of reach.
 Writes use a short-lived [Octo STS](https://github.com/octo-sts/app) token
 that the command requests for one repository, just before its first write there.
-A token is granted only when that repository has the [Octo STS app](https://github.com/apps/octo-sts/installations/new) installed
+A token is granted only when that repository has the Octo STS app installed
 and commits a trust policy naming the calling workflow.
 
 | Destination | Policy file in the destination | Identity | Trusted workflows |

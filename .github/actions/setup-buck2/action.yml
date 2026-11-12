@@ -76,17 +76,20 @@ runs:
         mkdir -p "$store"
         if [[ "$RUNNER_OS" == Windows ]]; then
           # bazel-remote does not run on Windows; Buildbarn's storage server does.
+          mkdir -p "$store/chunks.state" "$store/chunk-mappings.state" "$store/actions.state"
           BUCK_ACTION_CACHE_DIR="$(cygpath -m "$store")" nohup dotslash "$GITHUB_WORKSPACE/bins/bb-storage" \
             "$(cygpath -m "$ACTION_PATH/bb-storage.jsonnet")" > "$log" 2>&1 &
         else
           nohup dotslash "$GITHUB_WORKSPACE/bins/bazel-remote" --dir "$store" --max_size 1 \
             --grpc_address 127.0.0.1:9092 --http_address 127.0.0.1:9093 > "$log" 2>&1 &
         fi
+        server=$!
         for _ in $(seq 1 120); do
           if (exec 3<>/dev/tcp/127.0.0.1/9092) 2>/dev/null; then
             listening=true
             break
           fi
+          if ! kill -0 "$server" 2>/dev/null; then break; fi
           sleep 0.5
         done
         if [[ "${listening:-}" != true ]]; then

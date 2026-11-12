@@ -1,0 +1,8 @@
+# Repositories enrolled in the exchange, approved during review.
+# Each repository's own manifest decides whether it shares tests, receives them, or both.
+#
+# [[participant]]
+# repository = "github:OWNER/REPO"
+# manifest = ".cm-testsuite.toml" # optional
+# reference = "main"              # optional; gathered from the default branch when absent
+schema = 1

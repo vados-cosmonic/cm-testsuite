@@ -96,6 +96,16 @@ xtask *args: doctor
 demo: doctor
     {{buck}} run {{host_config}} //:xtask -- demo --out .demo
 
+# Gather updates from enrolled repositories into one catalog import; a dry run unless --apply or --publish.
+[group('exchange')]
+gather *args: doctor
+    {{buck}} run {{host_config}} //:xtask -- gather "$@"
+
+# Propose catalog updates to enrolled repositories, one draft PR each; a dry run unless --publish.
+[group('exchange')]
+distribute *args: doctor
+    {{buck}} run {{host_config}} //:xtask -- distribute "$@"
+
 # Regenerate Buck's pinned registry inputs after updating Cargo.lock.
 [group('build')]
 buck-lock: doctor

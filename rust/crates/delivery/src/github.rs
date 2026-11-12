@@ -20,17 +20,17 @@ fn remote_hash(api: &dyn Api, source: &str, rev: &str, path: &str) -> Result<Opt
     Ok(read_file(api, source, rev, path)?.map(|b| sha256(&b)))
 }
 
-/// A stable branch per workflow subject. Publication never auto-merges.
+/// One stable branch per destination repository and direction, so every plan
+/// updates the same pull request. Publication never auto-merges.
 pub fn branch_for(plan: &Plan) -> String {
-    format!(
-        "cm-testsuite/{}/{}",
-        if plan.kind == Kind::Import {
-            "import"
-        } else {
-            "receive"
-        },
-        &sha256(plan.subject.as_bytes())[..20]
-    )
+    match plan.kind {
+        // Any set of sources shares the catalog's single import proposal.
+        Kind::Import => "cm-testsuite/import".into(),
+        Kind::Receive => format!(
+            "cm-testsuite/receive/{}",
+            &sha256(plan.subject.as_bytes())[..20]
+        ),
+    }
 }
 
 const MARKER: &str = "\n\nCM-TESTSUITE-PLAN\n";
@@ -216,7 +216,7 @@ pub fn publish(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publicati
         return withdraw(api, repository, plan);
     }
     let body = format!("<!-- cm-testsuite -->\n{}", plan.body()?);
-    let title = format!("cm-testsuite: {}", plan.subject);
+    let title = plan.title();
     ensure!(
         body.len() <= 60000 && title.len() <= 240,
         "proposal description exceeds draft size limit; use a smaller batch"
@@ -353,11 +353,7 @@ pub fn publish(api: &dyn Api, repository: &str, plan: &Plan) -> Result<Publicati
             "plan_sha256": key,
             "files": files,
         });
-        let message = format!(
-            "cm-testsuite: {}{MARKER}{}",
-            plan.subject,
-            serde_json::to_string(&record)?,
-        );
+        let message = format!("{title}{MARKER}{}", serde_json::to_string(&record)?);
         let commit = required(
             api,
             "POST",

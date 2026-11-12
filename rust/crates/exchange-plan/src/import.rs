@@ -1,7 +1,7 @@
 //! Reconcile complete source snapshots with the curated catalog.
 
 use crate::files::{edit, metadata_edit};
-use crate::{Guard, Kind, Plan, hash_at};
+use crate::{Checkout, Guard, Kind, Plan, hash_at};
 use anyhow::{Context, Result, ensure};
 use cm_acquisition::Snapshot;
 use cm_catalog::*;
@@ -12,6 +12,7 @@ use std::{
 
 /// Plan a complete import without modifying files; missing source entries become retirements.
 pub fn import(root: &Path, snapshots: &[Snapshot]) -> Result<Plan> {
+    let tree = Checkout(root);
     let old = Catalog::load(root)?;
     let mut next = old.clone();
     let mut plan = Plan {
@@ -47,7 +48,7 @@ pub fn import(root: &Path, snapshots: &[Snapshot]) -> Result<Plan> {
             .filter(|(_, t)| t.source == snapshot.source)
         {
             if !snapshot.tests.contains_key(id) {
-                if let Some(e) = edit(root, &test.destination, Some(&test.sha256), None)? {
+                if let Some(e) = edit(&tree, &test.destination, Some(&test.sha256), None)? {
                     plan.edits.push(e);
                 }
                 plan.provenance.insert(id.clone(), test.clone());
@@ -64,7 +65,7 @@ pub fn import(root: &Path, snapshots: &[Snapshot]) -> Result<Plan> {
                 .get(&test.destination)
                 .context("missing snapshot file")?
                 .clone();
-            if let Some(e) = edit(root, &test.destination, before, Some(content))? {
+            if let Some(e) = edit(&tree, &test.destination, before, Some(content))? {
                 plan.edits.push(e);
             }
             for warning in &test.analysis.warnings {
@@ -82,7 +83,7 @@ pub fn import(root: &Path, snapshots: &[Snapshot]) -> Result<Plan> {
 
     // Keep metadata comments and deterministic ordering in the final review plan.
     next.validate()?;
-    if let Some(e) = metadata_edit(root, CATALOG_PATH, records::encode(&next)?)? {
+    if let Some(e) = metadata_edit(&tree, CATALOG_PATH, records::encode(&next)?)? {
         plan.edits.push(e);
     }
     plan.edits.sort_by(|a, b| a.path.cmp(&b.path));

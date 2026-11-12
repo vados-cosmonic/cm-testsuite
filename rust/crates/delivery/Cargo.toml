@@ -13,10 +13,10 @@ tempfile = { workspace = true, features = ["getrandom"] }
 
 cm-catalog = { workspace = true }
 cm-github = { workspace = true }
+cm-acquisition = { workspace = true }
 cm-exchange-plan = { workspace = true }
 
 [dev-dependencies]
 toml = { workspace = true, features = ["std", "serde", "parse", "display"] }
-cm-acquisition = { workspace = true }
 cm-results = { workspace = true }
 cm-test-support = { workspace = true }

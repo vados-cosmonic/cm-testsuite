@@ -50,11 +50,73 @@ dotslash bins/just xtask publish --repository github:OWNER/TARGET --plan /tmp/re
 
 The token's origin is up to the caller; no GitHub App is required. Reading private sources needs repository read access. Publishing needs contents and pull-request write permissions for the target. GitHub's workflow event behavior also depends on the token used; a repository `GITHUB_TOKEN` is not a general cross-repository credential. Tokens are not included in plans or logs.
 
-Publication uses the target's default branch, verifies plan guards against its committed state, and creates or updates one stable **draft** PR branch for the plan subject. It preserves unrelated files through the base tree. It does not auto-merge. A declined identical plan is suppressed; permanent exclusions remain the durable way to decline future versions. When the proposed changes disappear, publication closes the owned PR after checking its branch, retaining the branch for inspection. Unexpected branch edits and non-fast-forward races fail without force-pushing.
+Publication uses the target's default branch, verifies plan guards against its committed state, and creates or updates one stable **draft** PR per destination repository: every import shares one branch in the catalog repository, and each receiving repository has its own. A later plan replaces the contents of that PR. It preserves unrelated files through the base tree. It does not auto-merge. A declined identical plan is suppressed; permanent exclusions remain the durable way to decline future versions. When the proposed changes disappear, publication closes the owned PR after checking its branch, retaining the branch for inspection. Unexpected branch edits and non-fast-forward races fail without force-pushing.
 
 Automatic withdrawals are marked separately from maintainer declines, so a withdrawn proposal can be offered again if it becomes relevant. Empty plans must still match their policy/catalog guards before withdrawing a PR. Retrying an already-applied plan can close only that exact proposal, leaving newer proposals for the same subject open.
 
 Publication supports branches in the destination repository and caps proposals at 200 file edits. Manual exchange workflows prepare artifacts first and publish only when their publication input is enabled.
+
+## Gather and distribute
+
+`gather` and `distribute` run the import and receiving flows for every repository
+enrolled in `registry/participants.toml`:
+
+```toml
+schema = 1
+maintainers = ["LOGIN"] # mentioned on every failure report
+
+[[participant]]
+repository = "github:OWNER/REPO"
+manifest = ".cm-testsuite.toml" # optional
+reference = "main"              # optional; gathered from the default branch when absent
+maintainers = ["LOGIN"]         # optional; mentioned when this repository fails
+```
+
+Enrollment only makes the exchange look at a repository.
+Its own manifest decides whether it shares tests, receives them, or both.
+
+```sh
+dotslash bins/just gather                 # report what the catalog would import
+dotslash bins/just gather --apply         # write the import into this checkout
+dotslash bins/just gather --publish --repository github:OWNER/CATALOG
+
+dotslash bins/just distribute             # report what each repository would receive
+dotslash bins/just distribute --publish   # open, update, or withdraw one draft PR each
+```
+
+Both commands only report unless told otherwise, and accept `--only github:OWNER/REPO`
+to narrow a run.
+Reading public repositories needs no token;
+`--publish` needs `GITHUB_TOKEN` with contents and pull-request write on each destination.
+
+- `gather` acquires every enrolled repository that shares tests
+  and plans one import covering all of them.
+  A repository that cannot be read is left out,
+  so it neither blocks the others nor retires its own tests.
+- `distribute` plans against each repository's default branch through the GitHub API;
+  no checkout of the recipient is needed.
+  A repository whose manifest does not enable receiving is skipped.
+- Each destination has one draft pull request.
+  A repeated run updates that pull request in place,
+  and withdraws it when nothing is left to propose.
+- Pull request descriptions give the change counts,
+  one row per test with its source revision and summary,
+  and collapsed sections for declining tests and for warnings.
+
+A failing repository makes the command exit non-zero after the others have been processed.
+With `--report-to github:OWNER/REPO` the command exits cleanly
+and keeps one issue per command in that repository instead:
+the issue lists each failing repository, its error, and its maintainers,
+is rewritten in place by later failing runs,
+and is closed by the next clean run.
+Reporting uses `REPORT_TOKEN` when set and `GITHUB_TOKEN` otherwise;
+the token needs issue write access.
+
+The `gather-updates` and `distribute-updates` workflows run these commands daily.
+`distribute-updates` also runs when the catalog or the registry changes on `main`.
+Scheduled runs publish with the `CM_TESTSUITE_TOKEN` secret and report failures as issues;
+without the secret they only report planned changes.
+Manually dispatched runs publish only when their `publish` input is enabled.
 
 ## Editable records
 

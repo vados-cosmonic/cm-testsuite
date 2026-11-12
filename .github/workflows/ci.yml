@@ -48,21 +48,12 @@ jobs:
         with:
           arch: ${{ runner.arch == 'ARM64' && 'amd64_arm64' || 'amd64' }}
 
-      - name: Restore Buck action cache
-        if: runner.os != 'Windows'
-        id: cache
-        uses: gilescope/rebuck@d4426bb4ad5a58134ad69f8c0afcdb2b43229865
-        with:
-          max-size-gb: "4"
-          cache-key-prefix: cm-testsuite-buck-v1-${{ matrix.runner }}-${{ hashFiles('bins/buck2') }}
-          # setup-buck2 also records the native toolchain's runner image identity.
-          write-buckconfig-local: "false"
-          force-cache-upload: "false"
-
+      # This job builds every cached target on every runner, so its default-branch
+      # runs are the ones that publish the action cache other runs restore.
       - name: Set up Buck2
         uses: $/.github/actions/setup-buck2
         with:
-          cache-address: ${{ steps.cache.outputs.grpc-address }}
+          action-cache-save: "true"
 
       - name: Check formatting before compilation
         run: just fmt-check

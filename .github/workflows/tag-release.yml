@@ -50,8 +50,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # A merged pull request runs this job in its own cache scope, which that
+      # pull request could have written, so the tagging tool is built from source.
       - name: Set up Buck2
         uses: $/.github/actions/setup-buck2
+        with:
+          action-cache: "false"
 
       # Build before any step receives a token, so dependency build scripts never see it.
       - name: Build release tooling

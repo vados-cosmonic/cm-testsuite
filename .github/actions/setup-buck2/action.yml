@@ -38,6 +38,8 @@ runs:
         : "${ImageVersion:?Expected a GitHub-hosted runner image version}"
         printf 'identity=%s-%s-%s-%s\n' "$RUNNER_OS" "$RUNNER_ARCH" "$ImageOS" "$ImageVersion" >> "$GITHUB_OUTPUT"
 
+    # The key names the runner image, then the cache server and its store layout,
+    # then the Buck inputs. A store is restored only by the server that wrote it.
     # Only default-branch runs write the cache, so no pull request can alter
     # what other runs restore, and unchanged build inputs never save a copy.
     - name: Restore and later save the Buck action cache
@@ -48,9 +50,9 @@ runs:
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/cm-testsuite-buck
-        key: buck-action-cache-v1-${{ steps.host.outputs.identity }}-${{ hashFiles('.buckconfig', 'BUCK', '.buck/**', 'bins/buck2', 'rust/**', 'examples/**') }}
+        key: buck-action-cache-v1-${{ steps.host.outputs.identity }}-${{ hashFiles('bins/bazel-remote', 'bins/bb-storage', '.github/actions/setup-buck2/bb-storage.jsonnet') }}-${{ hashFiles('.buckconfig', 'BUCK', '.buck/**', 'bins/buck2', 'rust/**', 'examples/**') }}
         restore-keys: |
-          buck-action-cache-v1-${{ steps.host.outputs.identity }}-
+          buck-action-cache-v1-${{ steps.host.outputs.identity }}-${{ hashFiles('bins/bazel-remote', 'bins/bb-storage', '.github/actions/setup-buck2/bb-storage.jsonnet') }}-
 
     - name: Restore the Buck action cache
       if: >-
@@ -60,9 +62,9 @@ runs:
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/cm-testsuite-buck
-        key: buck-action-cache-v1-${{ steps.host.outputs.identity }}-${{ hashFiles('.buckconfig', 'BUCK', '.buck/**', 'bins/buck2', 'rust/**', 'examples/**') }}
+        key: buck-action-cache-v1-${{ steps.host.outputs.identity }}-${{ hashFiles('bins/bazel-remote', 'bins/bb-storage', '.github/actions/setup-buck2/bb-storage.jsonnet') }}-${{ hashFiles('.buckconfig', 'BUCK', '.buck/**', 'bins/buck2', 'rust/**', 'examples/**') }}
         restore-keys: |
-          buck-action-cache-v1-${{ steps.host.outputs.identity }}-
+          buck-action-cache-v1-${{ steps.host.outputs.identity }}-${{ hashFiles('bins/bazel-remote', 'bins/bb-storage', '.github/actions/setup-buck2/bb-storage.jsonnet') }}-
 
     - name: Serve the Buck action cache
       if: steps.host.outputs.identity != ''

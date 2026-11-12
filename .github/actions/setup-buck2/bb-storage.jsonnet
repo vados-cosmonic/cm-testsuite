@@ -4,7 +4,7 @@ local dir = std.extVar('BUCK_ACTION_CACHE_DIR');
 local allow = { allow: {} };
 local mebibyte = 1024 * 1024;
 
-// A blob must fit in one block; blockBytes bounds the largest cacheable file.
+// Each store file holds 16 blocks. Blobs are stored as chunks of at most 512 KiB.
 // Stores whose entries can be overwritten accept only one "new" block.
 local store(name, mapBytes, blockBytes, newBlocks) = {
   'local': {
@@ -37,7 +37,7 @@ local store(name, mapBytes, blockBytes, newBlocks) = {
   contentAddressableStorageServer: {
     contentAddressableStorage: {
       // The server splits blobs into chunks and refuses to store them otherwise.
-      chunkStorage: store('chunks', 8 * mebibyte, 256 * mebibyte, 2) + {
+      chunkStorage: store('chunks', 8 * mebibyte, 128 * mebibyte, 2) + {
         'local'+: {
           chunkingParameters: {
             minChunkSizeBytes: 256 * 1024,

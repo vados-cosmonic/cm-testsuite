@@ -1,11 +1,17 @@
 name: setup-buck2
-description: Install repository launchers and cache the checksum-pinned Buck2 tool downloads.
+description: Install repository launchers, cache pinned tool downloads, and serve the Buck2 action cache.
 
 inputs:
-  cache-address:
-    description: Optional local REAPI cache address for GitHub-hosted Linux and macOS runners.
+  action-cache:
+    description: Restore the Buck2 action cache and serve it to Buck on loopback.
     required: false
-    default: ""
+    default: "true"
+  action-cache-save:
+    description: >-
+      Save the action cache when the job succeeds on the default branch.
+      Set by the one job per runner that builds every cached target.
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -22,23 +28,83 @@ runs:
           ~/AppData/Local/dotslash
         key: dotslash-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('bins/*') }}
 
-    - name: Configure the Buck action cache
-      if: inputs.cache-address != ''
+    # Host compilers are not Buck inputs; isolate results by runner image too.
+    - name: Identify the runner image
+      id: host
+      if: inputs.action-cache == 'true'
       shell: bash
-      env:
-        CACHE_ADDRESS: ${{ inputs.cache-address }}
-      # Host compilers are not Buck inputs; isolate results by runner image too.
       run: |
         : "${ImageOS:?Expected a GitHub-hosted runner image}"
         : "${ImageVersion:?Expected a GitHub-hosted runner image version}"
+        printf 'identity=%s-%s-%s-%s\n' "$RUNNER_OS" "$RUNNER_ARCH" "$ImageOS" "$ImageVersion" >> "$GITHUB_OUTPUT"
+
+    # The key names the runner image, then the cache server and its store layout,
+    # then the Buck inputs. A store is restored only by the server that wrote it.
+    # Only default-branch runs write the cache, so no pull request can alter
+    # what other runs restore, and unchanged build inputs never save a copy.
+    - name: Restore and later save the Buck action cache
+      if: >-
+        steps.host.outputs.identity != '' &&
+        inputs.action-cache-save == 'true' &&
+        github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/cm-testsuite-buck
+        key: buck-action-cache-v1-${{ steps.host.outputs.identity }}-${{ hashFiles('bins/bazel-remote', 'bins/bb-storage', '.github/actions/setup-buck2/bb-storage.jsonnet') }}-${{ hashFiles('.buckconfig', 'BUCK', '.buck/**', 'bins/buck2', 'rust/**', 'examples/**') }}
+        restore-keys: |
+          buck-action-cache-v1-${{ steps.host.outputs.identity }}-${{ hashFiles('bins/bazel-remote', 'bins/bb-storage', '.github/actions/setup-buck2/bb-storage.jsonnet') }}-
+
+    - name: Restore the Buck action cache
+      if: >-
+        steps.host.outputs.identity != '' &&
+        !(inputs.action-cache-save == 'true' &&
+        github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/cm-testsuite-buck
+        key: buck-action-cache-v1-${{ steps.host.outputs.identity }}-${{ hashFiles('bins/bazel-remote', 'bins/bb-storage', '.github/actions/setup-buck2/bb-storage.jsonnet') }}-${{ hashFiles('.buckconfig', 'BUCK', '.buck/**', 'bins/buck2', 'rust/**', 'examples/**') }}
+        restore-keys: |
+          buck-action-cache-v1-${{ steps.host.outputs.identity }}-${{ hashFiles('bins/bazel-remote', 'bins/bb-storage', '.github/actions/setup-buck2/bb-storage.jsonnet') }}-
+
+    - name: Serve the Buck action cache
+      if: steps.host.outputs.identity != ''
+      shell: bash
+      env:
+        CACHE_IDENTITY: ${{ steps.host.outputs.identity }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        store="$HOME/.cache/cm-testsuite-buck"
+        log="$RUNNER_TEMP/buck-action-cache.log"
+        mkdir -p "$store"
+        if [[ "$RUNNER_OS" == Windows ]]; then
+          # bazel-remote does not run on Windows; Buildbarn's storage server does.
+          mkdir -p "$store/chunks.state" "$store/chunk-mappings.state" "$store/actions.state"
+          BUCK_ACTION_CACHE_DIR="$(cygpath -m "$store")" nohup dotslash "$GITHUB_WORKSPACE/bins/bb-storage" \
+            "$(cygpath -m "$ACTION_PATH/bb-storage.jsonnet")" > "$log" 2>&1 &
+        else
+          nohup dotslash "$GITHUB_WORKSPACE/bins/bazel-remote" --dir "$store" --max_size 1 \
+            --grpc_address 127.0.0.1:9092 --http_address 127.0.0.1:9093 > "$log" 2>&1 &
+        fi
+        server=$!
+        for _ in $(seq 1 120); do
+          if (exec 3<>/dev/tcp/127.0.0.1/9092) 2>/dev/null; then
+            listening=true
+            break
+          fi
+          if ! kill -0 "$server" 2>/dev/null; then break; fi
+          sleep 0.5
+        done
+        if [[ "${listening:-}" != true ]]; then
+          cat "$log" >&2
+          exit 1
+        fi
         {
-          printf '[host_tools]\n  cache_identity = %s-%s-%s-%s\n' \
-            "$RUNNER_OS" "$RUNNER_ARCH" "$ImageOS" "$ImageVersion"
+          printf '[host_tools]\n  cache_identity = %s\n' "$CACHE_IDENTITY"
           printf '[build]\n  execution_platforms = root//.buck/platforms:ci-cache\n'
           printf '[buck2]\n  default_allow_cache_upload = true\n'
           printf '[buck2_re_client]\n'
           printf '  action_cache_address = %s\n  cas_address = %s\n  engine_address = %s\n' \
-            "$CACHE_ADDRESS" "$CACHE_ADDRESS" "$CACHE_ADDRESS"
+            grpc://127.0.0.1:9092 grpc://127.0.0.1:9092 grpc://127.0.0.1:9092
           printf '  tls = false\n  capabilities = false\n'
         } > .buckconfig.local
 

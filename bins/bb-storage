@@ -1,0 +1,30 @@
+#!/usr/bin/env dotslash
+
+// Buildbarn publishes no Windows ARM64 build; that host runs the x86_64 one.
+{
+  "name": "bb-storage",
+  "platforms": {
+    "windows-x86_64": {
+      "size": 54051328,
+      "hash": "sha256",
+      "digest": "7490a672de910faa9aeb4896cb0201e583a956848d9a42496a64ac9dde34d454",
+      "path": "bb_storage.exe",
+      "providers": [
+        {
+          "url": "https://github.com/buildbarn/bb-storage/releases/download/20261112T085002Z-8d2acac/bb_storage.windows_amd64.exe"
+        }
+      ]
+    },
+    "windows-aarch64": {
+      "size": 54051328,
+      "hash": "sha256",
+      "digest": "7490a672de910faa9aeb4896cb0201e583a956848d9a42496a64ac9dde34d454",
+      "path": "bb_storage.exe",
+      "providers": [
+        {
+          "url": "https://github.com/buildbarn/bb-storage/releases/download/20261112T085002Z-8d2acac/bb_storage.windows_amd64.exe"
+        }
+      ]
+    }
+  }
+}

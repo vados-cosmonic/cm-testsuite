@@ -48,8 +48,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Released artifacts are compiled in this job, never restored from a cache.
       - name: Set up Buck2
         uses: $/.github/actions/setup-buck2
+        with:
+          action-cache: "false"
 
       - name: Validate the exact release checkout
         id: meta
@@ -146,8 +149,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # tag-release calls this workflow from a merged pull request's cache scope.
       - name: Set up Buck2
         uses: $/.github/actions/setup-buck2
+        with:
+          action-cache: "false"
 
       - name: Update related issues or PRs
         env:

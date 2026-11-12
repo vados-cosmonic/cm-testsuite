@@ -74,6 +74,64 @@ When changing Rust or a DotSlash launcher, verify the published checksums and
 update the [pinned-tools table](docs/src/building.md#pinned-tools). Exercise the
 host matrix and example exchange before merging platform changes.
 
+## Merge queue
+
+The `check`, `repository-hygiene`, and `audit-workflows` workflows provide every required check.
+Each one also runs on `merge_group`, under the same job names, with no path filter,
+so a merge queue can require exactly what a pull request requires.
+No other workflow gates a merge, and none of them may gain the trigger:
+they publish, tag, release, or open pull requests.
+
+> [!IMPORTANT]
+> GitHub offers merge queues only for repositories owned by an organization:
+> any public one, or a private one on GitHub Enterprise Cloud.
+> A repository owned by a user account has no "Require merge queue" rule,
+> so the `merge_group` triggers stay idle until the repository belongs to an organization.
+
+To turn the queue on, edit the `main` ruleset under **Settings → Rules → Rulesets**:
+
+1. Add the **Require merge queue** rule with these settings.
+
+   | Setting | Value | Reason |
+   | --- | --- | --- |
+   | Merge method | Rebase | The repository allows no other method, and release tagging expects the pull request's own commits on `main`. |
+   | Build concurrency | 2 | A second queued pull request builds while the first finishes, without two more six-runner matrices waiting for macOS runners. |
+   | Minimum group size | 1 | A lone pull request merges as soon as its checks pass. |
+   | Maximum group size | 5 | Pull requests that are ready together land in one push, so `publish-pages` and `distribute-updates` run once. |
+   | Wait time to meet minimum group size | the lowest value offered | Never applies with a minimum of 1. |
+   | Require all queue entries to pass required checks | enabled | Rebase merging puts every queued commit on `main`, so each entry must pass on its own. |
+   | Status check timeout | 60 minutes | A matrix job may run for 30 minutes after waiting for a runner. |
+
+2. Keep **Require status checks to pass** with the checks below, each from the GitHub Actions source.
+   Leave **Require branches to be up to date before merging** off; the queue tests the rebased result instead.
+
+   | `check` workflow | Required checks |
+   | --- | --- |
+   | One job per runner | `check (ubuntu-latest)`, `check (ubuntu-26.04-arm)`, `check (macos-latest)`, `check (macos-26-intel)`, `check (windows-latest)`, `check (windows-11-arm)`, `commits`, `zizmor` |
+   | One aggregate `ci` job | `ci`, `commits`, `zizmor` |
+
+   Require only checks that also report for a merge group.
+   A check from a workflow without the `merge_group` trigger, such as a pull-request title lint in its own workflow,
+   never reports there, and every queued pull request then waits until the status check timeout removes it.
+
+3. Leave the bypass list as it is.
+   Automation needs no entry: release, import, gather, and enrollment pull requests are opened by Octo STS tokens,
+   merged by a maintainer, and queued like any other.
+   No workflow pushes to `main`, and release tags are outside the ruleset.
+
+A queued pull request is rebased onto `main` and the entries ahead of it
+on a temporary `gh-readonly-queue/main/pr-NUMBER-SHA` branch, which the workflows check out.
+`repository-hygiene` lints the commits between the merge group's `base_sha` and `head_sha`,
+the rebased copies of the pull request's commits; the title step runs for pull requests only.
+Each concurrency group includes `github.ref`, which is unique to a merge group,
+so queue runs neither cancel nor are cancelled by pull-request and `main` runs.
+A merge-group run restores caches saved on `main` and nothing saved by a pull request.
+The queue pushes to `main` when a group passes,
+so `check`, `audit-workflows`, `publish-pages`, and `distribute-updates` still run on that push.
+
+Queue a release pull request only while the queue is empty and its branch is up to date with `main`;
+see [the release lifecycle](docs/src/releases.md#release-lifecycle).
+
 ## Publishing documentation
 
 Configure the repository's Pages source as GitHub Actions. The `publish-pages`

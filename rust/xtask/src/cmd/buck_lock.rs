@@ -14,7 +14,7 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
     let Args { check } = args;
 
     let generated = buck_lock(&fs::read_to_string(root.join("rust/Cargo.lock"))?)?;
-    let path = root.join("third-party/crates.bzl");
+    let path = root.join(".buck/third-party/crates.bzl");
     if check {
         ensure!(
             fs::read_to_string(&path)? == generated,
@@ -62,7 +62,7 @@ fn buck_lock(text: &str) -> Result<String> {
         let name = p["name"].as_str().unwrap();
         let version = p["version"].as_str().unwrap();
         out.push_str(&format!(
-            "    \"{name}-{version}\": \"//third-party:{name}-{}\",\n",
+            "    \"{name}-{version}\": \"//.buck/third-party:{name}-{}\",\n",
             version.replace('+', "_")
         ));
     }

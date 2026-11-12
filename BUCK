@@ -1,6 +1,6 @@
 load("@toolchains//rust:defs.bzl", "host_build_tools")
-load("//build-support:cargo.bzl", "cargo_binary", "cargo_test", "cargo_workspace")
-load("//third-party:crates.bzl", "CHECKSUMS", "CRATES")
+load("//.buck/build-support:cargo.bzl", "cargo_binary", "cargo_test", "cargo_workspace")
+load("//.buck/third-party:crates.bzl", "CHECKSUMS", "CRATES")
 
 _TOOLS = host_build_tools()
 

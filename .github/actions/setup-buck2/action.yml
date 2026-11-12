@@ -34,7 +34,7 @@ runs:
         {
           printf '[host_tools]\n  cache_identity = %s-%s-%s-%s\n' \
             "$RUNNER_OS" "$RUNNER_ARCH" "$ImageOS" "$ImageVersion"
-          printf '[build]\n  execution_platforms = root//platforms:ci-cache\n'
+          printf '[build]\n  execution_platforms = root//.buck/platforms:ci-cache\n'
           printf '[buck2]\n  default_allow_cache_upload = true\n'
           printf '[buck2_re_client]\n'
           printf '  action_cache_address = %s\n  cas_address = %s\n  engine_address = %s\n' \

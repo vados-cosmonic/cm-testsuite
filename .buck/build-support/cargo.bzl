@@ -91,6 +91,6 @@ cargo_workspace = rule(
         "crates": attrs.dict(attrs.string(), attrs.dep()),
         "checksums": attrs.dict(attrs.string(), attrs.string()),
         "mode": attrs.enum(["build", "lint", "fmt"]),
-        "script": attrs.source(default = "//build-support:cargo.sh"),
+        "script": attrs.source(default = "//.buck/build-support:cargo.sh"),
     },
 )

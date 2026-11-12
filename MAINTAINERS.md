@@ -4,7 +4,7 @@
 
 Review the source manifest, provenance, WAST changes, and receiving policy before
 applying or merging a proposal. The import and receiving workflows are manually
-invoked and publish draft pull requests using caller-authorized credentials.
+invoked and publish draft pull requests with Octo STS tokens.
 Consult the [workflow guide](docs/src/workflow.md) for local equivalents and token
 requirements; running a build or test does not publish a proposal.
 
@@ -16,10 +16,16 @@ List this repository's own maintainers in the top-level `maintainers` array.
 The [workflow guide](docs/src/workflow.md#gather-and-distribute) documents the format
 and the `gather` and `distribute` commands, which run locally exactly as they do in CI.
 
-The `gather-updates` and `distribute-updates` workflows publish with the
-`CM_TESTSUITE_TOKEN` secret, which needs contents and pull-request write access
-to this repository and to every receiving repository.
-Until the secret is set, scheduled runs only report what they would change.
+No exchange workflow uses a stored token.
+Each one publishes with a short-lived Octo STS token scoped to a single repository,
+granted by a trust policy committed in that repository:
+`.github/chainguard/import.sts.yaml` here for the import pull request,
+and `.github/chainguard/cm-testsuite.sts.yaml` in every receiving repository.
+Adding a receiving repository, or a workflow that publishes, means editing those policies;
+see [Credentials in GitHub Actions](docs/src/workflow.md#credentials-in-github-actions).
+
+Both workflows can be dispatched manually with `only` or `except` to limit a run
+to some of the enrolled repositories.
 
 A repository that fails does not fail the scheduled run.
 Each workflow keeps one open issue here that lists the failing repositories,

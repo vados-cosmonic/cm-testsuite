@@ -21,7 +21,7 @@ on:
         type: string
 
       publish:
-        description: 'Explicitly publish a draft PR using CM_TESTSUITE_TOKEN'
+        description: 'Open or update the draft import PR'
         default: false
         type: boolean
 
@@ -38,6 +38,8 @@ jobs:
 
     permissions:
       contents: read
+      # Exchange this workflow's identity for an Octo STS token that opens the import PR.
+      id-token: write
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -53,7 +55,7 @@ jobs:
           SOURCE: ${{ inputs.source }}
           REFERENCE: ${{ inputs.reference }}
           MANIFEST: ${{ inputs.manifest }}
-          GITHUB_TOKEN: ${{ secrets.CM_TESTSUITE_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           just xtask acquire --source "$SOURCE" --reference "$REFERENCE" --manifest "$MANIFEST" --out "$RUNNER_TEMP/snapshot.toml"
           just xtask plan-import --snapshot "$RUNNER_TEMP/snapshot.toml" --out "$RUNNER_TEMP/import-plan.toml"
@@ -67,5 +69,6 @@ jobs:
         if: inputs.publish
         env:
           TARGET: github:${{ github.repository }}
-          GITHUB_TOKEN: ${{ secrets.CM_TESTSUITE_TOKEN }}
-        run: just xtask publish --repository "$TARGET" --plan "$RUNNER_TEMP/import-plan.toml"
+          # Reads the repository; the write token comes from Octo STS.
+          GITHUB_TOKEN: ${{ github.token }}
+        run: just xtask publish --repository "$TARGET" --plan "$RUNNER_TEMP/import-plan.toml" --sts-identity import

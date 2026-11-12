@@ -15,8 +15,18 @@ on:
 
   workflow_dispatch:
     inputs:
+      only:
+        description: 'Update only these enrolled repositories: space-separated owner/repository names'
+        default: ''
+        type: string
+
+      except:
+        description: 'Skip these enrolled repositories: space-separated owner/repository names'
+        default: ''
+        type: string
+
       publish:
-        description: 'Open or update draft PRs using CM_TESTSUITE_TOKEN'
+        description: 'Open, update, or withdraw draft PRs'
         default: false
         type: boolean
 
@@ -33,6 +43,8 @@ jobs:
 
     permissions:
       contents: read
+      # Exchange this workflow's identity for one Octo STS token per receiving repository.
+      id-token: write
       # File or close the issue that tracks failing repositories.
       issues: write
 
@@ -45,22 +57,26 @@ jobs:
       - name: Set up Buck2
         uses: $/.github/actions/setup-buck2
 
+      - name: Build the command before it can request tokens
+        run: just build
+
       - name: Distribute updates to enrolled repositories
         shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.CM_TESTSUITE_TOKEN }}
-          REPORT_TOKEN: ${{ github.token }}
+          # Reads repositories and files the failure issue; publishing uses Octo STS.
+          GITHUB_TOKEN: ${{ github.token }}
+          ONLY: ${{ inputs.only }}
+          EXCEPT: ${{ inputs.except }}
           PUBLISH: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
         run: |
           args=()
+          for repository in $ONLY; do args+=(--only "$repository"); done
+          for repository in $EXCEPT; do args+=(--except "$repository"); done
           if [[ "$PUBLISH" == true ]]; then
-            if [[ -n "$GITHUB_TOKEN" ]]; then
-              args+=(--publish)
-            else
-              echo '::notice::CM_TESTSUITE_TOKEN is not set; reporting planned changes only.'
-            fi
+            args+=(--publish --sts-identity cm-testsuite)
           fi
-          # Unattended runs file failures in an issue instead of failing.
+          # Unattended runs cover the whole registry and file failures in an
+          # issue instead of failing.
           if [[ "$GITHUB_EVENT_NAME" != workflow_dispatch ]]; then
             args+=(--report-to "$GITHUB_REPOSITORY")
           fi

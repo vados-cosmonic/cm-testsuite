@@ -1,0 +1,97 @@
+name: Enroll a repository
+description: Ask for a repository to submit tests to the catalog, receive tests from it, or both.
+title: '[Enroll] OWNER/REPO'
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Enrollment adds your repository to `registry/participants.toml`.
+        The scheduled runs then read the tests it declares, open one draft pull request with tests it receives, or both.
+        The committed `.cm-testsuite.toml` in your repository decides which; see the [manifest reference](https://github.com/vados-cosmonic/cm-testsuite/blob/main/docs/src/manifest.md).
+
+  - type: input
+    id: repository
+    attributes:
+      label: Repository
+      description: The GitHub repository to enroll, as OWNER/REPO.
+      placeholder: example/your-repository
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: roles
+    attributes:
+      label: Roles
+      description: Select every role the manifest enables.
+      options:
+        - label: Submit tests (the manifest declares `[[test]]` entries)
+        - label: Receive tests (the manifest sets `[receive] enabled = true`)
+
+  - type: input
+    id: maintainers
+    attributes:
+      label: Maintainers
+      description: GitHub logins to mention when a run fails for this repository, separated by commas.
+      placeholder: octocat, hubot
+    validations:
+      required: true
+
+  - type: input
+    id: manifest
+    attributes:
+      label: Manifest path
+      description: Leave empty for `.cm-testsuite.toml` at the repository root.
+      placeholder: .cm-testsuite.toml
+
+  - type: input
+    id: reference
+    attributes:
+      label: Branch to read tests from
+      description: Leave empty for the default branch. Received tests are always proposed against the default branch.
+      placeholder: main
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Receiving tests: grant pull-request access
+
+        Skip this section when the repository only submits tests.
+
+        No stored token is used.
+        This repository opens pull requests with a short-lived [Octo STS](https://github.com/octo-sts/app) token, which your repository grants through a committed trust policy:
+
+        1. Install the [Octo STS app](https://github.com/apps/octo-sts/installations/new) on the repository.
+        2. Commit this file on the default branch as `.github/chainguard/cm-testsuite.sts.yaml`:
+
+        ```yaml
+        issuer: https://token.actions.githubusercontent.com
+        subject: repo:vados-cosmonic@123968127/cm-testsuite@1447064737:ref:refs/heads/main
+        claim_pattern:
+          job_workflow_ref: vados-cosmonic/cm-testsuite/\.github/workflows/(distribute|receive)\.yml@refs/heads/main
+
+        permissions:
+          contents: write
+          pull_requests: write
+        ```
+
+        The policy trusts only the `distribute` and `receive` workflows of this repository running on `main`.
+
+  - type: checkboxes
+    id: setup
+    attributes:
+      label: Setup
+      options:
+        - label: The manifest is committed on the branch named above.
+          required: true
+        - label: I maintain this repository, or its maintainers have agreed to this request.
+          required: true
+        - label: Submitted tests are original to the repository or may be redistributed under its license.
+        - label: Receiving only — the Octo STS app is installed on the repository.
+        - label: Receiving only — `.github/chainguard/cm-testsuite.sts.yaml` is committed on the default branch.
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Constraints the maintainers should know about, such as required reviews or branch protection.

@@ -27,7 +27,9 @@ The [build guide](../../../docs/src/building.md) is the reference for prerequisi
   | `dotslash bins/just site` | mdBook and the results site |
 
 - CI runs more than `check`.
-  Reproduce the `check` job by running the steps in [ci.yml](../../../.github/workflows/ci.yml) in order.
+  Reproduce the `check (ubuntu-latest)` job by running the steps in [ci.yml](../../../.github/workflows/ci.yml) in order.
+  The other runners skip the steps whose result cannot depend on the host;
+  see [Continuous integration](../../../docs/src/building.md#continuous-integration).
 - Test suites execute on every invocation; only compilation is cached.
 - With a local Rust matching `rust/rust-toolchain.toml`, Cargo works from `rust/`
   and is faster for iteration, for example `cargo test -p xtask --test local`.

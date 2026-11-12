@@ -15,17 +15,74 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Choose the runners before anything builds, so this cannot be an xtask command.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+
+    outputs:
+      matrix: ${{ steps.scope.outputs.matrix }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # A pull request's merge commit and its first parent, the base branch.
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Select runners from the changed paths
+        id: scope
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        # Flags: build compiles and tests, fmt and lint run those checks,
+        # once runs the steps whose result does not depend on the host.
+        # Clippy needs one host per cfg family; the workspace uses only cfg(unix) and cfg(windows).
+        run: |
+          full='{"include": [
+            {"runner": "ubuntu-latest", "build": true, "fmt": true, "lint": true, "once": true},
+            {"runner": "ubuntu-26.04-arm", "build": true, "fmt": false, "lint": false, "once": false},
+            {"runner": "macos-latest", "build": true, "fmt": false, "lint": false, "once": false},
+            {"runner": "macos-26-intel", "build": true, "fmt": false, "lint": false, "once": false},
+            {"runner": "windows-latest", "build": true, "fmt": false, "lint": true, "once": false},
+            {"runner": "windows-11-arm", "build": true, "fmt": false, "lint": false, "once": false}
+          ]}'
+          data='{"include": [
+            {"runner": "ubuntu-latest", "build": false, "fmt": false, "lint": false, "once": true}
+          ]}'
+
+          # Only a pull request that stays inside paths Buck never reads skips the host matrix.
+          # Every other event, an unrecognised path, or a diff that cannot be read keeps it.
+          scope=full
+          if [[ "$EVENT_NAME" == pull_request ]] && git rev-parse --verify --quiet 'HEAD^2' >/dev/null; then
+            scope=data
+            paths=0
+            while IFS= read -r path; do
+              paths=$((paths + 1))
+              case "$path" in
+                registry/* | metadata/* | corpus/* | reports/* | docs/* | .agents/* | .github/ISSUE_TEMPLATE/*) ;;
+                */*) scope=full ;;
+                *.md | LICENSE) ;;
+                *) scope=full ;;
+              esac
+            done < <(git diff --no-renames --name-only 'HEAD^1' HEAD)
+            if [[ "$paths" == 0 ]]; then scope=full; fi
+          fi
+
+          printf 'Scope: %s\n' "$scope"
+          if [[ "$scope" == data ]]; then matrix=$data; else matrix=$full; fi
+          printf 'matrix<<END_OF_MATRIX\n%s\nEND_OF_MATRIX\n' "$matrix" >> "$GITHUB_OUTPUT"
+
   check:
+    name: check (${{ matrix.runner }})
+    needs: changes
+
     strategy:
       fail-fast: false
-      matrix:
-        runner:
-          - ubuntu-latest
-          - ubuntu-26.04-arm
-          - macos-latest
-          - macos-26-intel
-          - windows-latest
-          - windows-11-arm
+      matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
 
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -65,34 +122,44 @@ jobs:
           cache-address: ${{ steps.cache.outputs.grpc-address }}
 
       - name: Check formatting before compilation
+        if: matrix.fmt
         run: just fmt-check
 
       - name: Lint the workspace
+        if: matrix.lint
         run: just lint
 
       - name: Build shared CLI and test artifacts
+        if: matrix.build
         run: just ci-build
 
       - name: Run offline suites through Buck2
+        if: matrix.build
         run: just ci-test
 
-      - name: Verify Cargo/Buck inputs and the local flow
+      - name: Run the local flow
+        run: just demo
+
+      - name: Verify Cargo/Buck inputs, the catalog, and the registries
+        if: matrix.once
         run: |
           just xtask buck-lock --check
-          just demo
           just xtask validate
 
       - name: Check release tooling
+        if: matrix.once
         run: |
           dotslash bins/git-cliff --version
           just xtask release metadata --version 0.2.0-rc.1
 
       - name: Build documentation and submitted-results site
+        if: matrix.once
         run: just site
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: matrix.once
         with:
-          name: site-preview-${{ matrix.runner }}
+          name: site-preview
           path: site-out/
 
       - name: Upload Buck2 reports
@@ -103,3 +170,24 @@ jobs:
           path: .ci-results/
           include-hidden-files: true
           if-no-files-found: ignore
+
+  # One stable name to require, whichever runners the change selected.
+  ci:
+    if: always()
+    needs:
+      - changes
+      - check
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Require every needed job to succeed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        # Neither job is ever skipped by design, so a skip means the selection itself failed.
+        run: |
+          printf 'Needed job results: %s\n' "$RESULTS"
+          for result in $RESULTS; do
+            if [[ "$result" != success ]]; then exit 1; fi
+          done

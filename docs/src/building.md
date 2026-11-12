@@ -88,7 +88,7 @@ Only dependency-fetch actions need network access. Buck downloads crate archives
 with checksum verification, and the Cargo wrapper extracts them directly into
 its directory source. Formatting uses the SDK and sources without fetching crates.
 
-`toolchains/rust/releases.bzl` also records WASI Preview 1 and Preview 2 standard
+`.buck/toolchains/rust/releases.bzl` also records WASI Preview 1 and Preview 2 standard
 libraries. The `wasm32-wasip3` entry remains commented out because the pinned
 stable release does not publish it; enable it only with an official checksum
 when upgrading to a stable release that includes the target. Native exchange
@@ -136,7 +136,7 @@ currently downloads a floating release and selects x86_64 on Windows.
 Linux and macOS jobs also use commit-pinned [Rebuck](https://github.com/gilescope/rebuck)
 to run a loopback-only bazel-remote cache and persist its contents through Actions cache.
 The cache has a 4 GiB disk limit per runner variant.
-The `//platforms:ci-cache` execution platform keeps compilation local while allowing
+The `//.buck/platforms:ci-cache` execution platform keeps compilation local while allowing
 Buck to download and upload action results through REAPI.
 The setup action writes `.buckconfig.local` before starting Buck;
 local development continues to use the default execution platform.
@@ -162,7 +162,7 @@ The existing build and test reports remain available as workflow artifacts.
 ## Updating dependencies
 
 After updating `rust/Cargo.lock`, run `dotslash bins/just buck-lock` to regenerate
-`third-party/crates.bzl`.
+`.buck/third-party/crates.bzl`.
 Use `dotslash bins/just xtask buck-lock --check` to verify that they agree.
 
 New packages must appear in the Buck declarations before Buck can build xtask.

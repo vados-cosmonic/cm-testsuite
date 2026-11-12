@@ -66,7 +66,7 @@ credentials, temporary repositories, and cleanup behavior.
 
 ## Updating dependencies and documentation
 
-Keep `rust/Cargo.lock` and `third-party/crates.bzl` synchronized using the
+Keep `rust/Cargo.lock` and `.buck/third-party/crates.bzl` synchronized using the
 [dependency update procedure](docs/src/building.md#updating-dependencies).
 Declare dependencies through `{ workspace = true }` in leaf manifests and group
 local path dependencies separately from external crates.

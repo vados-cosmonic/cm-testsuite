@@ -1,6 +1,6 @@
 [cells]
   root = .
-  toolchains = toolchains
+  toolchains = .buck/toolchains
   prelude = prelude
   wasmono = wasmono
   none = none

@@ -4,6 +4,7 @@ mod files;
 mod import;
 mod plan;
 mod receive;
+mod warnings;
 
 pub use files::{Checkout, Tree, hash_at, read};
 pub use import::import;

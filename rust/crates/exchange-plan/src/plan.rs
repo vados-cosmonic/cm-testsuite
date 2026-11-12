@@ -127,7 +127,7 @@ impl Plan {
     }
 
     /// Describe the proposal for review: one summary line, one row per test,
-    /// and collapsed sections for declining tests and for warnings.
+    /// and collapsed sections for declining tests and for warnings grouped by kind.
     pub fn body(&self) -> Result<String> {
         let changes = self.changes();
         let mut body = match self.kind {
@@ -217,19 +217,7 @@ impl Plan {
             }
             body.push_str("]\n```\n\n</details>\n");
         }
-        if !self.warnings.is_empty() {
-            body.push_str(&format!(
-                "\n<details>\n<summary>Warnings ({})</summary>\n\n",
-                self.warnings.len()
-            ));
-            for warning in self.warnings.iter().take(LISTED) {
-                body.push_str(&format!("- {warning}\n"));
-            }
-            if self.warnings.len() > LISTED {
-                body.push_str(&format!("- and {} more\n", self.warnings.len() - LISTED));
-            }
-            body.push_str("\n</details>\n");
-        }
+        body.push_str(&self.warning_section());
 
         // Publication reads this line back to recognize a declined proposal.
         body.push_str(&format!("\nPlan SHA-256: `{}`\n", self.key()?));
@@ -238,7 +226,7 @@ impl Plan {
 }
 
 /// Most entries a description lists before pointing at the changed files.
-const LISTED: usize = 100;
+pub(crate) const LISTED: usize = 100;
 
 /// Whether a path is a record the tool maintains rather than a test file.
 fn is_record(path: &str) -> bool {
@@ -372,7 +360,11 @@ mod tests {
         assert!(body.contains(&format!("| Move | `{id}/moved` |")));
         assert!(body.contains("Other files:\n\n- Remove `shared/example/source/retired.wast`\n"));
         assert!(!body.contains(RECEIPT_PATH));
-        assert!(body.contains("<summary>Warnings (1)</summary>"));
+        assert!(body.contains(
+            "<summary>Warnings (1)</summary>\n\nWarnings do not block this pull request.\n\n\
+             **Other warnings** (1)\n\n- github:example/source/added: incomplete inference\n\n\
+             </details>\n\nPlan SHA-256:"
+        ));
         assert!(body.contains(&format!("  \"{id}/added\",\n")));
         assert!(body.ends_with(&format!("\nPlan SHA-256: `{}`\n", plan.key().unwrap())));
     }

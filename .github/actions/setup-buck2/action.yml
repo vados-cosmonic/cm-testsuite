@@ -31,7 +31,7 @@ runs:
     # Host compilers are not Buck inputs; isolate results by runner image too.
     - name: Identify the runner image
       id: host
-      if: inputs.action-cache == 'true' && runner.os != 'Windows'
+      if: inputs.action-cache == 'true'
       shell: bash
       run: |
         : "${ImageOS:?Expected a GitHub-hosted runner image}"
@@ -69,20 +69,27 @@ runs:
       shell: bash
       env:
         CACHE_IDENTITY: ${{ steps.host.outputs.identity }}
+        ACTION_PATH: ${{ github.action_path }}
       run: |
         store="$HOME/.cache/cm-testsuite-buck"
         log="$RUNNER_TEMP/buck-action-cache.log"
         mkdir -p "$store"
-        nohup dotslash "$GITHUB_WORKSPACE/bins/bazel-remote" --dir "$store" --max_size 1 \
-          --grpc_address 127.0.0.1:9092 --http_address 127.0.0.1:9093 > "$log" 2>&1 &
+        if [[ "$RUNNER_OS" == Windows ]]; then
+          # bazel-remote does not run on Windows; Buildbarn's storage server does.
+          BUCK_ACTION_CACHE_DIR="$(cygpath -m "$store")" nohup dotslash "$GITHUB_WORKSPACE/bins/bb-storage" \
+            "$(cygpath -m "$ACTION_PATH/bb-storage.jsonnet")" > "$log" 2>&1 &
+        else
+          nohup dotslash "$GITHUB_WORKSPACE/bins/bazel-remote" --dir "$store" --max_size 1 \
+            --grpc_address 127.0.0.1:9092 --http_address 127.0.0.1:9093 > "$log" 2>&1 &
+        fi
         for _ in $(seq 1 120); do
-          if curl --fail --silent --output /dev/null http://127.0.0.1:9093/status; then
-            healthy=true
+          if (exec 3<>/dev/tcp/127.0.0.1/9092) 2>/dev/null; then
+            listening=true
             break
           fi
           sleep 0.5
         done
-        if [[ "${healthy:-}" != true ]]; then
+        if [[ "${listening:-}" != true ]]; then
           cat "$log" >&2
           exit 1
         fi

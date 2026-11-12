@@ -58,6 +58,9 @@ enum Task {
     /// Propose catalog updates to every enrolled repository that receives tests.
     Distribute(cmd::distribute::Args),
 
+    /// Turn an "Enroll a repository" issue into its registry entry and draft PR.
+    Enroll(cmd::enroll::Args),
+
     /// Admit an engine's TOML report against this exact catalog and approved publishers.
     ResultsImport(cmd::results_import::Args),
 
@@ -93,6 +96,7 @@ fn main() -> Result<()> {
         Task::Publish(args) => cmd::publish::run(&root, args),
         Task::Gather(args) => cmd::gather::run(&root, args),
         Task::Distribute(args) => cmd::distribute::run(&root, args),
+        Task::Enroll(args) => cmd::enroll::run(&root, args),
         Task::ResultsImport(args) => cmd::results_import::run(&root, args),
         Task::Docs(args) => cmd::docs::run(&root, args),
         Task::Site(args) => cmd::site::run(&root, args),

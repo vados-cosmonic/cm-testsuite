@@ -7,6 +7,7 @@ pub mod buck_lock;
 pub mod demo;
 pub mod distribute;
 pub mod docs;
+pub mod enroll;
 pub mod gather;
 pub mod lint_commits;
 pub mod plan_import;

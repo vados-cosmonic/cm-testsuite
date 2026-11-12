@@ -1,4 +1,5 @@
 //! Manifests, immutable identity, provenance, and safe repository-relative paths.
+mod layout;
 pub mod records;
 mod registry;
 
@@ -13,7 +14,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
+pub use layout::{CATALOG_DIR, Layout, path_source, source_path};
+
 pub const SCHEMA: u32 = 1;
+/// The catalog file that may hold any number of sources; see [`CATALOG_DIR`].
 pub const CATALOG_PATH: &str = "metadata/catalog.toml";
 pub const RECEIPT_PATH: &str = ".cm-testsuite-lock.toml";
 pub fn sha256(bytes: &[u8]) -> String {
@@ -377,19 +381,23 @@ impl Catalog {
             );
             ensure!(paths.insert(&t.destination), "duplicate corpus destination");
         }
-        Ok(())
-    }
-    pub fn load(root: &Path) -> Result<Self> {
-        let p = checked_path(root, CATALOG_PATH)?;
-        match std::fs::read(p) {
-            Ok(b) => {
-                let c: Self = records::decode(&b)?;
-                c.validate()?;
-                Ok(c)
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(Self::default()),
-            Err(e) => Err(e.into()),
+        // GitHub treats names that differ only in case as one repository, and so
+        // do the file systems that would hold both spellings' files.
+        let mut spellings = BTreeMap::new();
+        let retired = self.retired.keys().map(|id| {
+            let name = id.match_indices('/').nth(1).map_or(id.len(), |(at, _)| at);
+            &id[..name]
+        });
+        for source in self.sources.keys().map(String::as_str).chain(retired) {
+            let known = spellings
+                .entry(source.to_ascii_lowercase())
+                .or_insert(source);
+            ensure!(
+                *known == source,
+                "one source spelled both {known} and {source}"
+            );
         }
+        Ok(())
     }
 }
 pub fn corpus_path(source: &str, name: &str) -> Result<String> {

@@ -78,7 +78,7 @@ Use GitHub-compatible admonitions for warnings and tables for pinned versions.
 ## Preparing a pull request
 
 Explain the behavior changed, why it matters, and the checks you ran. Use
-Conventional Commits with a concise title. Keep `.llm/` plans and working notes
+Conventional Commits with a concise title; CI lints the pull request title in the same form. Keep `.llm/` plans and working notes
 local, and avoid committing generated build output or credentials.
 
 For commit-message checks, install Node.js 24 or newer and run

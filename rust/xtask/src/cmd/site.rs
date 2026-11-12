@@ -14,7 +14,7 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
     super::docs::run(root, super::docs::Args {})?;
     let catalog = Catalog::load(root)?;
     let directory = root.join("reports").join(digest(&catalog)?);
-    let allowed = cm_results::Publishers::load(&root.join("registry/publishers.toml"))?;
+    let allowed = cm_results::Publishers::load(&root.join(cm_results::PUBLISHERS_PATH))?;
     let mut paths = if directory.exists() {
         fs::read_dir(directory)?
             .map(|e| e.map(|x| x.path()))

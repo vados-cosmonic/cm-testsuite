@@ -1,0 +1,43 @@
+name: pull-request-title
+
+on:
+  # `edited` also fires for description edits and cannot be filtered by field here.
+  # The job still runs then: skipping it would replace an earlier failure with a skipped check.
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - edited
+
+permissions: {}
+
+concurrency:
+  group: title-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  title:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Validate the pull request title as a Conventional Commit header
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$PR_TITLE" | npm exec --no -- commitlint --verbose

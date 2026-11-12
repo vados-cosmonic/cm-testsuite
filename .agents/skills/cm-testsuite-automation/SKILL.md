@@ -34,6 +34,11 @@ Read the sections that match the files being changed.
   must trust the workflow file by name.
   A new publishing workflow or destination needs a matching policy change;
   see [Credentials in GitHub Actions](../../../docs/src/workflow.md#credentials-in-github-actions).
+- `ci.yml` picks its runners in the `changes` job and gates steps on the matrix flags it emits.
+  Give a new step the narrowest flag that still covers it: `once` when its result cannot depend on the host.
+  A new top-level path selects every runner unless it is added to that job's data list.
+- Do not skip a job with `if:` to save time when an earlier run of it may have failed for the same commit;
+  the skipped check replaces the failure.
 - Audit every workflow or action change with `dotslash bins/just zizmor --offline`.
   Fix findings instead of suppressing them.
 

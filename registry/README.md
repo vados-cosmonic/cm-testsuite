@@ -17,3 +17,7 @@ See the [workflow guide](../docs/src/workflow.md#import) for usage.
 Membership controls admission; it does not verify a report's signature or origin.
 See the [result-submission guide](../docs/src/results.md) for the report format
 and admission process.
+
+`dotslash bins/just xtask validate` loads both registries the way the exchange does
+and rejects a file that fails to parse or validate.
+CI runs the same command on every pull request.

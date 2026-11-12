@@ -121,11 +121,30 @@ are not guaranteed.
 
 ## Continuous integration
 
-Each platform job runs formatting and Clippy before compiling `//:artifacts`.
+The `check` workflow first selects its runners from the paths a pull request changes.
+A pull request confined to `registry/`, `metadata/`, `corpus/`, `reports/`, `docs/`, `.agents/`,
+`.github/ISSUE_TEMPLATE/`, root-level Markdown, and `LICENSE` runs one `ubuntu-latest` job.
+Buck reads none of those paths, so that job skips formatting, Clippy, the build, and the test suites.
+Any other path, and every push to `main`, merge-queue run, and manual run, selects all six runners.
+
+| Step | Six-runner change | Data or documentation change |
+| --- | --- | --- |
+| `just fmt-check` | `ubuntu-latest` | not run |
+| `just lint` | `ubuntu-latest`, `windows-latest` | not run |
+| `just ci-build`, `just ci-test` | every runner | not run |
+| `just demo` | every runner | `ubuntu-latest` |
+| `xtask buck-lock --check`, `xtask validate`, release-tool checks, `just site` | `ubuntu-latest` | `ubuntu-latest` |
+
+rustfmt, the lockfile check, validation, the release-tool checks, and the site give the same answer on every host.
+Clippy differs only where `cfg` selects different code,
+and the workspace conditions code on `unix` and `windows` alone, so one runner of each family lints.
+Add a runner's `lint` flag in `ci.yml` before introducing code conditional on another operating system or architecture.
+The final `ci` job fails unless every selected job succeeded.
+
 `just ci-build` writes Buck's build report to `.ci-results/build.json`, and
 `just ci-test` executes all offline suites with separate build and command reports.
-The demo, release-tool checks, and site generation reuse the compiled xtask in the
-same job. CI uploads the reports alongside the generated site preview.
+The demo, release-tool checks, and site generation reuse the compiled xtask in the same job.
+CI uploads each runner's reports and one `site-preview` artifact.
 
 The reusable `.github/actions/setup-buck2` action installs Just and DotSlash,
 restores DotSlash's platform-specific download cache, and verifies the repository's

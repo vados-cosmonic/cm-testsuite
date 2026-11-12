@@ -25,8 +25,8 @@ These conventions describe how to prepare a contribution; they do not authorize 
 
 ## Pull requests
 
-- CI lints the PR title as well, because it may become a squash commit.
-  Give it the same Conventional Commit form.
+- CI lints the PR title as well.
+  Give it the same Conventional Commit form, although rebase merging never turns it into a commit.
 - Explain the behavior changed, why it matters, and the checks you ran.
 - Open a pull request as a draft after local checks pass.
 - Say which checks could not run and why.

@@ -426,3 +426,30 @@ fn independent_sources_share_names_without_overwriting_or_retiring_each_other() 
         UPDATED
     );
 }
+
+#[test]
+fn validation_loads_both_registries_once_a_registry_directory_exists() {
+    let f = Exchange::new();
+    f.import();
+    let validate = || cli(&f.hub).arg("validate").output().unwrap();
+    assert!(!success(validate()).contains("registries"));
+
+    let participants = "schema = 1\n[[participant]]\nrepository = 'github:example/source'\n";
+    let publishers = "schema = 1\npublishers = ['a', 'b']\n";
+    write(&f.hub, "registry/participants.toml", participants);
+    failure(validate(), "registry/publishers.toml");
+    write(&f.hub, "registry/publishers.toml", publishers);
+    assert!(success(validate()).contains("Validated registries; 1 participants, 2 publishers"));
+
+    write(&f.hub, "registry/publishers.toml", "schema = 2\n");
+    failure(validate(), "registry/publishers.toml");
+    write(&f.hub, "registry/publishers.toml", publishers);
+    write(
+        &f.hub,
+        "registry/participants.toml",
+        format!("{participants}manifst = 'typo'\n"),
+    );
+    failure(validate(), "registry/participants.toml");
+    fs::remove_file(f.hub.join("registry/participants.toml")).unwrap();
+    failure(validate(), "registry/participants.toml");
+}

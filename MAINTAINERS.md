@@ -67,6 +67,13 @@ Just and DotSlash by operating system, architecture, and version. On a cache mis
 cargo-binstall installs upstream prebuilt binaries, selecting DotSlash's release
 filename for each host. Workflows invoke the installed `just` directly.
 
+The `check` workflow selects its runners in the `changes` job;
+[the build guide](docs/src/building.md#continuous-integration) lists what runs where.
+A path the job does not recognise selects every runner.
+Add a path to its data list only when no Buck target reads it,
+which the source globs in the root `BUCK` decide.
+Require the `ci` check rather than individual `check (RUNNER)` jobs.
+
 CI runs Zizmor with its read-only GitHub token. For a local audit, run
 `dotslash bins/just zizmor --offline`, or set `GH_TOKEN` to include online checks.
 

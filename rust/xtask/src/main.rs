@@ -40,7 +40,7 @@ enum Task {
     /// Apply a reviewed plan after checking all file and policy baselines.
     Apply(cmd::apply::Args),
 
-    /// Verify catalog digests and structurally parse every WAST; never execute it.
+    /// Verify the catalog, parse every WAST without executing it, and check the registries.
     Validate(cmd::validate::Args),
 
     /// Parse a WAT/WAST file and show conservative syntax evidence and warnings.

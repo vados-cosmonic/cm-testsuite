@@ -5,6 +5,8 @@ use cm_catalog::{SCHEMA, records};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeSet, fs, path::Path};
 
+pub const PUBLISHERS_PATH: &str = "registry/publishers.toml";
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Publishers {

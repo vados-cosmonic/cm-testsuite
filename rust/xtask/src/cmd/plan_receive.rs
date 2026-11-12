@@ -30,6 +30,9 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
     let plan = cm_exchange_plan::receive(root, &recipient, &manifest, &catalog, &files)?;
     write_record(&out, &plan)?;
     println!("Planned {} receiving changes", plan.edits.len());
+    for line in plan.warning_summary() {
+        eprintln!("{line}");
+    }
 
     Ok(())
 }

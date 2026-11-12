@@ -24,6 +24,13 @@ Read the sections that match the files being changed.
 - Pin every action to a full commit SHA with the version in a trailing comment.
 - Set `persist-credentials: false` on checkouts unless the job pushes.
 - Write YAML lists one item per line, never in the inline `[a, b]` form.
+- A workflow that provides a required check triggers on `merge_group` as well as `pull_request`,
+  reports the same job name for both, and uses no `paths` or `paths-ignore` filter on either.
+  A required check that never reports blocks the pull request or stalls the merge queue.
+  Skip pull-request-only work with a step-level `if:` so the job still succeeds in a merge group,
+  and give every `github.event.pull_request.*` value a `github.event.merge_group.*` fallback.
+  Never add `merge_group` to a workflow that publishes, tags, releases, or opens pull requests.
+  See [Merge queue](../../../MAINTAINERS.md#merge-queue).
 - Keep tool installation and caching in `.github/actions/setup-tools` and Buck setup in
   `.github/actions/setup-buck2`, so every workflow shares one implementation.
   Update the cache keys there when a tool pin changes.

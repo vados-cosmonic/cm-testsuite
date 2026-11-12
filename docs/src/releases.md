@@ -66,6 +66,9 @@ archives are available through GitHub Releases. The crates remain
    main moves while the release PR is open; it regenerates the PR on current
    main. Requiring branches to be up to date before merging in branch protection
    enforces this. Do not use **Update branch**: its merge commit is refused too.
+   A merge queue replaces that requirement and rebases a stale branch itself,
+   so with a queue, add the release PR only while the queue is empty and the PR is up to date with main.
+   A release PR that lands behind another queued PR is refused the same way.
    After a refusal, main carries the untagged version. Rerun
    **create-release-pr** with the same version and **allow-current-version**
    checked (`--allow-current-version` locally). It keeps the manifests and

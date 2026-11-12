@@ -14,7 +14,7 @@ Change them through the owning command, not by hand.
 | `metadata/catalog.toml` | Import plans | Same as the corpus; it records each file's source, revision, and digest |
 | `reports/` | `xtask results-import` | Admit a report with the command; never write one directly |
 | `registry/publishers.toml` | Maintainer review | Edit by hand only as an explicitly requested admission change |
-| `registry/participants.toml` | Maintainer review | Edit by hand only as an explicitly requested enrollment change |
+| `registry/participants.toml` | `xtask enroll` | Add an entry with `dotslash bins/just enroll --issue NUMBER --apply`; edit by hand only for an explicitly requested change the command cannot make |
 | `examples/*/` | Hand-written | Edit directly; see below |
 | `.cm-testsuite.toml` | Hand-written | Follow the [manifest guide](../../../docs/src/manifest.md) |
 
@@ -28,6 +28,10 @@ Change them through the owning command, not by hand.
 - `gather` and `distribute` run those flows for every enrolled repository and only report by default.
   Pass `--apply`, `--publish`, or `--report-to` only when explicitly asked;
   the last two open pull requests and issues on GitHub.
+- `enroll` reads an enrollment issue and only reports by default.
+  Its `--publish` opens a pull request; pass it only when explicitly asked.
+  The form's labels in `.github/ISSUE_TEMPLATE/enroll-repository.yml` and the parser
+  in `rust/crates/delivery/src/enroll/form.rs` must change together.
 
 ## Examples
 

@@ -136,6 +136,63 @@ each a comma-separated list of `OWNER/REPO` names,
 publish only when their `publish` input is enabled,
 and fail instead of filing an issue.
 
+## Enroll from an issue
+
+`enroll` turns an "Enroll a repository" issue into the registry entry it asks for:
+
+```sh
+dotslash bins/just enroll --issue 11 --repository OWNER/CATALOG             # report the entry and the checks
+dotslash bins/just enroll --issue 11 --repository OWNER/CATALOG --apply     # add the entry to this checkout
+dotslash bins/just enroll --issue 11 --repository OWNER/CATALOG --publish   # open or update the draft PR
+```
+
+`--repository` names the catalog repository that holds the issue and defaults to `GITHUB_REPOSITORY`.
+Tokens are found as for `gather`; only `--publish` writes to GitHub.
+
+The issue body is untrusted, so the command accepts only what the form produces:
+
+- The issue is open, its title starts with `[Enroll]`,
+  and its body has the form's headings once each, in order.
+  Text under "Anything else" is ignored.
+- Repository is `OWNER/REPO`, and Maintainers is 1 to 20 GitHub logins separated by commas.
+- Manifest path and Branch use only ASCII letters, digits, `-`, `_`, `.`, and `/`.
+- Both required Setup boxes are ticked.
+- The repository is not enrolled already.
+
+The entry holds `repository` and `maintainers`,
+`manifest` only when the path is not `.cm-testsuite.toml`,
+and `reference` only when a branch is named.
+Existing entries and comments in the registry are kept as they are.
+
+Before proposing anything, the command reads the repository through the GitHub API:
+
+| Finding | Effect |
+| --- | --- |
+| Repository, branch, or manifest missing, or the manifest invalid | The command fails; nothing is proposed |
+| Manifest enables receiving, but `.github/chainguard/cm-testsuite.sts.yaml` is not on the default branch | Warning |
+| A role ticked in the issue that the manifest does not enable | Warning |
+| Manifest neither shares nor receives tests | Warning |
+
+The trust policy is only checked for presence; its contents are not read.
+A warning does not block the pull request,
+since a policy can be committed after enrollment and `distribute` reports the repository until then.
+
+`--publish` keeps one draft pull request per issue, on the branch `cm-testsuite/enroll/NUMBER`.
+The pull request changes the registry alone, starting from the default branch,
+is titled `feat(registry): enroll OWNER/REPO`,
+lists the findings as a checklist with warnings left unticked,
+and closes the issue when merged.
+A repeated run updates the same pull request, for example after the issue was edited.
+The command refuses to touch a branch whose head commit it did not write,
+and a pull request on that branch it did not open.
+
+The `enroll-repository` workflow runs `enroll --publish` for one issue.
+Dispatch it manually with the issue number, which needs write access,
+or apply the `enroll` label to the issue, which needs triage access.
+Only the issue number reaches the workflow; the command fetches and validates the rest.
+Review the pull request's diff rather than the issue,
+which its author can edit until the run reads it.
+
 ## Credentials in GitHub Actions
 
 No workflow uses a stored token.
@@ -150,9 +207,10 @@ and commits a trust policy naming the calling workflow.
 | Destination | Policy file in the destination | Identity | Trusted workflows |
 | --- | --- | --- | --- |
 | This repository (import PR) | `.github/chainguard/import.sts.yaml` | `import` | `gather.yml`, `import.yml` |
+| This repository (enrollment PR) | `.github/chainguard/enroll.sts.yaml` | `enroll` | `enroll.yml` |
 | Each receiving repository | `.github/chainguard/cm-testsuite.sts.yaml` | `cm-testsuite` | `distribute.yml`, `receive.yml` |
 
-This repository needs the app installed as well, for its own import pull request.
+This repository needs the app installed as well, for its own import and enrollment pull requests.
 A receiving repository installs the
 [Octo STS app](https://github.com/apps/octo-sts/installations/new) and adds:
 
@@ -173,7 +231,7 @@ from the repository's **Settings → Actions → OIDC** page.
 
 Widening the exchange is therefore a configuration change on both sides:
 
-- A new receiving repository is enrolled in `registry/participants.toml` here
+- A new receiving repository is [enrolled](#enroll-from-an-issue) in `registry/participants.toml` here
   and commits the policy above there.
   Until it does, `distribute` reports that repository as failing and carries on with the rest.
 - A new source needs only enrollment, since gathering reads and writes nothing in the source.

@@ -278,14 +278,18 @@ fn notifiable_target(
     match api.request("GET", &format!("{repo}/issues/{number}"), None) {
         Ok(Some(target)) => Ok(Some(target)),
         Ok(None) => {
-            warnings.push(format!("skipping #{number}: not found"));
+            warnings.push(format!(
+                "skipping #{number}: not found; a released pull request names it with a closing \
+                 keyword, probably by mistake, and no action is needed"
+            ));
             Ok(None)
         }
         Err(error) => match error.downcast_ref::<HttpStatus>() {
             // GitHub answers 301 for a transferred issue and 410 for a deleted one.
             Some(HttpStatus { status, .. }) if matches!(*status, 301 | 410) => {
                 warnings.push(format!(
-                    "skipping #{number}: moved or deleted (HTTP {status})"
+                    "skipping #{number}: moved or deleted (HTTP {status}); it gets no release \
+                     comment, so announce the release by hand where a moved issue now lives"
                 ));
                 Ok(None)
             }
@@ -349,7 +353,8 @@ pub fn notifications(
         // The first release's range is the entire history; announcing it on
         // every past PR and issue would be noise and exhaust the API budget.
         plan.warnings.push(format!(
-            "{tag} is the first release; skipping notifications"
+            "{tag} is the first release; skipping notifications, because its range is the \
+             entire history, and no action is needed"
         ));
         return Ok(plan);
     }

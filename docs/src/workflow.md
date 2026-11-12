@@ -42,7 +42,7 @@ and attempts rollback on ordinary I/O errors.
 
 ## Publish a reviewed proposal
 
-Supply `GITHUB_TOKEN` through the environment or a credential manager, then explicitly run:
+Supply `GITHUB_TOKEN` or `GH_TOKEN` through the environment, or sign in with `gh auth login`, then explicitly run:
 
 ```sh
 dotslash bins/just xtask publish --repository github:OWNER/TARGET --plan /tmp/receive.toml
@@ -85,12 +85,14 @@ dotslash bins/just distribute --publish   # open, update, or withdraw one draft 
 ```
 
 Both commands only report unless told otherwise.
-Narrow a run with `--only OWNER/REPO` or `--except OWNER/REPO`;
-each flag repeats, the two cannot be combined, and a name that is not enrolled is an error.
+Narrow a run with `--only OWNER/REPO,OWNER/REPO` or `--except OWNER/REPO`;
+each flag takes a comma-separated list or repeats, the two cannot be combined, and a name that is not enrolled is an error.
 Reading public repositories needs no token.
-`--publish` needs write access to each destination,
-either from `GITHUB_TOKEN` with contents and pull-request write,
-or from [Octo STS](#credentials-in-github-actions) with `--sts-identity NAME`.
+`--publish` needs contents and pull-request write on each destination.
+A local run takes the token from `GITHUB_TOKEN`, then `GH_TOKEN`,
+then the GitHub CLI's login (`gh auth token`).
+A GitHub Actions run passes `--sts-identity NAME` to use [Octo STS](#credentials-in-github-actions) instead;
+outside GitHub Actions the flag is ignored, so a workflow's command line also runs locally.
 
 - `gather` acquires every enrolled repository that shares tests
   and plans one import covering all of them.
@@ -114,14 +116,14 @@ a partial run would close an issue that still describes repositories it skipped.
 The issue lists each failing repository, its error, and its maintainers,
 is rewritten in place by later failing runs,
 and is closed by the next clean run.
-Reporting uses `REPORT_TOKEN` when set and `GITHUB_TOKEN` otherwise;
+Reporting uses `REPORT_TOKEN` when set and the publishing credentials otherwise;
 the token needs issue write access.
 
 The `gather-updates` and `distribute-updates` workflows run these commands daily.
 `distribute-updates` also runs when the catalog or the registry changes on `main`.
 Unattended runs publish and report failures as issues.
 Manually dispatched runs take `only` and `except` inputs,
-each a space-separated list of `OWNER/REPO` names,
+each a comma-separated list of `OWNER/REPO` names,
 publish only when their `publish` input is enabled,
 and fail instead of filing an issue.
 
@@ -168,7 +170,9 @@ Widening the exchange is therefore a configuration change on both sides:
 - A new workflow that publishes is added to the `job_workflow_ref` pattern
   of every policy it should be able to use.
 
-Tokens expire on their own within the hour; the command does not revoke them.
+The command revokes each token as soon as it has finished with that repository,
+before moving on to the next.
+A failed revocation is a warning, and the token then expires on its own within the hour.
 
 ## Editable records
 

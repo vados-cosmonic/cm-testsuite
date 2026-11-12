@@ -4,9 +4,11 @@
 //! exchanges that for a GitHub App token when the target repository's
 //! `.github/chainguard/<identity>.sts.yaml` trust policy accepts the workflow.
 
-use crate::client::fetch_json;
+use crate::client::{fetch_json, revoke};
+use crate::{Api, Client};
 use anyhow::{Context, Result, ensure};
 use cm_catalog::validate_source;
+use serde_json::Value;
 
 /// The public Octo STS instance, which is also the OIDC audience it expects.
 const DOMAIN: &str = "octo-sts.dev";
@@ -68,7 +70,7 @@ impl OctoSts {
     }
 
     /// Mint a token for `github:owner/repository` under this identity's trust policy.
-    pub fn token(&self, repository: &str) -> Result<String> {
+    fn token(&self, repository: &str) -> Result<String> {
         validate_source(repository)?;
         let name = repository.trim_start_matches("github:");
         let (origin, route) = split(&self.request_url)?;
@@ -93,6 +95,44 @@ impl OctoSts {
             .as_str()
             .context("token exchange response has no token")?
             .to_owned())
+    }
+
+    /// Open a connection to `github:owner/repository` whose token is revoked
+    /// when the connection is dropped.
+    pub fn connect(&self, repository: &str) -> Result<Session> {
+        let token = self.token(repository)?;
+        Ok(Session {
+            client: Client::new(Some(token.clone()))?,
+            repository: repository.to_owned(),
+            token,
+        })
+    }
+}
+
+/// A connection authorized by one minted token, which it revokes on drop so
+/// the token does not outlive the work it was requested for.
+pub struct Session {
+    client: Client,
+    repository: String,
+    token: String,
+}
+
+impl Api for Session {
+    fn request(&self, method: &str, path: &str, body: Option<Value>) -> Result<Option<Value>> {
+        self.client.request(method, path, body)
+    }
+}
+
+impl Drop for Session {
+    fn drop(&mut self) {
+        // The work is already done, so a failed revocation is reported rather
+        // than turned into a failure; the token then expires on its own.
+        if let Err(error) = revoke(&self.token) {
+            eprintln!(
+                "warning: could not revoke the token for {}: {error:#}",
+                self.repository
+            );
+        }
     }
 }
 

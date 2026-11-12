@@ -49,7 +49,7 @@ enum Task {
     /// Plan delivery using the recipient manifest in --root and a curated catalog.
     PlanReceive(cmd::plan_receive::Args),
 
-    /// Explicitly create/update a draft PR. Requires caller-supplied GITHUB_TOKEN.
+    /// Explicitly create/update a draft PR with caller-supplied or Octo STS credentials.
     Publish(cmd::publish::Args),
 
     /// Gather updates from enrolled repositories into one catalog import.

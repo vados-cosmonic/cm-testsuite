@@ -112,6 +112,8 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
         }
         conclude(&api, root, &gathered, &mode)
     });
+    // Publishing is over: revoke the import token before reporting.
+    drop(api);
     match catalog {
         Ok(outcome) => println!("catalog: {outcome}"),
         Err(error) => {

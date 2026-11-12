@@ -9,11 +9,11 @@ use std::path::Path;
 /// Limit a run to part of the registry.
 #[derive(clap::Args, Default)]
 pub struct Selection {
-    /// Process only this enrolled repository; repeat to name several.
-    #[arg(long, conflicts_with = "except")]
+    /// Process only these enrolled repositories; separate names with commas or repeat the flag.
+    #[arg(long, value_delimiter = ',', conflicts_with = "except")]
     pub(crate) only: Vec<String>,
-    /// Skip this enrolled repository; repeat to name several.
-    #[arg(long)]
+    /// Skip these enrolled repositories; separate names with commas or repeat the flag.
+    #[arg(long, value_delimiter = ',')]
     pub(crate) except: Vec<String>,
 }
 
@@ -21,8 +21,16 @@ impl Selection {
     /// Keep the selected participants, rejecting names that are not enrolled
     /// so a typo cannot silently widen or empty a run.
     fn apply(&self, registry: &mut Participants) -> Result<()> {
-        let only: Vec<_> = self.only.iter().map(|name| github_name(name)).collect();
-        let except: Vec<_> = self.except.iter().map(|name| github_name(name)).collect();
+        // Lists typed by hand come as "a/b, c/d" or with a trailing comma.
+        let names = |names: &[String]| -> Vec<String> {
+            names
+                .iter()
+                .map(|name| name.trim())
+                .filter(|name| !name.is_empty())
+                .map(github_name)
+                .collect()
+        };
+        let (only, except) = (names(&self.only), names(&self.except));
         for repository in only.iter().chain(&except) {
             ensure!(
                 registry
@@ -55,22 +63,42 @@ fn token_from(variable: &str) -> Option<String> {
         .filter(|token| !token.trim().is_empty())
 }
 
-/// The token used to read repositories and, without Octo STS, to publish.
+/// The token from the environment, used to read repositories and,
+/// without Octo STS, to publish.
 fn token() -> Option<String> {
-    token_from("GITHUB_TOKEN")
+    token_from("GITHUB_TOKEN").or_else(|| token_from("GH_TOKEN"))
+}
+
+/// The token of the GitHub CLI's logged-in account, when `gh` is installed and signed in.
+fn ambient_token() -> Option<String> {
+    let output = std::process::Command::new("gh")
+        .args(["auth", "token"])
+        .stderr(std::process::Stdio::null())
+        .output()
+        .ok()
+        .filter(|output| output.status.success())?;
+    let token = String::from_utf8(output.stdout).ok()?;
+    Some(token.trim().to_owned()).filter(|token| !token.is_empty())
+}
+
+/// Whether this process is a GitHub Actions job, where Octo STS can be used.
+fn in_actions() -> bool {
+    std::env::var("GITHUB_ACTIONS").is_ok_and(|value| value == "true")
 }
 
 /// How a run authenticates to GitHub.
 #[derive(clap::Args, Default)]
 pub struct Credentials {
-    /// Publish with short-lived Octo STS tokens for this trust-policy name,
-    /// minted per destination repository inside GitHub Actions.
+    /// Inside GitHub Actions, publish with short-lived Octo STS tokens for this
+    /// trust-policy name, minted per destination repository. Ignored elsewhere,
+    /// where GITHUB_TOKEN, GH_TOKEN, or the GitHub CLI's login is used.
     #[arg(long, value_name = "NAME")]
     pub(crate) sts_identity: Option<String>,
 }
 
-/// The credentials of one run: GITHUB_TOKEN for reading, and for publishing
-/// either that same token or a token Octo STS mints for each destination.
+/// The credentials of one run: an environment token for reading, and for
+/// publishing either a token Octo STS mints for each destination, that same
+/// environment token, or the GitHub CLI's login.
 pub struct Access {
     token: Option<String>,
     reader: cm_github::Client,
@@ -80,16 +108,23 @@ pub struct Access {
 impl Access {
     /// Check up front that a publishing run has a way to obtain write access.
     pub fn new(credentials: &Credentials, publishing: bool) -> Result<Self> {
-        let token = token();
+        let mut token = token();
+        // Octo STS trusts GitHub Actions workflows only, so the same command
+        // line run anywhere else publishes with the caller's own credentials.
         let sts = credentials
             .sts_identity
             .as_deref()
+            .filter(|_| in_actions())
             .map(OctoSts::from_actions)
             .transpose()?;
         if publishing && sts.is_none() {
+            // Only a publishing run reaches for the GitHub CLI's login, so
+            // reporting runs never depend on who happens to be signed in.
+            token = token.or_else(ambient_token);
             ensure!(
                 token.is_some(),
-                "--publish requires GITHUB_TOKEN, or --sts-identity inside GitHub Actions"
+                "--publish requires GITHUB_TOKEN or GH_TOKEN, a GitHub CLI login (gh auth login), \
+                 or --sts-identity inside GitHub Actions"
             );
         }
         Ok(Self {
@@ -100,15 +135,15 @@ impl Access {
     }
 
     /// The API for this run. Write access is obtained per repository, on its first write.
+    ///
+    /// An Octo STS token is revoked when its repository is released or the API
+    /// is dropped. The caller's own token is never revoked.
     pub fn api(&self) -> Scoped<'_> {
         Scoped::new(
             &self.reader,
-            Box::new(|repository| {
-                let token = match &self.sts {
-                    Some(sts) => Some(sts.token(repository)?),
-                    None => self.token.clone(),
-                };
-                Ok(Box::new(cm_github::Client::new(token)?))
+            Box::new(|repository| match &self.sts {
+                Some(sts) => Ok(Box::new(sts.connect(repository)?)),
+                None => Ok(Box::new(cm_github::Client::new(self.token.clone())?)),
             }),
         )
     }
@@ -157,7 +192,7 @@ fn run_url() -> Option<String> {
 ///
 /// With a target, per-repository failures leave the exit status clean. The
 /// issue there is opened, rewritten, or closed to match this run, using
-/// REPORT_TOKEN when set and GITHUB_TOKEN otherwise.
+/// REPORT_TOKEN when set and the publishing credentials otherwise.
 pub fn settle(
     task: &str,
     report_to: Option<&str>,
@@ -174,7 +209,10 @@ pub fn settle(
     };
     let token = token_from("REPORT_TOKEN")
         .or_else(token)
-        .context("--report-to requires REPORT_TOKEN or GITHUB_TOKEN")?;
+        .or_else(ambient_token)
+        .context(
+            "--report-to requires REPORT_TOKEN, GITHUB_TOKEN, GH_TOKEN, or a GitHub CLI login",
+        )?;
     let api = cm_github::Client::new(Some(token))?;
     let report = cm_delivery::report(
         &api,
@@ -227,6 +265,8 @@ mod tests {
             [all[0], all[2]]
         );
         assert_eq!(selected(&[], &["example/b"]).unwrap(), [all[0], all[2]]);
+        // Padding and empty entries left by a hand-typed list are ignored.
+        assert_eq!(selected(&[" example/b", ""], &[]).unwrap(), [all[1]]);
         assert!(selected(&["example/missing"], &[]).is_err());
         assert!(selected(&[], &["example/missing"]).is_err());
     }

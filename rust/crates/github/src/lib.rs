@@ -8,4 +8,4 @@ mod sts;
 pub use client::{Api, Client, HttpStatus, required};
 pub use repository::{encode, read_file, repo_path, resolve, tree_sha};
 pub use scoped::{Connect, Scoped};
-pub use sts::OctoSts;
+pub use sts::{OctoSts, Session};

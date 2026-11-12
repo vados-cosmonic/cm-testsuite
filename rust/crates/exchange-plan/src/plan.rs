@@ -55,7 +55,7 @@ impl Plan {
             }
             match self.kind {
                 Kind::Import => ensure!(
-                    e.path == CATALOG_PATH || e.path.starts_with("corpus/wast/"),
+                    is_catalog(&e.path) || e.path.starts_with("corpus/wast/"),
                     "import path outside corpus/catalog"
                 ),
                 Kind::Receive => ensure!(
@@ -242,7 +242,12 @@ const LISTED: usize = 100;
 
 /// Whether a path is a record the tool maintains rather than a test file.
 fn is_record(path: &str) -> bool {
-    path == CATALOG_PATH || path == RECEIPT_PATH
+    is_catalog(path) || path == RECEIPT_PATH
+}
+
+/// Whether a path holds catalog records: the shared file or one source's own.
+fn is_catalog(path: &str) -> bool {
+    path == CATALOG_PATH || path_source(path).is_some()
 }
 
 /// Keep author-supplied text inside one Markdown table cell.
@@ -375,6 +380,36 @@ mod tests {
         assert!(body.contains("<summary>Warnings (1)</summary>"));
         assert!(body.contains(&format!("  \"{id}/added\",\n")));
         assert!(body.ends_with(&format!("\nPlan SHA-256: `{}`\n", plan.key().unwrap())));
+    }
+
+    #[test]
+    fn imports_edit_only_the_corpus_and_catalog_records() {
+        let mut plan = receive_plan();
+        plan.kind = Kind::Import;
+        let edit = |path: &str| Edit {
+            path: path.into(),
+            before: None,
+            after: Some(String::new()),
+        };
+        plan.edits = vec![
+            edit("corpus/wast/example/source/added.wast"),
+            edit(CATALOG_PATH),
+            edit("metadata/catalog/example/source.toml"),
+        ];
+        plan.validate().unwrap();
+        assert_eq!(plan.changes().to_string(), "1 added");
+        assert!(!plan.body().unwrap().contains("Other files"));
+        for outside in [
+            "metadata/other.toml",
+            "metadata/catalog/source.toml",
+            "metadata/catalog/example/source/extra.toml",
+            "metadata/catalog/example/source.txt",
+            "metadata/catalog/README.md",
+            RECEIPT_PATH,
+        ] {
+            plan.edits = vec![edit(outside)];
+            assert!(plan.validate().is_err(), "{outside}");
+        }
     }
 
     #[test]

@@ -1,7 +1,7 @@
 //! Complete on-disk exchange lifecycles through serialized CLI records.
 
 use crate::common::*;
-use cm_catalog::{CATALOG_PATH, Catalog, RECEIPT_PATH, records};
+use cm_catalog::{CATALOG_PATH, Catalog, RECEIPT_PATH, records, source_path};
 use cm_exchange_plan::Receipt;
 use std::fs;
 
@@ -35,7 +35,7 @@ fn plans_do_not_modify_catalog_or_recipient() {
     let f = Exchange::new();
     success(f.acquire("main", ".cm-testsuite.toml"));
     success(f.plan_import());
-    assert!(!f.hub.join(CATALOG_PATH).exists());
+    assert!(!f.hub.join("metadata").exists());
     success(f.apply(&f.hub, "import.toml"));
     success(f.plan_receive());
     assert!(!f.recipient.join(DELIVERED).exists());
@@ -381,7 +381,7 @@ fn tampered_snapshot_is_rejected_before_import_plan_is_written() {
     .unwrap();
     assert!(!f.plan_import().status.success());
     assert!(!f.artifact("import.toml").exists());
-    assert!(!f.hub.join(CATALOG_PATH).exists());
+    assert!(!f.hub.join("metadata").exists());
 }
 
 #[test]
@@ -425,4 +425,28 @@ fn independent_sources_share_names_without_overwriting_or_retiring_each_other() 
         fs::read_to_string(a.recipient.join(DELIVERED)).unwrap(),
         UPDATED
     );
+}
+
+#[test]
+fn validation_reads_every_catalog_file_and_reports_one_digest_for_any_layout() {
+    let f = Exchange::new();
+    f.import();
+    let validate = || cli(&f.hub).arg("validate").output().unwrap();
+    let per_source = success(validate());
+    let catalog = Catalog::load(&f.hub).unwrap();
+    let records = records::encode(&catalog).unwrap();
+    let own = source_path(SOURCE).unwrap();
+
+    // The same records in the shared file are the same catalog.
+    fs::remove_file(f.hub.join(&own)).unwrap();
+    write(&f.hub, CATALOG_PATH, &records);
+    assert_eq!(success(validate()), per_source);
+
+    // A source recorded twice, or under another source's name, fails validation.
+    write(&f.hub, &own, &records);
+    failure(validate(), "recorded in both");
+    fs::remove_file(f.hub.join(CATALOG_PATH)).unwrap();
+    assert_eq!(success(validate()), per_source);
+    write(&f.hub, "metadata/catalog/example/other.toml", &records);
+    failure(validate(), "other.toml");
 }

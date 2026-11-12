@@ -15,7 +15,7 @@ Buck2 builds it through pinned DotSlash launchers in `bins/`, and Buck-only defi
 - Run `dotslash bins/just check` before proposing a change, plus the checks the relevant skill lists.
   Re-run them after fixes, and report any check that could not run and why.
 - Do not edit generated or snapshot files by hand:
-  `.buck/third-party/crates.bzl`, `corpus/wast/`, `metadata/catalog.toml`, `reports/`, and `CHANGELOG.md`.
+  `.buck/third-party/crates.bzl`, `corpus/wast/`, `metadata/catalog.toml`, `metadata/catalog/`, `reports/`, and `CHANGELOG.md`.
   Use the command that owns each one.
 - Never run the live GitHub suite (`just test-github`), publish, tag, or release unless explicitly asked.
   These create repositories, pull requests, or tags with real credentials.

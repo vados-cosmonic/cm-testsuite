@@ -70,7 +70,7 @@ dotslash bins/just xtask validate
 - Acquisition reads committed blobs at one immutable commit.
   It never runs your build.
 - Import copies exact bytes to `corpus/wast/OWNER/REPO/NAME.wast`
-  and records the source commit and SHA-256 in `metadata/catalog.toml`.
+  and records the source commit and SHA-256 in `metadata/catalog/OWNER/REPO.toml`.
 - `name` is the identity.
   Keep it when moving or editing a file;
   a new name is a new test.

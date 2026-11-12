@@ -292,12 +292,12 @@ mod tests {
             manifest: "ci/exchange.toml".into(),
             reference: Some("release/1.x".into()),
             maintainers: vec!["octo-cat".into(), "hubot".into()],
-            ..participant("github:other/a")
+            ..participant("github:zeta/a")
         };
         let files: Vec<_> = [
             custom.clone(),
             participant("github:example/b"),
-            participant("github:Example/a.b"),
+            participant("github:Other/a.b"),
         ]
         .iter()
         .map(|entry| {
@@ -319,12 +319,12 @@ mod tests {
         assert_eq!(loaded.maintainers, ["lead"]);
         assert_eq!(
             names(&loaded),
-            ["github:Example/a.b", "github:example/b", "github:other/a"]
+            ["github:example/b", "github:Other/a.b", "github:zeta/a"]
         );
         assert_eq!(loaded.participant[2], custom);
         assert_eq!(
             custom.encode().unwrap(),
-            "schema = 1\nrepository = \"github:other/a\"\nmanifest = \"ci/exchange.toml\"\n\
+            "schema = 1\nrepository = \"github:zeta/a\"\nmanifest = \"ci/exchange.toml\"\n\
              reference = \"release/1.x\"\nmaintainers = [\"octo-cat\", \"hubot\"]\n"
         );
         assert_eq!(
@@ -389,7 +389,9 @@ mod tests {
             ),
         ] {
             let error = load("schema = 1\n", &[(name, text)]).unwrap_err();
-            assert!(format!("{error:#}").contains(name), "{name}: {error:#}");
+            // The failing file is named, with the separators of the platform.
+            let file = name.rsplit('/').next().unwrap();
+            assert!(format!("{error:#}").contains(file), "{name}: {error:#}");
         }
         assert!(participant("example/a").path().is_err());
         assert!(participant("github:example/a/b").encode().is_err());

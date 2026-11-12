@@ -87,7 +87,7 @@ body:
         - label: I maintain this repository, or its maintainers have agreed to this request.
           required: true
         - label: Submitted tests are original to the repository or may be redistributed under its license.
-        - label: Receiving only — the Octo STS app is installed on the repository.
+        - label: Receiving only — the [Octo STS app](https://github.com/apps/octo-sts/installations/new) is installed on the repository.
         - label: Receiving only — `.github/chainguard/cm-testsuite.sts.yaml` is committed on the default branch.
 
   - type: textarea

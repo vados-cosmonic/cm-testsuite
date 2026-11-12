@@ -1,7 +1,7 @@
 //! Reconcile complete source snapshots with the curated catalog.
 
-use crate::files::{edit, metadata_edit};
-use crate::{Checkout, Guard, Kind, Plan, hash_at};
+use crate::files::{edit, metadata_edit, moved_edit};
+use crate::{Checkout, Guard, Kind, Plan, Tree, hash_at};
 use anyhow::{Context, Result, ensure};
 use cm_acquisition::Snapshot;
 use cm_catalog::*;
@@ -13,7 +13,10 @@ use std::{
 /// Plan a complete import without modifying files; missing source entries become retirements.
 pub fn import(root: &Path, snapshots: &[Snapshot]) -> Result<Plan> {
     let tree = Checkout(root);
-    let old = Catalog::load(root)?;
+    let Layout {
+        catalog: old,
+        mut inline,
+    } = Layout::load(root)?;
     let mut next = old.clone();
     let mut plan = Plan {
         schema: SCHEMA,
@@ -24,10 +27,7 @@ pub fn import(root: &Path, snapshots: &[Snapshot]) -> Result<Plan> {
             .collect::<Vec<_>>()
             .join(", "),
         edits: vec![],
-        guards: vec![Guard {
-            path: CATALOG_PATH.into(),
-            sha256: hash_at(root, CATALOG_PATH)?,
-        }],
+        guards: vec![],
         warnings: vec![],
         exclusions: BTreeSet::new(),
         provenance: BTreeMap::new(),
@@ -81,10 +81,40 @@ pub fn import(root: &Path, snapshots: &[Snapshot]) -> Result<Plan> {
             .insert(snapshot.source.clone(), snapshot.metadata.clone());
     }
 
-    // Keep metadata comments and deterministic ordering in the final review plan.
+    // Each source's records go to its own file, so imports of different sources
+    // edit different files. A source still recorded in the shared file moves
+    // out of it in the same plan, with its comments, and is never in both.
     next.validate()?;
-    if let Some(e) = metadata_edit(&tree, CATALOG_PATH, records::encode(&next)?)? {
-        plan.edits.push(e);
+    let shared = tree.read(CATALOG_PATH)?;
+    let mut moved = false;
+    // The plan is stale once any file that held those sources' records changes:
+    // their own files always, and the shared file only when it recorded one of
+    // them. Every catalog invariant is local to one source, so a plan stays
+    // valid while other sources' files change under it.
+    for source in sources {
+        let path = source_path(source)?;
+        plan.guards.push(Guard {
+            sha256: hash_at(root, &path)?,
+            path: path.clone(),
+        });
+        let origin = shared.as_deref().filter(|_| inline.holds(source));
+        if origin.is_some() {
+            inline.remove(source);
+            moved = true;
+        }
+        let records = records::encode(&next.only(source))?;
+        if let Some(e) = moved_edit(&tree, &path, origin, records)? {
+            plan.edits.push(e);
+        }
+    }
+    if moved {
+        plan.guards.push(Guard {
+            path: CATALOG_PATH.into(),
+            sha256: shared.as_deref().map(sha256),
+        });
+        if let Some(e) = metadata_edit(&tree, CATALOG_PATH, records::encode(&inline)?)? {
+            plan.edits.push(e);
+        }
     }
     plan.edits.sort_by(|a, b| a.path.cmp(&b.path));
     plan.warnings.sort();

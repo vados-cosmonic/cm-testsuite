@@ -55,7 +55,7 @@ impl Plan {
             }
             match self.kind {
                 Kind::Import => ensure!(
-                    e.path == CATALOG_PATH || e.path.starts_with("corpus/wast/"),
+                    is_catalog(&e.path) || e.path.starts_with("corpus/wast/"),
                     "import path outside corpus/catalog"
                 ),
                 Kind::Receive => ensure!(
@@ -115,6 +115,10 @@ impl Plan {
                 // The title lint caps headers at 100 characters; long names fall back to a count.
                 if sources.len() <= 2 && named.len() <= 100 {
                     named
+                } else if let [source] = sources[..] {
+                    // One source is still named, as far as the cap allows.
+                    let kept: String = source.chars().take(65).collect();
+                    format!("feat(corpus): import tests from {kept}...")
                 } else {
                     format!(
                         "feat(corpus): import tests from {} repositories",
@@ -242,7 +246,12 @@ const LISTED: usize = 100;
 
 /// Whether a path is a record the tool maintains rather than a test file.
 fn is_record(path: &str) -> bool {
-    path == CATALOG_PATH || path == RECEIPT_PATH
+    is_catalog(path) || path == RECEIPT_PATH
+}
+
+/// Whether a path holds catalog records: the shared file or one source's own.
+fn is_catalog(path: &str) -> bool {
+    path == CATALOG_PATH || path_source(path).is_some()
 }
 
 /// Keep author-supplied text inside one Markdown table cell.
@@ -378,6 +387,36 @@ mod tests {
     }
 
     #[test]
+    fn imports_edit_only_the_corpus_and_catalog_records() {
+        let mut plan = receive_plan();
+        plan.kind = Kind::Import;
+        let edit = |path: &str| Edit {
+            path: path.into(),
+            before: None,
+            after: Some(String::new()),
+        };
+        plan.edits = vec![
+            edit("corpus/wast/example/source/added.wast"),
+            edit(CATALOG_PATH),
+            edit("metadata/catalog/example/source.toml"),
+        ];
+        plan.validate().unwrap();
+        assert_eq!(plan.changes().to_string(), "1 added");
+        assert!(!plan.body().unwrap().contains("Other files"));
+        for outside in [
+            "metadata/other.toml",
+            "metadata/catalog/source.toml",
+            "metadata/catalog/example/source/extra.toml",
+            "metadata/catalog/example/source.txt",
+            "metadata/catalog/README.md",
+            RECEIPT_PATH,
+        ] {
+            plan.edits = vec![edit(outside)];
+            assert!(plan.validate().is_err(), "{outside}");
+        }
+    }
+
+    #[test]
     fn titles_name_the_proposal_not_the_destination() {
         let mut plan = receive_plan();
         assert_eq!(plan.title(), "Update tests received from cm-testsuite");
@@ -392,5 +431,11 @@ mod tests {
             plan.title(),
             "feat(corpus): import tests from 3 repositories"
         );
+        plan.subject = "github:example/a".into();
+        assert_eq!(plan.title(), "feat(corpus): import tests from example/a");
+        plan.subject = format!("github:{}/{}", "o".repeat(39), "r".repeat(100));
+        let long = plan.title();
+        assert_eq!(long.len(), 100);
+        assert!(long.ends_with("rrr..."), "{long}");
     }
 }

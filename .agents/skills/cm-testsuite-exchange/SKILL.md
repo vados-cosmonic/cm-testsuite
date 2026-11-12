@@ -11,7 +11,7 @@ Change them through the owning command, not by hand.
 | Path | Owner | How to change it |
 | --- | --- | --- |
 | `corpus/wast/` | Import plans | Fix the test in its source repository, then acquire, plan, and apply an import |
-| `metadata/catalog.toml` | Import plans | Same as the corpus; it records each file's source, revision, and digest |
+| `metadata/catalog/`, `metadata/catalog.toml` | Import plans | Same as the corpus; one file per source records each test's source, revision, and digest |
 | `reports/` | `xtask results-import` | Admit a report with the command; never write one directly |
 | `registry/publishers.toml` | Maintainer review | Edit by hand only as an explicitly requested admission change |
 | `registry/participants.toml` | Maintainer review | Edit by hand only as an explicitly requested enrollment change |

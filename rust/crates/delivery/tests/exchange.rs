@@ -3,7 +3,7 @@
 mod common;
 
 use cm_acquisition::{acquire, load_catalog_files};
-use cm_catalog::{CATALOG_PATH, Catalog, Manifest, digest, records};
+use cm_catalog::{Catalog, Manifest, digest, records, source_path};
 use cm_delivery::apply;
 use cm_exchange_plan::{Receipt, import, receive};
 use common::exchange::*;
@@ -61,7 +61,7 @@ fn stable_name_survives_source_file_move() {
     setup(d.path(), &before);
     let p = import(d.path(), &[after]).unwrap();
     assert_eq!(p.edits.len(), 1);
-    assert_eq!(p.edits[0].path, CATALOG_PATH);
+    assert_eq!(p.edits[0].path, source_path("github:example/a").unwrap());
     apply(d.path(), &p).unwrap();
     assert_eq!(
         Catalog::load(d.path())
@@ -200,9 +200,12 @@ fn ambiguous_routes_and_incomplete_inference_are_explicit() {
 fn unavailable_source_cannot_become_deletion() {
     let d = tempfile::tempdir().unwrap();
     setup(d.path(), &snapshot("a", "x.wast", "(module)"));
-    let before = fs::read(d.path().join(CATALOG_PATH)).unwrap();
+    let before = fs::read(d.path().join(source_path("github:example/a").unwrap())).unwrap();
     assert!(acquire(&Gone, "github:example/a", "main", ".cm-testsuite.toml").is_err());
-    assert_eq!(fs::read(d.path().join(CATALOG_PATH)).unwrap(), before);
+    assert_eq!(
+        fs::read(d.path().join(source_path("github:example/a").unwrap())).unwrap(),
+        before
+    );
 }
 
 #[test]
@@ -260,7 +263,7 @@ fn duplicate_sources_do_not_mutate() {
     let d = tempfile::tempdir().unwrap();
     let a = snapshot("a", "x.wast", "(module)");
     assert!(import(d.path(), &[a.clone(), a]).is_err());
-    assert!(!d.path().join(CATALOG_PATH).exists());
+    assert!(!d.path().join("metadata").exists());
 }
 
 #[test]
@@ -469,7 +472,8 @@ fn catalog_and_receipt_updates_preserve_maintainer_comments() {
 
     // Comments belong to maintainers and must survive real metadata reconciliation.
     for path in [
-        hub.path().join(CATALOG_PATH),
+        hub.path()
+            .join(source_path("github:example/source").unwrap()),
         target.path().join(cm_catalog::RECEIPT_PATH),
     ] {
         let text = fs::read_to_string(&path).unwrap();
@@ -498,7 +502,8 @@ fn catalog_and_receipt_updates_preserve_maintainer_comments() {
     apply(hub.path(), &import(hub.path(), &[updated]).unwrap()).unwrap();
     apply(target.path(), &received(target.path(), hub.path())).unwrap();
     for path in [
-        hub.path().join(CATALOG_PATH),
+        hub.path()
+            .join(source_path("github:example/source").unwrap()),
         target.path().join(cm_catalog::RECEIPT_PATH),
     ] {
         let text = fs::read_to_string(path).unwrap();

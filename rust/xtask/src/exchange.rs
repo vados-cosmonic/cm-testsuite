@@ -18,11 +18,6 @@ pub struct Selection {
 }
 
 impl Selection {
-    /// Whether the run was narrowed to part of the registry.
-    pub fn is_partial(&self) -> bool {
-        !self.only.is_empty() || !self.except.is_empty()
-    }
-
     /// Keep the selected participants, rejecting names that are not enrolled
     /// so a typo cannot silently widen or empty a run.
     fn apply(&self, registry: &mut Participants) -> Result<()> {

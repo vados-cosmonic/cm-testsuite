@@ -10,6 +10,7 @@ on:
       - main
     paths:
       - metadata/catalog.toml
+      - metadata/catalog/**/*.toml
       - corpus/**
       - registry/participants.toml
 

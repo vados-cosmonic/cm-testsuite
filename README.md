@@ -30,7 +30,7 @@ Joining the exchange takes these steps:
    that adds your repository to `registry/participants.toml`.
 5. Every run after that, daily or started by a maintainer, does the following:
    - **Submitting:** your declared tests are read at one commit
-     and proposed to the catalog in a single import pull request here.
+     and proposed to the catalog in one import pull request of their own here.
      Once a maintainer merges it, receiving projects are offered those tests.
    - **Receiving:** *one* draft pull request in your repository is opened, or updated in place,
      with the catalog tests your routes accept
@@ -70,7 +70,7 @@ dotslash bins/just xtask validate
 - Acquisition reads committed blobs at one immutable commit.
   It never runs your build.
 - Import copies exact bytes to `corpus/wast/OWNER/REPO/NAME.wast`
-  and records the source commit and SHA-256 in `metadata/catalog.toml`.
+  and records the source commit and SHA-256 in `metadata/catalog/OWNER/REPO.toml`.
 - `name` is the identity.
   Keep it when moving or editing a file;
   a new name is a new test.

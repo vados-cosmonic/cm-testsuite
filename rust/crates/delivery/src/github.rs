@@ -20,23 +20,42 @@ fn remote_hash(api: &dyn Api, source: &str, rev: &str, path: &str) -> Result<Opt
     Ok(read_file(api, source, rev, path)?.map(|b| sha256(&b)))
 }
 
-/// The branch of the single import proposal that covers the whole registry.
+/// Branches of single-source imports: `cm-testsuite/sources/owner/repository`.
 ///
-/// Only a run over every enrolled repository publishes here. A plan for some
-/// of them keeps its own branch, so it can neither replace nor withdraw the
-/// shared proposal.
-pub const GATHER_BRANCH: &str = "cm-testsuite/gather";
+/// The prefix is used by nothing else, so these branches cannot clash with a
+/// `cm-testsuite/gather` branch left by earlier versions or with the hashed
+/// names of the other proposals.
+const SOURCES: &str = "cm-testsuite/sources";
+
+/// The branch that every import of `source` alone shares, however it was planned.
+///
+/// GitHub names ignore case and branch names do not, so the name is lowered.
+/// A name Git would refuse as a branch has none and falls back to a hash.
+fn source_branch(source: &str) -> Option<String> {
+    validate_source(source).ok()?;
+    let name = source.strip_prefix("github:")?.to_ascii_lowercase();
+    let refused = name
+        .split('/')
+        .any(|part| part.starts_with('.') || part.ends_with(".lock"));
+    (!refused && !name.contains("..") && name.len() <= 200).then(|| format!("{SOURCES}/{name}"))
+}
 
 /// A stable branch per workflow subject. Publication never auto-merges.
+///
+/// An import of one source lands on that source's branch, so a scheduled run
+/// and a manual import of the same source update one pull request. An import
+/// of several sources at once has a branch of its own.
 pub fn branch_for(plan: &Plan) -> String {
-    format!(
-        "cm-testsuite/{}/{}",
-        if plan.kind == Kind::Import {
-            "import"
-        } else {
-            "receive"
+    let (family, subject) = match plan.kind {
+        Kind::Import => match source_branch(&plan.subject) {
+            Some(branch) => return branch,
+            None => ("import", plan.subject.to_ascii_lowercase()),
         },
-        &sha256(plan.subject.as_bytes())[..20]
+        Kind::Receive => ("receive", plan.subject.clone()),
+    };
+    format!(
+        "cm-testsuite/{family}/{}",
+        &sha256(subject.as_bytes())[..20]
     )
 }
 
@@ -428,4 +447,89 @@ pub fn publish_on(
     Ok(Publication::PullRequest(
         pr["html_url"].as_str().context("missing PR URL")?.into(),
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::BTreeMap;
+
+    fn branch(kind: Kind, subject: &str) -> String {
+        branch_for(&Plan {
+            schema: SCHEMA,
+            kind,
+            subject: subject.into(),
+            edits: vec![],
+            guards: vec![],
+            warnings: vec![],
+            exclusions: BTreeSet::new(),
+            provenance: BTreeMap::new(),
+        })
+    }
+
+    /// The rules of `git check-ref-format` for a branch name.
+    fn valid_ref(name: &str) -> bool {
+        let part =
+            |part: &str| !part.is_empty() && !part.starts_with('.') && !part.ends_with(".lock");
+        name.split('/').all(part)
+            && !name.contains("..")
+            && !name.contains("@{")
+            && !name.ends_with('.')
+            && name != "@"
+            && !name
+                .chars()
+                .any(|c| c.is_control() || " ~^:?*[\\".contains(c))
+    }
+
+    #[test]
+    fn a_source_has_one_branch_whatever_its_case_or_the_plan_it_came_from() {
+        let import = |subject: &str| branch(Kind::Import, subject);
+        assert_eq!(import("github:example/a"), "cm-testsuite/sources/example/a");
+        assert_eq!(import("github:Example/A"), import("github:example/a"));
+        assert_eq!(
+            import("github:bytecodealliance/wasm-tools_2.x"),
+            "cm-testsuite/sources/bytecodealliance/wasm-tools_2.x"
+        );
+
+        // Names Git refuses as branches fall back to a hash, in any case.
+        let long = format!("github:example/{}", "r".repeat(200));
+        for awkward in [
+            "github:example/.github",
+            "github:.example/a",
+            "github:example/a..b",
+            "github:example/tests.lock",
+            "github:example.lock/a",
+            long.as_str(),
+        ] {
+            validate_source(awkward).unwrap();
+            let name = import(awkward);
+            let hash = name.strip_prefix("cm-testsuite/import/").unwrap();
+            assert!(validate_sha(&format!("{hash}{hash}{hash}{}", &hash[..4])).is_ok());
+            assert_eq!(
+                import(&awkward.to_ascii_uppercase().replace("GITHUB:", "github:")),
+                name
+            );
+        }
+
+        // Several sources in one plan keep a branch of their own, as receiving plans do.
+        let several = import("github:example/a, github:example/b");
+        assert!(several.starts_with("cm-testsuite/import/"), "{several}");
+        assert_ne!(several, import("github:example/a, github:example/c"));
+        let receive = branch(Kind::Receive, "github:example/a");
+        assert!(receive.starts_with("cm-testsuite/receive/"), "{receive}");
+
+        // No family is a prefix of another, so their branches cannot collide,
+        // and none sits under the `cm-testsuite/gather` branch of earlier versions.
+        for name in [
+            import("github:example/a"),
+            import("github:import/receive"),
+            import("github:gather/sources"),
+            import("github:example/.github"),
+            several,
+            receive,
+        ] {
+            assert!(valid_ref(&name) && name.len() < 250, "{name}");
+            assert!(!name.starts_with("cm-testsuite/gather/"), "{name}");
+        }
+    }
 }

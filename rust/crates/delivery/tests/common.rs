@@ -87,8 +87,32 @@ pub mod exchange {
 }
 
 pub mod github {
+    use cm_delivery::branch_for;
     use cm_exchange_plan::{Edit, Kind, Plan};
+    use cm_test_support::github::FakeGitHub;
+    use serde_json::json;
     use std::collections::{BTreeMap, BTreeSet};
+
+    /// Land a plan on the default branch as a merge of its pull request would,
+    /// keeping whatever the branch gained since the plan was made.
+    pub fn merge(api: &FakeGitHub, plan: &Plan) {
+        let mut state = api.state_mut();
+        let main = state.refs["main"].clone();
+        let mut files = state.files_at(&main).clone();
+        for edit in &plan.edits {
+            match &edit.after {
+                Some(text) => files.insert(edit.path.clone(), text.clone()),
+                None => files.remove(&edit.path),
+            };
+        }
+        let merged = state.commit(files, "merge", vec![main]);
+        state.refs.insert("main".into(), merged);
+        let branch = branch_for(plan);
+        for pr in state.prs.iter_mut().filter(|pr| pr["head"] == branch) {
+            pr["state"] = json!("closed");
+            pr["merged_at"] = json!("2026-11-12T00:00:00Z");
+        }
+    }
 
     /// Create the standard managed proposal used by publication scenarios.
     pub fn plan(text: &str) -> Plan {

@@ -200,6 +200,62 @@ fn routes_filter_features_categories_and_unknown_analysis() {
 }
 
 #[test]
+fn commands_report_warning_kinds_with_guidance() {
+    let stderr = |output: std::process::Output| {
+        assert!(output.status.success());
+        String::from_utf8(output.stderr).unwrap()
+    };
+    let reference = "https://github.com/vados-cosmonic/cm-testsuite/blob/main/docs/src/warnings.md";
+    let f = Exchange::new();
+
+    // The record on standard output is unchanged; guidance goes to standard error.
+    let analyzed = cli(&f.hub)
+        .arg("analyze")
+        .arg(f.source.join("tests/input.wast"))
+        .output()
+        .unwrap();
+    let record = String::from_utf8(analyzed.stdout.clone()).unwrap();
+    assert!(record.contains("complete = false") && !record.contains("warning["));
+    let notes = stderr(analyzed);
+    assert!(notes.starts_with("warning[incomplete-feature-inference]: Feature inference"));
+    assert!(notes.contains("Reported for every test; nothing is wrong with the file."));
+    assert!(notes.contains("Source maintainer: list every capability"));
+    assert!(notes.contains(&format!("See {reference}#incomplete-feature-inference")));
+    assert!(!notes.contains("missing-intent-comment"));
+
+    success(f.acquire("main", ".cm-testsuite.toml"));
+    let planned = stderr(f.plan_import());
+    assert!(planned.starts_with("warning[incomplete-feature-inference]: "));
+    assert!(planned.contains(&format!(
+        "(1); see {reference}#incomplete-feature-inference"
+    )));
+    // Stored plan warnings keep their text, which plan digests cover.
+    assert_eq!(
+        f.plan("import.toml").warnings,
+        [format!(
+            "{SOURCE}/nested/test: Feature inference is incomplete; \
+             syntax evidence is not a complete execution requirement set."
+        )]
+    );
+    success(f.apply(&f.hub, "import.toml"));
+
+    assert!(stderr(f.plan_receive()).starts_with("warning[accepted-incomplete-inference]: "));
+    write(
+        &f.recipient,
+        ".cm-testsuite.toml",
+        policy("").replace("allow_unknown = true", "allow_unknown = false"),
+    );
+    assert!(stderr(f.plan_receive()).starts_with("warning[route-needs-allow-unknown]: "));
+    assert_eq!(
+        f.plan("receive.toml").warnings,
+        [format!(
+            "{SOURCE}/nested/test: route shared needs explicit allow_unknown \
+             for incomplete feature inference"
+        )]
+    );
+}
+
+#[test]
 fn disabled_receiving_rejects_plan_without_output() {
     let f = Exchange::new();
     f.import();

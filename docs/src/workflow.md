@@ -116,6 +116,7 @@ outside GitHub Actions the flag is ignored, so a workflow's command line also ru
 - Pull request descriptions give the change counts,
   one row per test with its source revision and summary,
   and collapsed sections for declining tests and for warnings.
+  Warnings are grouped by [kind](warnings.md), each with its meaning and who acts on it.
 
 A failing repository makes the command exit non-zero after the others have been processed.
 With `--report-to github:OWNER/REPO` the command exits cleanly

@@ -2,6 +2,7 @@
 
 use crate::ANALYZER;
 use anyhow::Result;
+use cm_catalog::warnings::{SYNTAX_FEATURES, Warning};
 use cm_catalog::{Analysis, Evidence};
 use wast::lexer::{Lexer, TokenKind};
 
@@ -12,9 +13,7 @@ pub(crate) fn collect(text: &str) -> Result<Analysis> {
         analyzer: ANALYZER.into(),
         complete: false,
         syntax: vec![],
-        warnings: vec![
-            "Feature inference is incomplete; syntax evidence is not a complete execution requirement set.".into(),
-        ],
+        warnings: vec![Warning::IncompleteFeatureInference.to_string()],
     };
     let mut first = true;
     let mut has_intent = false;
@@ -40,17 +39,12 @@ pub(crate) fn collect(text: &str) -> Result<Analysis> {
             }
             TokenKind::Keyword => {
                 first = false;
-                let feature = match value {
-                    "component" => Some("component-model"),
-                    "resource" => Some("resources"),
-                    "v128" => Some("simd"),
-                    "shared" => Some("threads"),
-                    "memory64" => Some("memory64"),
-                    _ => None,
-                };
-                if let Some(feature) = feature {
+                let feature = SYNTAX_FEATURES
+                    .iter()
+                    .find(|(keyword, _)| *keyword == value);
+                if let Some((_, feature)) = feature {
                     out.syntax.push(Evidence {
-                        feature: feature.into(),
+                        feature: (*feature).into(),
                         byte_offset: token.offset,
                     });
                 }
@@ -62,12 +56,11 @@ pub(crate) fn collect(text: &str) -> Result<Analysis> {
 
     // Editorial warnings help authors explain intent without rejecting valid WAST.
     if !has_intent {
-        out.warnings
-            .push("Add a top-of-file comment explaining this test's intent.".into());
+        out.warnings.push(Warning::MissingIntentComment.to_string());
     }
     if assertions && comments <= 1 {
         out.warnings
-            .push("Review whether subtle assertions need nearby explanatory comments.".into());
+            .push(Warning::UnexplainedAssertions.to_string());
     }
     Ok(out)
 }

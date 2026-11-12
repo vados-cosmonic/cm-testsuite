@@ -1,6 +1,6 @@
 //! Parse a WAT/WAST file and show conservative syntax evidence and warnings.
 use anyhow::Result;
-use cm_catalog::records::encode;
+use cm_catalog::{records::encode, warnings::explain};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -12,13 +12,17 @@ pub struct Args {
 }
 
 /// Parse a WAT/WAST file and show conservative syntax evidence and warnings.
+///
+/// The analysis record goes to standard output as it is stored;
+/// what each warning means and who acts on it goes to standard error.
 pub fn run(_root: &Path, args: Args) -> Result<()> {
     let Args { file } = args;
 
-    println!(
-        "{}",
-        encode(&cm_wast_analysis::analyze(&fs::read_to_string(file)?)?)?
-    );
+    let analysis = cm_wast_analysis::analyze(&fs::read_to_string(file)?)?;
+    println!("{}", encode(&analysis)?);
+    for warning in &analysis.warnings {
+        eprintln!("{}", explain(warning));
+    }
 
     Ok(())
 }

@@ -216,12 +216,16 @@ fn skips_missing_moved_and_deleted_targets_and_names_linked_prs() {
             .starts_with("The changes linked to this issue")
     );
     // Every skipped target is reported to the caller rather than printed.
+    let moved = "it gets no release comment, \
+                 so announce the release by hand where a moved issue now lives";
     assert_eq!(
         plan.warnings,
         [
-            "skipping #7: not found",
-            "skipping #8: moved or deleted (HTTP 301)",
-            "skipping #9: moved or deleted (HTTP 410)",
+            "skipping #7: not found; a released pull request names it with a closing keyword, \
+             probably by mistake, and no action is needed"
+                .to_owned(),
+            format!("skipping #8: moved or deleted (HTTP 301); {moved}"),
+            format!("skipping #9: moved or deleted (HTTP 410); {moved}"),
         ]
     );
     api.state_mut().unavailable.insert(10, 500);
@@ -239,7 +243,8 @@ fn first_release_skips_notifications() {
     let plan = github::notifications(&api, REPO, RC_TAG, &first, AUTHOR).unwrap();
     assert!(plan.edits.is_empty());
     assert_eq!(plan.warnings.len(), 1);
-    assert!(plan.warnings[0].contains("first release"));
+    assert!(plan.warnings[0].contains("first release; skipping notifications, because"));
+    assert!(plan.warnings[0].ends_with("no action is needed"));
 }
 
 /// A commit as returned by the PR commits API.

@@ -1,6 +1,7 @@
 //! Manifests, immutable identity, provenance, and safe repository-relative paths.
 pub mod records;
 mod registry;
+pub mod warnings;
 
 pub use registry::{PARTICIPANTS_PATH, Participant, Participants};
 

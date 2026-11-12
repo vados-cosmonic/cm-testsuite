@@ -129,7 +129,9 @@ impl Drop for Session {
         // than turned into a failure; the token then expires on its own.
         if let Err(error) = revoke(&self.token) {
             eprintln!(
-                "warning: could not revoke the token for {}: {error:#}",
+                "warning: could not revoke the token for {}: {error:#}\n  \
+                 The work on that repository already finished, and its result stands.\n  \
+                 No action is needed: the token expires on its own within the hour.",
                 self.repository
             );
         }

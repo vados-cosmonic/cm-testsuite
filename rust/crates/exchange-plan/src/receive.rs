@@ -3,6 +3,7 @@
 use crate::files::{edit, hash_in, metadata_edit};
 use crate::{Checkout, Guard, Kind, Plan, Tree};
 use anyhow::{Context, Result, ensure};
+use cm_catalog::warnings::Warning;
 use cm_catalog::*;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -169,8 +170,8 @@ pub fn receive_from(
             }
             if !test.analysis.complete && !route.allow_unknown {
                 plan.warnings.push(format!(
-                    "{id}: route {} needs explicit allow_unknown for incomplete feature inference",
-                    route.name
+                    "{id}: {}",
+                    Warning::RouteNeedsAllowUnknown { route: &route.name }
                 ));
                 continue;
             }
@@ -241,8 +242,8 @@ pub fn receive_from(
         next.tests.insert(id.clone(), delivered);
         if !test.analysis.complete {
             plan.warnings.push(format!(
-                "{id}: accepted incomplete feature inference via route {}",
-                route.name
+                "{id}: {}",
+                Warning::AcceptedIncompleteInference { route: &route.name }
             ));
         }
     }

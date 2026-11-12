@@ -1,6 +1,6 @@
 //! Gather updates from enrolled repositories into one catalog import.
 use crate::exchange::{
-    github_name, participants, planned, published, require_token, settle, token,
+    Access, Credentials, Selection, github_name, participants, planned, published, settle,
 };
 use anyhow::{Context, Result};
 use cm_catalog::PARTICIPANTS_PATH;
@@ -13,9 +13,8 @@ pub struct Args {
     /// Registry of enrolled repositories, relative to --root.
     #[arg(long, default_value = PARTICIPANTS_PATH)]
     pub(crate) registry: PathBuf,
-    /// Gather only this enrolled repository; repeat to name several.
-    #[arg(long)]
-    pub(crate) only: Vec<String>,
+    #[command(flatten)]
+    pub(crate) selection: Selection,
     /// Write the import into the catalog checkout at --root.
     #[arg(long, conflicts_with = "publish")]
     pub(crate) apply: bool,
@@ -25,8 +24,10 @@ pub struct Args {
     /// Catalog repository to publish to; defaults to GITHUB_REPOSITORY.
     #[arg(long)]
     pub(crate) repository: Option<String>,
+    #[command(flatten)]
+    pub(crate) credentials: Credentials,
     /// File failures as one issue in this repository instead of failing the run.
-    #[arg(long, conflicts_with = "only")]
+    #[arg(long, conflicts_with_all = ["only", "except"])]
     pub(crate) report_to: Option<String>,
 }
 
@@ -70,24 +71,22 @@ fn conclude(api: &dyn Api, root: &Path, gathered: &Gathered, mode: &Mode) -> Res
 pub fn run(root: &Path, args: Args) -> Result<()> {
     let Args {
         registry,
-        only,
+        selection,
         apply,
         publish,
         repository,
+        credentials,
         report_to,
     } = args;
 
-    let registry = participants(root, &registry, &only)?;
-    let token = token();
-    if publish {
-        require_token(&token)?;
-    }
+    let registry = participants(root, &registry, &selection)?;
+    let access = Access::new(&credentials, publish)?;
     let mode = match (apply, publish) {
         (true, _) => Mode::Apply,
         (_, true) => Mode::Publish(repository),
         _ => Mode::DryRun,
     };
-    let api = cm_github::Client::new(token)?;
+    let api = access.api();
 
     // A repository that cannot be read is reported and left out. A failure of
     // the combined import is reported too, against the catalog as a whole.

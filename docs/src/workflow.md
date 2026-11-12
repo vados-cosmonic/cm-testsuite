@@ -48,7 +48,7 @@ Supply `GITHUB_TOKEN` through the environment or a credential manager, then expl
 dotslash bins/just xtask publish --repository github:OWNER/TARGET --plan /tmp/receive.toml
 ```
 
-The token's origin is up to the caller; no GitHub App is required. Reading private sources needs repository read access. Publishing needs contents and pull-request write permissions for the target. GitHub's workflow event behavior also depends on the token used; a repository `GITHUB_TOKEN` is not a general cross-repository credential. Tokens are not included in plans or logs.
+The token's origin is up to the caller; no GitHub App is required. Reading private sources needs repository read access. Publishing needs contents and pull-request write permissions for the target. GitHub's workflow event behavior also depends on the token used; a repository `GITHUB_TOKEN` is not a general cross-repository credential. Tokens are not included in plans or logs. Inside GitHub Actions, `--sts-identity NAME` publishes with an [Octo STS](#credentials-in-github-actions) token instead.
 
 Publication uses the target's default branch, verifies plan guards against its committed state, and creates or updates one stable **draft** PR per destination repository: every import shares one branch in the catalog repository, and each receiving repository has its own. A later plan replaces the contents of that PR. It preserves unrelated files through the base tree. It does not auto-merge. A declined identical plan is suppressed; permanent exclusions remain the durable way to decline future versions. When the proposed changes disappear, publication closes the owned PR after checking its branch, retaining the branch for inspection. Unexpected branch edits and non-fast-forward races fail without force-pushing.
 
@@ -84,10 +84,13 @@ dotslash bins/just distribute             # report what each repository would re
 dotslash bins/just distribute --publish   # open, update, or withdraw one draft PR each
 ```
 
-Both commands only report unless told otherwise, and accept `--only github:OWNER/REPO`
-to narrow a run.
-Reading public repositories needs no token;
-`--publish` needs `GITHUB_TOKEN` with contents and pull-request write on each destination.
+Both commands only report unless told otherwise.
+Narrow a run with `--only OWNER/REPO` or `--except OWNER/REPO`;
+each flag repeats, the two cannot be combined, and a name that is not enrolled is an error.
+Reading public repositories needs no token.
+`--publish` needs write access to each destination,
+either from `GITHUB_TOKEN` with contents and pull-request write,
+or from [Octo STS](#credentials-in-github-actions) with `--sts-identity NAME`.
 
 - `gather` acquires every enrolled repository that shares tests
   and plans one import covering all of them.
@@ -105,8 +108,10 @@ Reading public repositories needs no token;
 
 A failing repository makes the command exit non-zero after the others have been processed.
 With `--report-to github:OWNER/REPO` the command exits cleanly
-and keeps one issue per command in that repository instead:
-the issue lists each failing repository, its error, and its maintainers,
+and keeps one issue per command in that repository instead.
+The option applies to whole-registry runs only, so it cannot be combined with `--only` or `--except`:
+a partial run would close an issue that still describes repositories it skipped.
+The issue lists each failing repository, its error, and its maintainers,
 is rewritten in place by later failing runs,
 and is closed by the next clean run.
 Reporting uses `REPORT_TOKEN` when set and `GITHUB_TOKEN` otherwise;
@@ -114,9 +119,56 @@ the token needs issue write access.
 
 The `gather-updates` and `distribute-updates` workflows run these commands daily.
 `distribute-updates` also runs when the catalog or the registry changes on `main`.
-Scheduled runs publish with the `CM_TESTSUITE_TOKEN` secret and report failures as issues;
-without the secret they only report planned changes.
-Manually dispatched runs publish only when their `publish` input is enabled.
+Unattended runs publish and report failures as issues.
+Manually dispatched runs take `only` and `except` inputs,
+each a space-separated list of `OWNER/REPO` names,
+publish only when their `publish` input is enabled,
+and fail instead of filing an issue.
+
+## Credentials in GitHub Actions
+
+No workflow uses a stored token.
+Reads and the failure issue use the job's own `GITHUB_TOKEN`,
+which covers this repository and public ones;
+private participants are out of reach.
+Writes use a short-lived [Octo STS](https://github.com/octo-sts/app) token
+that the command requests for one repository, just before its first write there.
+A token is granted only when that repository has the Octo STS app installed
+and commits a trust policy naming the calling workflow.
+
+| Destination | Policy file in the destination | Identity | Trusted workflows |
+| --- | --- | --- | --- |
+| This repository (import PR) | `.github/chainguard/import.sts.yaml` | `import` | `gather.yml`, `import.yml` |
+| Each receiving repository | `.github/chainguard/cm-testsuite.sts.yaml` | `cm-testsuite` | `distribute.yml`, `receive.yml` |
+
+A receiving repository installs the
+[Octo STS app](https://github.com/apps/octo-sts/installations/new) and adds:
+
+```yaml
+issuer: https://token.actions.githubusercontent.com
+subject: repo:vados-cosmonic@123968127/cm-testsuite@1447064737:ref:refs/heads/main
+claim_pattern:
+  job_workflow_ref: vados-cosmonic/cm-testsuite/\.github/workflows/(distribute|receive)\.yml@refs/heads/main
+
+permissions:
+  contents: write
+  pull_requests: write
+```
+
+The subject carries this repository's immutable owner and repository IDs;
+a fork or transferred copy substitutes its own,
+from the repository's **Settings → Actions → OIDC** page.
+
+Widening the exchange is therefore a configuration change on both sides:
+
+- A new receiving repository is enrolled in `registry/participants.toml` here
+  and commits the policy above there.
+  Until it does, `distribute` reports that repository as failing and carries on with the rest.
+- A new source needs only enrollment, since gathering reads and writes nothing in the source.
+- A new workflow that publishes is added to the `job_workflow_ref` pattern
+  of every policy it should be able to use.
+
+Tokens expire on their own within the hour; the command does not revoke them.
 
 ## Editable records
 

@@ -41,6 +41,12 @@ pub struct Client {
 impl Client {
     /// Build a client using caller-supplied credentials and a private single-thread runtime.
     pub fn new(token: Option<String>) -> Result<Self> {
+        Self::at(None, token)
+    }
+
+    /// Build a client for another HTTPS origin, or for GitHub when `origin` is absent.
+    /// The bearer credential is sent to that origin only.
+    fn at(origin: Option<&str>, token: Option<String>) -> Result<Self> {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()?;
@@ -51,6 +57,9 @@ impl Client {
                 .set_connect_timeout(Some(Duration::from_secs(60)))
                 .set_read_timeout(Some(Duration::from_secs(60)))
                 .set_write_timeout(Some(Duration::from_secs(60)));
+            if let Some(origin) = origin {
+                builder = builder.base_uri(origin)?;
+            }
             if let Some(token) = token.filter(|value| !value.trim().is_empty()) {
                 builder = builder.personal_token(token);
             }
@@ -58,6 +67,29 @@ impl Client {
         };
         Ok(Self { client, runtime })
     }
+}
+
+/// Fetch one JSON document from `origin` + `route`, presenting a bearer credential.
+///
+/// Used for token exchange, so failures name only the origin: neither the
+/// credential nor the response body reaches diagnostics.
+pub(crate) fn fetch_json(origin: &str, route: &str, bearer: &str) -> Result<Value> {
+    ensure!(
+        origin.starts_with("https://") && route.starts_with('/'),
+        "token exchange requires an HTTPS endpoint"
+    );
+    let client = Client::at(Some(origin), Some(bearer.to_owned()))?;
+    client.runtime.block_on(async {
+        let request = client.client.get::<Value, _, ()>(route, None);
+        match tokio::time::timeout(Duration::from_secs(60), request).await {
+            Ok(Ok(value)) => Ok(value),
+            Ok(Err(octocrab::Error::GitHub { source, .. })) => {
+                bail!("{origin} answered HTTP {}", source.status_code.as_u16())
+            }
+            Ok(Err(_)) => bail!("request to {origin} failed"),
+            Err(_) => bail!("request to {origin} exceeded 60 seconds"),
+        }
+    })
 }
 
 impl Api for Client {

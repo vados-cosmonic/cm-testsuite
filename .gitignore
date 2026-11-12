@@ -2,7 +2,6 @@
 /buck-out/
 /.buckd/
 /.buckconfig.local
-/.buckroot
 /rust/target/
 /site-out/
 /docs/book/

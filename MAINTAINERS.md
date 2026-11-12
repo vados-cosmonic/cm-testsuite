@@ -8,6 +8,29 @@ invoked and publish draft pull requests using caller-authorized credentials.
 Consult the [workflow guide](docs/src/workflow.md) for local equivalents and token
 requirements; running a build or test does not publish a proposal.
 
+## Running the scheduled exchange
+
+Enroll a repository by adding it to `registry/participants.toml` through review,
+with the GitHub logins of the people who can fix it under `maintainers`.
+List this repository's own maintainers in the top-level `maintainers` array.
+The [workflow guide](docs/src/workflow.md#gather-and-distribute) documents the format
+and the `gather` and `distribute` commands, which run locally exactly as they do in CI.
+
+The `gather-updates` and `distribute-updates` workflows publish with the
+`CM_TESTSUITE_TOKEN` secret, which needs contents and pull-request write access
+to this repository and to every receiving repository.
+Until the secret is set, scheduled runs only report what they would change.
+
+A repository that fails does not fail the scheduled run.
+Each workflow keeps one open issue here that lists the failing repositories,
+mentions their maintainers and this repository's, and closes itself after a clean run.
+Fix the cause, or remove the repository from the registry to stop trying.
+To stop a workflow altogether, disable it in the repository's Actions settings.
+
+Gathered imports arrive as one draft pull request on the `cm-testsuite/import` branch.
+Review and merge it like any other import;
+`distribute-updates` then offers the merged changes to receiving repositories.
+
 ## Admitting results
 
 Approve publisher identifiers through review in `registry/publishers.toml`.

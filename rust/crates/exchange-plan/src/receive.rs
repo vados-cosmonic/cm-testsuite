@@ -1,7 +1,7 @@
 //! Select and reconcile deliveries using receiving policy and prior receipts.
 
-use crate::files::{edit, metadata_edit};
-use crate::{Guard, Kind, Plan, hash_at, read};
+use crate::files::{edit, hash_in, metadata_edit};
+use crate::{Checkout, Guard, Kind, Plan, Tree};
 use anyhow::{Context, Result, ensure};
 use cm_catalog::*;
 use serde::{Deserialize, Serialize};
@@ -86,8 +86,7 @@ fn retirement_excluded(
     })
 }
 
-/// Plan opted-in delivery against recipient policy and exact managed-file baselines.
-/// Reject ambiguous routes, source overwrites, collisions, and local divergence.
+/// Plan opted-in delivery to the recipient checked out at `root`.
 pub fn receive(
     root: &Path,
     recipient: &str,
@@ -95,9 +94,23 @@ pub fn receive(
     catalog: &Catalog,
     files: &BTreeMap<String, String>,
 ) -> Result<Plan> {
+    receive_from(&Checkout(root), recipient, manifest_path, catalog, files)
+}
+
+/// Plan opted-in delivery against recipient policy and exact managed-file baselines.
+/// Reject ambiguous routes, source overwrites, collisions, and local divergence.
+pub fn receive_from(
+    tree: &dyn Tree,
+    recipient: &str,
+    manifest_path: &str,
+    catalog: &Catalog,
+    files: &BTreeMap<String, String>,
+) -> Result<Plan> {
     validate_source(recipient)?;
     catalog.validate()?;
-    let raw = read(root, manifest_path)?.context("recipient manifest is required")?;
+    let raw = tree
+        .read(manifest_path)?
+        .context("recipient manifest is required")?;
     let manifest = Manifest::parse(std::str::from_utf8(&raw)?, manifest_path)?;
     ensure!(
         manifest.receive.enabled,
@@ -108,7 +121,8 @@ pub fn receive(
         .iter()
         .map(|test| resolve_path(manifest_path, &test.path))
         .collect::<Result<BTreeSet<_>>>()?;
-    let old = read(root, RECEIPT_PATH)?
+    let old = tree
+        .read(RECEIPT_PATH)?
         .map(|b| records::decode::<Receipt>(&b))
         .transpose()?
         .unwrap_or(Receipt {
@@ -130,7 +144,7 @@ pub fn receive(
             },
             Guard {
                 path: RECEIPT_PATH.into(),
-                sha256: hash_at(root, RECEIPT_PATH)?,
+                sha256: hash_in(tree, RECEIPT_PATH)?,
             },
         ],
         warnings: vec![],
@@ -204,12 +218,12 @@ pub fn receive(
         let baseline = previous
             .filter(|t| t.path == destination)
             .map(|t| t.sha256.as_str());
-        if let Some(e) = edit(root, &destination, baseline, Some(content))? {
+        if let Some(e) = edit(tree, &destination, baseline, Some(content))? {
             edits.insert(destination.clone(), e);
             plan.exclusions.insert(id.clone());
         }
         if let Some(prior) = previous.filter(|t| t.path != destination)
-            && let Some(e) = edit(root, &prior.path, Some(&prior.sha256), None)?
+            && let Some(e) = edit(tree, &prior.path, Some(&prior.sha256), None)?
         {
             ensure!(!edits.contains_key(&prior.path), "managed move collision");
             edits.insert(prior.path.clone(), e);
@@ -240,7 +254,7 @@ pub fn receive(
             && manifest.receive.deletions == Policy::PullRequest
             && !retirement_excluded(id, prior, &manifest, manifest_path)?
         {
-            if let Some(e) = edit(root, &prior.path, Some(&prior.sha256), None)? {
+            if let Some(e) = edit(tree, &prior.path, Some(&prior.sha256), None)? {
                 ensure!(
                     !edits.contains_key(&prior.path),
                     "deletion collides with receiving edit"
@@ -254,7 +268,7 @@ pub fn receive(
     // catalog churn in receiving repositories.
     if next.tests != old.tests {
         next.catalog_sha256 = digest(catalog)?;
-        if let Some(e) = metadata_edit(root, RECEIPT_PATH, records::encode(&next)?)? {
+        if let Some(e) = metadata_edit(tree, RECEIPT_PATH, records::encode(&next)?)? {
             edits.insert(RECEIPT_PATH.into(), e);
         }
     }

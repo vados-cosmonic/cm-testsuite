@@ -65,6 +65,8 @@ pub struct State {
     /// Issue numbers that answer with this HTTP status instead of an issue.
     /// Every other number exists, as a PR when [`State::prs`] lists it.
     pub unavailable: BTreeMap<u64, u16>,
+    /// Issues created through the API, as the issues API returns them.
+    pub issues: Vec<Value>,
     /// Comments of each issue or PR, by number.
     pub comments: BTreeMap<u64, Vec<Value>>,
     /// Number of mutating (non-`GET`) requests received.
@@ -407,6 +409,39 @@ impl Api for FakeGitHub {
                 comment["body"] = data["body"].clone();
                 comment.clone()
             }
+            ("GET", ["issues"]) => {
+                let listed: Vec<_> = s
+                    .issues
+                    .iter()
+                    .filter(|issue| !query.contains("state=open") || issue["state"] == "open")
+                    .cloned()
+                    .collect();
+                page_of(Some(&listed), page)
+            }
+            ("POST", ["issues"]) => {
+                // Issues and pull requests share one number sequence.
+                let numbers = s.issues.iter().chain(&s.prs);
+                let number = numbers.filter_map(|item| item["number"].as_u64()).max();
+                let number = number.unwrap_or(0) + 1;
+                let mut issue = data;
+                issue["number"] = json!(number);
+                issue["html_url"] = json!(format!("https://example.invalid/issues/{number}"));
+                issue["state"] = json!("open");
+                s.issues.push(issue.clone());
+                issue
+            }
+            ("PATCH", ["issues", number]) => {
+                let number = number.parse::<u64>()?;
+                let issue = s
+                    .issues
+                    .iter_mut()
+                    .find(|issue| issue["number"] == number)
+                    .with_context(|| format!("missing issue {number}"))?;
+                for (key, value) in data.as_object().context("expected issue fields")? {
+                    issue[key] = value.clone();
+                }
+                issue.clone()
+            }
             ("GET", ["issues", number]) => {
                 let number = number.parse::<u64>()?;
                 match s.unavailable.get(&number) {
@@ -442,5 +477,65 @@ impl Api for FakeGitHub {
             _ => bail!("unexpected API request: {method} {path}"),
         };
         Ok(Some(found))
+    }
+}
+
+/// Several in-memory repositories behind one [`Api`], for flows that read
+/// from some repositories and publish to others.
+#[derive(Default)]
+pub struct FakeGitHubs {
+    repositories: Vec<FakeGitHub>,
+}
+
+impl FakeGitHubs {
+    /// Create each `owner/name` repository with one commit on `main`.
+    pub fn new(repositories: &[&str]) -> Self {
+        Self {
+            repositories: repositories
+                .iter()
+                .map(|name| FakeGitHub::new(name))
+                .collect(),
+        }
+    }
+
+    /// The repository `owner/name`. Panics when it was not created.
+    pub fn repository(&self, name: &str) -> &FakeGitHub {
+        self.repositories
+            .iter()
+            .find(|repository| repository.repository == name)
+            .unwrap_or_else(|| panic!("no repository {name}"))
+    }
+
+    /// Commit `files` on top of the current `main` of `owner/name`, replacing
+    /// same-named files and keeping the rest.
+    pub fn push(&self, name: &str, files: &[(&str, &str)]) {
+        let mut state = self.repository(name).state_mut();
+        let old = state.refs["main"].clone();
+        let mut all = state.files_at(&old).clone();
+        for (path, text) in files {
+            all.insert((*path).into(), (*text).into());
+        }
+        let new = state.commit(all, "push", vec![old]);
+        state.refs.insert("main".into(), new);
+    }
+
+    /// Number of mutating requests received across every repository.
+    pub fn writes(&self) -> usize {
+        self.repositories.iter().map(FakeGitHub::writes).sum()
+    }
+}
+
+impl Api for FakeGitHubs {
+    fn request(&self, method: &str, path: &str, body: Option<Value>) -> Result<Option<Value>> {
+        let rest = path.strip_prefix("/repos/").unwrap_or_default();
+        let repository = self.repositories.iter().find(|repository| {
+            rest.strip_prefix(repository.repository.as_str())
+                .is_some_and(|route| route.is_empty() || route.starts_with(['/', '?']))
+        });
+        // An unknown repository answers like GitHub does: not found.
+        match repository {
+            Some(repository) => repository.request(method, path, body),
+            None => Ok(None),
+        }
     }
 }

@@ -32,7 +32,9 @@ covers = ["resource-lifetime"]
 ```
 
 Then open a "Propose a hand-written WAST test" issue naming your repository.
-A maintainer imports it, locally or through the `propose-source-import` workflow:
+Once it is enrolled in `registry/participants.toml`,
+the scheduled `gather` run picks up later changes on its own.
+A maintainer can also import it by hand, locally or through the `propose-source-import` workflow:
 
 ```sh
 dotslash bins/just xtask acquire --source github:OWNER/REPO --reference main --out source.toml
@@ -89,7 +91,9 @@ dotslash bins/just xtask --root /path/to/recipient apply --plan receive.toml
 dotslash bins/just xtask publish --repository github:OWNER/RECIPIENT --plan receive.toml
 ```
 
-Maintainers can run the same flow through the `propose-receiving-update` workflow.
+Enrolled repositories need none of this:
+the scheduled `distribute` run opens and updates the draft pull request for them.
+Maintainers can also run the flow for one repository through the `propose-receiving-update` workflow.
 
 - A test is delivered when exactly one route supports its `requires` and matches its coverage.
   Matching several routes is an error.
@@ -104,7 +108,7 @@ Maintainers can run the same flow through the `propose-receiving-update` workflo
   refuses to overwrite files it does not manage,
   and is a no-op when repeated.
   Any edit after planning requires a new plan.
-- `publish` maintains one draft PR per plan subject.
+- `publish` maintains one draft PR per repository.
   It never merges or force-pushes,
   and does not re-offer an identical plan you closed.
 
@@ -136,7 +140,7 @@ and the [tooling design FAQ](docs/src/faq/why-not-use-tool-x.md).
 ## Limitations
 
 - Only checked-in WAST from Git repositories is supported:
-  no generated tests, URL or S3 sources, registry polling, or identity aliases.
+  no generated tests, URL or S3 sources, or identity aliases.
 - Syntax evidence aids routing review
   but does not establish a test's runtime requirements.
 - Publication targets branches in the destination repository, not forks,

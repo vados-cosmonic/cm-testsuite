@@ -1,0 +1,63 @@
+name: gather-updates
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Open or update the draft import PR using CM_TESTSUITE_TOKEN'
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: gather
+  cancel-in-progress: false
+
+jobs:
+  gather:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      # File or close the issue that tracks failing repositories.
+      issues: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up Buck2
+        uses: $/.github/actions/setup-buck2
+
+      - name: Gather updates from enrolled repositories
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.CM_TESTSUITE_TOKEN }}
+          REPORT_TOKEN: ${{ github.token }}
+          PUBLISH: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
+        run: |
+          args=()
+          if [[ "$PUBLISH" == true ]]; then
+            if [[ -n "$GITHUB_TOKEN" ]]; then
+              args+=(--publish)
+            else
+              echo '::notice::CM_TESTSUITE_TOKEN is not set; reporting planned changes only.'
+            fi
+          fi
+          # Unattended runs file failures in an issue instead of failing.
+          if [[ "$GITHUB_EVENT_NAME" != workflow_dispatch ]]; then
+            args+=(--report-to "$GITHUB_REPOSITORY")
+          fi
+
+          status=0
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          just gather "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY" || status=$?
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"

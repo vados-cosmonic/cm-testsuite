@@ -2,6 +2,7 @@
 
 mod build_artifacts;
 mod cmd;
+mod exchange;
 mod io;
 mod tools;
 
@@ -51,6 +52,12 @@ enum Task {
     /// Explicitly create/update a draft PR. Requires caller-supplied GITHUB_TOKEN.
     Publish(cmd::publish::Args),
 
+    /// Gather updates from enrolled repositories into one catalog import.
+    Gather(cmd::gather::Args),
+
+    /// Propose catalog updates to every enrolled repository that receives tests.
+    Distribute(cmd::distribute::Args),
+
     /// Admit an engine's TOML report against this exact catalog and approved publishers.
     ResultsImport(cmd::results_import::Args),
 
@@ -84,6 +91,8 @@ fn main() -> Result<()> {
         Task::Analyze(args) => cmd::analyze::run(&root, args),
         Task::PlanReceive(args) => cmd::plan_receive::run(&root, args),
         Task::Publish(args) => cmd::publish::run(&root, args),
+        Task::Gather(args) => cmd::gather::run(&root, args),
+        Task::Distribute(args) => cmd::distribute::run(&root, args),
         Task::ResultsImport(args) => cmd::results_import::run(&root, args),
         Task::Docs(args) => cmd::docs::run(&root, args),
         Task::Site(args) => cmd::site::run(&root, args),

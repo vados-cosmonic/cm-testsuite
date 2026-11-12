@@ -1,7 +1,7 @@
 //! Plan and propose catalog deliveries to one enrolled repository.
 
 use crate::gather::default_branch;
-use crate::{Publication, publish};
+use crate::{Offer, Publication, branch_for, publish_on};
 use anyhow::{Context, Result};
 use cm_catalog::{Catalog, Manifest, Participant};
 use cm_exchange_plan::{Plan, Tree, receive_from};
@@ -39,7 +39,7 @@ pub enum Delivery {
     Published(Plan, Publication),
 }
 
-/// Plan delivery against a repository's default branch and optionally publish it.
+/// Plan delivery against a repository's default branch and publish it when given an offer.
 ///
 /// Publishing reconciles the repository's single draft pull request: it opens
 /// or updates it when the plan has changes and withdraws it when none remain.
@@ -48,7 +48,7 @@ pub fn distribute(
     participant: &Participant,
     catalog: &Catalog,
     files: &BTreeMap<String, String>,
-    publish_proposal: bool,
+    offer: Option<Offer>,
 ) -> Result<Delivery> {
     let repository = participant.repository.as_str();
     let tree = Revision {
@@ -65,10 +65,10 @@ pub fn distribute(
         return Ok(Delivery::NotReceiving);
     }
     let plan = receive_from(&tree, repository, &participant.manifest, catalog, files)?;
-    if !publish_proposal {
+    let Some(offer) = offer else {
         return Ok(Delivery::Planned(plan));
-    }
+    };
     // Publication re-reads the default branch and rejects a plan it has outrun.
-    let publication = publish(api, repository, &plan)?;
+    let publication = publish_on(api, repository, &plan, &branch_for(&plan), offer)?;
     Ok(Delivery::Published(plan, publication))
 }

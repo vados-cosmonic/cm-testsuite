@@ -2,6 +2,7 @@
 use crate::exchange::{Access, Credentials};
 use crate::io::load_plan;
 use anyhow::Result;
+use cm_delivery::{Offer, Review, branch_for};
 use std::path::{Path, PathBuf};
 
 #[derive(clap::Args)]
@@ -10,6 +11,9 @@ pub struct Args {
     pub(crate) repository: String,
     #[arg(long)]
     pub(crate) plan: PathBuf,
+    /// Open the pull request again when an identical one was closed without merging.
+    #[arg(long)]
+    pub(crate) recreate: bool,
     #[command(flatten)]
     pub(crate) credentials: Credentials,
 }
@@ -19,13 +23,19 @@ pub fn run(_root: &Path, args: Args) -> Result<()> {
     let Args {
         repository,
         plan,
+        recreate,
         credentials,
     } = args;
 
     let access = Access::new(&credentials, true)?;
+    let plan = load_plan(&plan)?;
+    let offer = Offer {
+        review: Review::Draft,
+        recreate,
+    };
     println!(
         "{:?}",
-        cm_delivery::publish(&access.api(), &repository, &load_plan(&plan)?)?
+        cm_delivery::publish_on(&access.api(), &repository, &plan, &branch_for(&plan), offer)?
     );
 
     Ok(())

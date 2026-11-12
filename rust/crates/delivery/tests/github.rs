@@ -3,7 +3,7 @@
 mod common;
 
 use cm_catalog::sha256;
-use cm_delivery::{Publication, branch_for, publish};
+use cm_delivery::{Offer, Publication, Review, branch_for, publish, publish_on};
 use cm_test_support::github::FakeGitHub;
 use common::github::plan;
 use serde_json::json;
@@ -41,6 +41,48 @@ fn declined_identical_plan_is_not_reopened() {
         Publication::Declined
     );
     assert_eq!(api.state().prs.len(), 1);
+}
+
+#[test]
+fn declined_identical_plan_is_opened_again_on_request() {
+    let api = FakeGitHub::new("example/target");
+    let p = plan("(module)");
+    let offer = |review, recreate| {
+        let offer = Offer { review, recreate };
+        publish_on(&api, "github:example/target", &p, &branch_for(&p), offer).unwrap()
+    };
+    let close = |index: usize| api.state_mut().prs[index]["state"] = json!("closed");
+    publish(&api, "github:example/target", &p).unwrap();
+    close(0);
+    let commits = api.state().commits.len();
+
+    // The request opens a second pull request from the branch the first one left.
+    let again = offer(Review::Ready, true);
+    assert!(matches!(again, Publication::PullRequest(_)), "{again:?}");
+    {
+        let state = api.state();
+        assert_eq!(state.prs.len(), 2);
+        assert_eq!(state.prs[0]["state"], "closed");
+        assert_eq!(state.prs[1]["state"], "open");
+        assert_eq!(state.prs[1]["draft"], false);
+        assert_eq!(state.commits.len(), commits);
+    }
+
+    // While it is open, later runs update it whether or not they repeat the request.
+    assert_eq!(offer(Review::Draft, false), again);
+    assert_eq!(offer(Review::Draft, true), again);
+    assert_eq!(api.state().prs.len(), 2);
+
+    // Closing it declines the plan again, and each request opens one more.
+    close(1);
+    assert_eq!(offer(Review::Draft, false), Publication::Declined);
+    assert!(matches!(
+        offer(Review::Draft, true),
+        Publication::PullRequest(_)
+    ));
+    let state = api.state();
+    assert_eq!(state.prs.len(), 3);
+    assert_eq!(state.prs[2]["draft"], true);
 }
 
 #[test]

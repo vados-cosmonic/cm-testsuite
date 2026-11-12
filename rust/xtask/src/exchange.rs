@@ -172,7 +172,10 @@ pub fn github_name(name: &str) -> String {
 pub fn published(plan: &Plan, publication: &Publication) -> String {
     match publication {
         Publication::NoChanges => "up to date".into(),
-        Publication::Declined => "identical proposal was closed earlier; not reopened".into(),
+        Publication::Declined => {
+            "identical proposal was closed earlier; not opened again (pass --recreate to do so)"
+                .into()
+        }
         Publication::Closed(url) => format!("nothing left to propose; closed {url}"),
         Publication::PullRequest(url) => format!("{}; {url}", plan.changes()),
     }

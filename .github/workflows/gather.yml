@@ -17,7 +17,12 @@ on:
         type: string
 
       publish:
-        description: 'Open or update the draft import PR'
+        description: 'Open or update the import PR'
+        default: false
+        type: boolean
+
+      recreate:
+        description: 'With publish: open the import PR again if an identical one was closed without merging'
         default: false
         type: boolean
 
@@ -59,12 +64,14 @@ jobs:
           ONLY: ${{ inputs.only }}
           EXCEPT: ${{ inputs.except }}
           PUBLISH: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
+          RECREATE: ${{ inputs.recreate }}
         run: |
           args=()
           if [[ -n "$ONLY" ]]; then args+=(--only "$ONLY"); fi
           if [[ -n "$EXCEPT" ]]; then args+=(--except "$EXCEPT"); fi
           if [[ "$PUBLISH" == true ]]; then
             args+=(--publish --sts-identity import)
+            if [[ "$RECREATE" == true ]]; then args+=(--recreate); fi
           fi
           # Unattended runs cover the whole registry and file failures in an
           # issue instead of failing.

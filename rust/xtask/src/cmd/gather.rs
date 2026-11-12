@@ -4,7 +4,7 @@ use crate::exchange::{
 };
 use anyhow::{Context, Result};
 use cm_catalog::PARTICIPANTS_PATH;
-use cm_delivery::{Failure, GATHER_BRANCH, Gathered, Source};
+use cm_delivery::{Failure, GATHER_BRANCH, Gathered, Offer, Review, Source, branch_for};
 use cm_github::Api;
 use std::path::{Path, PathBuf};
 
@@ -18,10 +18,14 @@ pub struct Args {
     /// Write the import into the catalog checkout at --root.
     #[arg(long, conflicts_with = "publish")]
     pub(crate) apply: bool,
-    /// Open or update the catalog repository's draft import pull request: the shared one
+    /// Open or update the catalog repository's import pull request: the shared one
     /// for a whole-registry run, a separate one for a run narrowed by --only or --except.
+    /// A new one opens ready for review; an open one keeps its draft state.
     #[arg(long)]
     pub(crate) publish: bool,
+    /// Open the import pull request again when an identical one was closed without merging.
+    #[arg(long, requires = "publish")]
+    pub(crate) recreate: bool,
     /// Catalog repository to publish to; defaults to GITHUB_REPOSITORY.
     #[arg(long)]
     pub(crate) repository: Option<String>,
@@ -40,6 +44,7 @@ enum Mode {
     Publish {
         repository: Option<String>,
         shared: bool,
+        recreate: bool,
     },
 }
 
@@ -57,7 +62,11 @@ fn conclude(api: &dyn Api, root: &Path, gathered: &Gathered, mode: &Mode) -> Res
             cm_delivery::apply(root, plan)?;
             Ok(format!("applied {}", planned(plan)))
         }
-        Mode::Publish { repository, shared } => {
+        Mode::Publish {
+            repository,
+            shared,
+            recreate,
+        } => {
             let target = repository
                 .clone()
                 .or_else(|| std::env::var("GITHUB_REPOSITORY").ok())
@@ -75,12 +84,18 @@ fn conclude(api: &dyn Api, root: &Path, gathered: &Gathered, mode: &Mode) -> Res
                     .into());
             }
             // Only a run over the whole registry speaks for the shared proposal.
-            let publication = if *shared {
-                cm_delivery::publish_on(api, &target, plan, GATHER_BRANCH)
+            let branch = if *shared {
+                GATHER_BRANCH.to_owned()
             } else {
-                cm_delivery::publish(api, &target, plan)
-            }
-            .with_context(|| format!("publishing the import to {target}"))?;
+                branch_for(plan)
+            };
+            // The catalog runs gather for itself, so either proposal opens ready for review.
+            let offer = Offer {
+                review: Review::Ready,
+                recreate: *recreate,
+            };
+            let publication = cm_delivery::publish_on(api, &target, plan, &branch, offer)
+                .with_context(|| format!("publishing the import to {target}"))?;
             Ok(published(plan, &publication))
         }
     }
@@ -95,6 +110,7 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
         selection,
         apply,
         publish,
+        recreate,
         repository,
         credentials,
         report_to,
@@ -107,6 +123,7 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
         (_, true) => Mode::Publish {
             repository,
             shared: !selection.is_partial(),
+            recreate,
         },
         _ => Mode::DryRun,
     };
@@ -156,4 +173,71 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
         &failures,
         &registry.maintainers,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cm_catalog::Participants;
+    use cm_test_support::github::FakeGitHubs;
+
+    #[test]
+    fn publishing_opens_ready_import_pull_requests_and_recreates_closed_ones() {
+        let hub = FakeGitHubs::new(&["example/a", "example/catalog"]);
+        hub.push(
+            "example/a",
+            &[
+                (
+                    ".cm-testsuite.toml",
+                    "schema=1\n[[test]]\nname='one'\npath='file:///tests/one.wast'\n\
+                     summary='Check one'\nrequires=['component-model']\ncovers=['smoke']\n",
+                ),
+                ("tests/one.wast", ";; intent\n(module)\n"),
+            ],
+        );
+        let registry =
+            Participants::parse(b"schema=1\n[[participant]]\nrepository='github:example/a'\n")
+                .unwrap();
+        let root = tempfile::tempdir().unwrap();
+        let gathered = cm_delivery::gather(&hub, root.path(), &registry.participant).unwrap();
+        let plan = gathered.plan.as_ref().unwrap();
+        let publish = |shared, recreate| {
+            let mode = Mode::Publish {
+                repository: Some("example/catalog".into()),
+                shared,
+                recreate,
+            };
+            conclude(&hub, root.path(), &gathered, &mode).unwrap()
+        };
+        let pulls = || hub.repository("example/catalog").state().prs.clone();
+
+        // A dry run writes nothing.
+        conclude(&hub, root.path(), &gathered, &Mode::DryRun).unwrap();
+        assert_eq!(hub.writes(), 0);
+
+        // The whole-registry proposal and a narrowed one each open ready for review.
+        for (shared, branch) in [(true, GATHER_BRANCH.to_owned()), (false, branch_for(plan))] {
+            publish(shared, false);
+            let pr = pulls().pop().unwrap();
+            assert_eq!(pr["head"], branch);
+            assert_eq!(pr["draft"], false);
+            assert_eq!(pr["state"], "open");
+        }
+        assert_eq!(pulls().len(), 2);
+
+        // A closed import stays closed until a run asks for it again, each time it is closed.
+        for round in 0..2 {
+            let last = pulls().len() - 1;
+            hub.repository("example/catalog").state_mut().prs[last]["state"] = "closed".into();
+            let declined = publish(false, false);
+            assert!(declined.contains("--recreate"), "{declined}");
+            assert_eq!(pulls().len(), 2 + round);
+            publish(false, true);
+            let pr = pulls().pop().unwrap();
+            assert_eq!(pulls().len(), 3 + round);
+            assert_eq!(pr["head"], branch_for(plan));
+            assert_eq!(pr["state"], "open");
+            assert_eq!(pr["draft"], false);
+        }
+    }
 }

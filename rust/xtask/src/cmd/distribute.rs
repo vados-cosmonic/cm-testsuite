@@ -59,7 +59,10 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
                 });
             }
         }
+        // Finished with this repository: revoke the token minted for it now.
+        api.release(repository);
     }
+    drop(api);
     if registry.participant.is_empty() {
         println!("no repositories are enrolled in {}", path.display());
     } else if !publish {

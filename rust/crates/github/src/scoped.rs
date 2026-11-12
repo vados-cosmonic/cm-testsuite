@@ -27,6 +27,14 @@ impl<'a> Scoped<'a> {
             writers: RefCell::default(),
         }
     }
+
+    /// Close the write connection to `github:owner/repository`, if one was opened.
+    ///
+    /// Call this once a repository's work is finished, so a connection that
+    /// revokes its credential on drop does so then rather than at the end of the run.
+    pub fn release(&self, repository: &str) {
+        self.writers.borrow_mut().remove(repository);
+    }
 }
 
 /// Name the `github:owner/repository` an API path addresses.
@@ -63,8 +71,14 @@ mod tests {
     use super::*;
     use std::cell::Cell;
 
-    /// Record which connection served each request.
+    /// Record which connection served each request, and when it was closed.
     struct Named<'a>(&'a str, &'a RefCell<Vec<String>>);
+
+    impl Drop for Named<'_> {
+        fn drop(&mut self) {
+            self.1.borrow_mut().push(format!("{} closed", self.0));
+        }
+    }
 
     impl Api for Named<'_> {
         fn request(&self, method: &str, path: &str, _: Option<Value>) -> Result<Option<Value>> {
@@ -96,6 +110,10 @@ mod tests {
             .unwrap();
         api.request("GET", "/repos/example/a", None).unwrap();
         api.request("GET", "/repos/example/b", None).unwrap();
+        // Releasing a repository closes its writer at once; reads go back to the reader.
+        api.release("github:example/b");
+        api.release("github:example/a");
+        api.request("GET", "/repos/example/a", None).unwrap();
         assert_eq!(opened.get(), 1);
         assert_eq!(
             *log.borrow(),
@@ -105,6 +123,8 @@ mod tests {
                 "writer PATCH /repos/example/a/pulls/1",
                 "writer GET /repos/example/a",
                 "reader GET /repos/example/b",
+                "writer closed",
+                "reader GET /repos/example/a",
             ]
         );
 

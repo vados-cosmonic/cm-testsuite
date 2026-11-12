@@ -92,6 +92,22 @@ pub(crate) fn fetch_json(origin: &str, route: &str, bearer: &str) -> Result<Valu
     })
 }
 
+/// Revoke a GitHub App installation token by presenting it one last time.
+///
+/// As with the exchange, neither the token nor a response body reaches diagnostics.
+pub(crate) fn revoke(token: &str) -> Result<()> {
+    let client = Client::new(Some(token.to_owned()))?;
+    client.runtime.block_on(async {
+        let request = client.client._delete("/installation/token", None::<&()>);
+        match tokio::time::timeout(Duration::from_secs(60), request).await {
+            Ok(Ok(response)) if response.status().is_success() => Ok(()),
+            Ok(Ok(response)) => bail!("GitHub answered HTTP {}", response.status().as_u16()),
+            Ok(Err(_)) => bail!("request to GitHub failed"),
+            Err(_) => bail!("request to GitHub exceeded 60 seconds"),
+        }
+    })
+}
+
 impl Api for Client {
     /// Send one bounded REST request; redirects and automatic retries are disabled.
     fn request(&self, method: &str, path: &str, body: Option<Value>) -> Result<Option<Value>> {

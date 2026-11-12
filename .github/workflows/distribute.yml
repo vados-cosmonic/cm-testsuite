@@ -16,12 +16,12 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: 'Update only these enrolled repositories: space-separated owner/repository names'
+        description: 'Update only these enrolled repositories: comma-separated owner/repository names'
         default: ''
         type: string
 
       except:
-        description: 'Skip these enrolled repositories: space-separated owner/repository names'
+        description: 'Skip these enrolled repositories: comma-separated owner/repository names'
         default: ''
         type: string
 
@@ -70,8 +70,8 @@ jobs:
           PUBLISH: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
         run: |
           args=()
-          for repository in $ONLY; do args+=(--only "$repository"); done
-          for repository in $EXCEPT; do args+=(--except "$repository"); done
+          if [[ -n "$ONLY" ]]; then args+=(--only "$ONLY"); fi
+          if [[ -n "$EXCEPT" ]]; then args+=(--except "$EXCEPT"); fi
           if [[ "$PUBLISH" == true ]]; then
             args+=(--publish --sts-identity cm-testsuite)
           fi

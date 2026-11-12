@@ -1,0 +1,61 @@
+name: enroll-repository
+
+on:
+  # Labeling needs triage access; opening or editing an issue starts nothing.
+  issues:
+    types:
+      - labeled
+
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: 'Number of the "Enroll a repository" issue'
+        type: number
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: enroll-${{ inputs.issue || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  enroll:
+    # Of all labels, only `enroll` asks for a pull request.
+    if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'enroll'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      # Exchange this workflow's identity for an Octo STS token that opens the enrollment PR.
+      id-token: write
+      # Read the enrollment issue.
+      issues: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Set up Buck2
+        uses: $/.github/actions/setup-buck2
+
+      - name: Build the command before it can request tokens
+        run: just build
+
+      # The issue is untrusted: only its number is passed, and the command
+      # fetches and validates the rest itself.
+      - name: Propose the enrollment
+        shell: bash
+        env:
+          # Reads the issue and the repository it names; publishing uses Octo STS.
+          GITHUB_TOKEN: ${{ github.token }}
+          ISSUE: ${{ inputs.issue || github.event.issue.number }}
+        run: |
+          status=0
+          echo '```text' >> "$GITHUB_STEP_SUMMARY"
+          just enroll --issue "$ISSUE" --publish --sts-identity enroll | tee -a "$GITHUB_STEP_SUMMARY" || status=$?
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"

@@ -1,16 +1,37 @@
 schema = 1
 
 [sources."github:vados-cosmonic/cm-testsuite-test-source"]
-revision = "479a5dcbf4d0ab0be15ace2f98e6c1b9dd3c9690"
+revision = "02b18294699def3ab497a4c60a4844bf2c070b03"
 manifest_path = ".cm-testsuite.toml"
-manifest_sha256 = "88ad1fa4e1c60a5e210088d4f51177e93a0e0b5083cae097e2c77627d225708d"
+manifest_sha256 = "a97cded1841bf5c77539986aa93336e6e3432a81ce44380f619a7bb9957abc69"
+
+[tests."github:vados-cosmonic/cm-testsuite-test-source/values/bool-is-zero"]
+source = "github:vados-cosmonic/cm-testsuite-test-source"
+name = "values/bool-is-zero"
+revision = "02b18294699def3ab497a4c60a4844bf2c070b03"
+source_path = "tests/values/bool-is-zero.wast"
+manifest_revision = "02b18294699def3ab497a4c60a4844bf2c070b03"
+sha256 = "f1db2ae3f3723db7394415b24e38ec5c71ac98f8153f731e0999be0beaf72a44"
+destination = "corpus/wast/vados-cosmonic/cm-testsuite-test-source/values/bool-is-zero.wast"
+summary = "Observe a lifted core i32 result as a bool, for both true and false"
+requires = ["component-model"]
+covers = ["values"]
+
+[tests."github:vados-cosmonic/cm-testsuite-test-source/values/bool-is-zero".analysis]
+analyzer = "cm-wast-analysis/0.1+wast-263.0.0"
+complete = false
+warnings = ["Feature inference is incomplete; syntax evidence is not a complete execution requirement set."]
+
+[[tests."github:vados-cosmonic/cm-testsuite-test-source/values/bool-is-zero".analysis.syntax]]
+feature = "component-model"
+byte_offset = 178
 
 [tests."github:vados-cosmonic/cm-testsuite-test-source/values/u32-add"]
 source = "github:vados-cosmonic/cm-testsuite-test-source"
 name = "values/u32-add"
-revision = "479a5dcbf4d0ab0be15ace2f98e6c1b9dd3c9690"
+revision = "02b18294699def3ab497a4c60a4844bf2c070b03"
 source_path = "tests/values/u32-add.wast"
-manifest_revision = "479a5dcbf4d0ab0be15ace2f98e6c1b9dd3c9690"
+manifest_revision = "02b18294699def3ab497a4c60a4844bf2c070b03"
 sha256 = "665a236d28bdcc2afd6d32dc77a93757325330e3251d46487e9f92c04f4fb96c"
 destination = "corpus/wast/vados-cosmonic/cm-testsuite-test-source/values/u32-add.wast"
 summary = "Add two u32 values through a lifted core function, including wrap-around"

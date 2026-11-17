@@ -1,5 +1,7 @@
 //! Manifests, immutable identity, provenance, and safe repository-relative paths.
+mod gather;
 pub mod records;
+pub use gather::GatherSpec;
 mod registry;
 
 pub use registry::{PARTICIPANTS_PATH, Participant, Participants};
@@ -171,6 +173,8 @@ pub struct Manifest {
     #[serde(default)]
     pub test: Vec<TestSpec>,
     #[serde(default)]
+    pub gather: Vec<GatherSpec>,
+    #[serde(default)]
     pub receive: Receive,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -242,6 +246,9 @@ impl Manifest {
             self.schema
         );
         validate_path(path)?;
+        for gather in &self.gather {
+            gather.directory(path)?;
+        }
         let mut names = BTreeSet::new();
         for test in &self.test {
             validate_name(&test.name)?;

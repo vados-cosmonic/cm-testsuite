@@ -459,6 +459,49 @@ fn route_move_must_protect_authoritative_paths() {
 }
 
 #[test]
+fn retirement_and_route_moves_protect_automatically_gathered_files() {
+    for retire in [false, true] {
+        let hub = tempfile::tempdir().unwrap();
+        let target = tempfile::tempdir().unwrap();
+        let mut source = snapshot("a", "x.wast", "(module)");
+        setup(hub.path(), &source);
+        policy(target.path(), "deletions='pull-request'");
+        apply(target.path(), &received(target.path(), hub.path())).unwrap();
+        fs::write(target.path().join(".cm-testsuite.toml"),
+            "schema=1\n[[gather]]\npath='file:///tests/shared'\nrecursive=true\n[receive]\nenabled=true\ndeletions='pull-request'\n[[receive.route]]\nname='smoke'\ndestination='file:///tests/new'\nsupports=['component-model']\nallow_unknown=true\n"
+        ).unwrap();
+        if retire {
+            source.tests.clear();
+            source.files.clear();
+            setup(hub.path(), &source);
+        }
+        let catalog = Catalog::load(hub.path()).unwrap();
+        let result = receive(
+            target.path(),
+            "github:example/recipient",
+            ".cm-testsuite.toml",
+            &catalog,
+            &load_catalog_files(hub.path(), &catalog).unwrap(),
+        );
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("authoritative test")
+        );
+        assert_eq!(
+            fs::read_to_string(
+                target
+                    .path()
+                    .join("tests/shared/example/a/stable-name.wast")
+            )
+            .unwrap(),
+            "(module)"
+        );
+    }
+}
+
+#[test]
 fn catalog_and_receipt_updates_preserve_maintainer_comments() {
     let hub = tempfile::tempdir().unwrap();
     let target = tempfile::tempdir().unwrap();

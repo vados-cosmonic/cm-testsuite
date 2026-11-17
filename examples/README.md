@@ -4,6 +4,8 @@ Each immediate subdirectory is a standalone project that contributes checked-in
 WAST tests and receives tests from the other projects through cm-testsuite.
 Copy a project's `.cm-testsuite.toml` into your repository and adjust its test
 paths, metadata, and receiving routes to match your project.
+The source example lists its test explicitly; the recipient example uses recursive
+folder discovery with `[[gather]]`.
 
 Run `dotslash bins/just demo` from the checkout root. The command discovers every
 project directory, copies it into `.demo/`, and exercises acquisition, catalog

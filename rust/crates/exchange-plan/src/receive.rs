@@ -116,11 +116,6 @@ pub fn receive_from(
         manifest.receive.enabled,
         "recipient has not opted into receiving"
     );
-    let authoritative = manifest
-        .test
-        .iter()
-        .map(|test| resolve_path(manifest_path, &test.path))
-        .collect::<Result<BTreeSet<_>>>()?;
     let old = tree
         .read(RECEIPT_PATH)?
         .map(|b| records::decode::<Receipt>(&b))
@@ -198,7 +193,7 @@ pub fn receive_from(
             "receiving destination collision"
         );
         ensure!(
-            !authoritative.contains(&destination),
+            !manifest.is_authoritative_path(manifest_path, &destination)?,
             "delivery would overwrite an authoritative test"
         );
         ensure!(
@@ -276,7 +271,7 @@ pub fn receive_from(
     plan.edits = edits.into_values().collect();
     for edit in &plan.edits {
         ensure!(
-            !authoritative.contains(&edit.path),
+            !manifest.is_authoritative_path(manifest_path, &edit.path)?,
             "delivery would modify or remove an authoritative test: {}",
             edit.path
         );

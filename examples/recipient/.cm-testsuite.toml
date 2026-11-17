@@ -13,9 +13,8 @@ supports = []
 # Feature inference is incomplete: opt in to reviewing uncertainty explicitly.
 allow_unknown = true
 
-[[test]]
-name = "core/multiply"
-path = "file://multiply.wast"
-summary = "Check integer multiplication through a WAST assertion"
+[[gather]]
+path = "file:///"
+recursive = true
 requires = []
 covers = ["arithmetic"]

@@ -1,6 +1,6 @@
 //! Read immutable repository objects without running producer code.
 
-use anyhow::{Context, Result, ensure};
+use anyhow::{Context, Result, bail, ensure};
 use cm_catalog::{validate_path, validate_revision};
 use cm_github::Api;
 use std::{path::PathBuf, process::Command};
@@ -12,6 +12,16 @@ pub trait Repository {
 
     /// Read exact bytes from a regular tracked file at the supplied commit.
     fn read(&self, revision: &str, path: &str) -> Result<Vec<u8>>;
+
+    /// List committed WAST paths in a directory (empty for root), without following links.
+    fn list_wast(
+        &self,
+        _revision: &str,
+        _directory: &str,
+        _recursive: bool,
+    ) -> Result<Vec<String>> {
+        bail!("repository does not support directory discovery")
+    }
 }
 
 pub struct GitHub<'a> {
@@ -27,6 +37,10 @@ impl Repository for GitHub<'_> {
     fn read(&self, r: &str, p: &str) -> Result<Vec<u8>> {
         cm_github::read_file(self.api, self.source, r, p)?
             .with_context(|| format!("missing tracked source file {p} at {r}"))
+    }
+
+    fn list_wast(&self, r: &str, directory: &str, recursive: bool) -> Result<Vec<String>> {
+        cm_github::list_wast(self.api, self.source, r, directory, recursive)
     }
 }
 
@@ -61,6 +75,49 @@ impl LocalGit {
 }
 
 impl Repository for LocalGit {
+    fn list_wast(&self, r: &str, directory: &str, recursive: bool) -> Result<Vec<String>> {
+        validate_revision(r)?;
+        if !directory.is_empty() {
+            validate_path(directory)?;
+        }
+        let tree = format!("{r}:{directory}");
+        ensure!(
+            self.git(&["cat-file", "-t", &tree])? == b"tree\n",
+            "gather path is not a tracked directory: {directory}"
+        );
+        let mut args = vec!["ls-tree", "-z"];
+        if recursive {
+            args.push("-r");
+        }
+        args.push(&tree);
+        let entries = self.git(&args)?;
+        let mut paths = Vec::new();
+        for entry in entries.split(|b| *b == 0).filter(|e| !e.is_empty()) {
+            let entry = std::str::from_utf8(entry)?;
+            let (kind, relative) = entry.split_once('\t').context("invalid Git tree entry")?;
+            if !relative.ends_with(".wast") {
+                continue;
+            }
+            // Directories named *.wast are containers, not candidate test files.
+            if kind.starts_with("040000 tree ") {
+                continue;
+            }
+            ensure!(
+                kind.starts_with("100644 blob ") || kind.starts_with("100755 blob "),
+                "symlink or non-regular tracked WAST file: {relative}"
+            );
+            let path = if directory.is_empty() {
+                relative.to_owned()
+            } else {
+                format!("{directory}/{relative}")
+            };
+            validate_path(&path)?;
+            paths.push(path);
+        }
+        paths.sort();
+        Ok(paths)
+    }
+
     fn resolve(&self, r: &str) -> Result<String> {
         ensure!(!r.is_empty(), "empty Git ref");
         let v = String::from_utf8(self.git(&[

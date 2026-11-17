@@ -51,6 +51,59 @@ These rules apply to both exported test paths and receiving destinations.
 
 ## For authors sharing tests
 
+### Automatically gather a folder
+
+Use `[[gather]]` to pick up committed `.wast` files without listing each one:
+
+```toml
+schema = 1
+
+[[gather]]
+path = "file:///tests/component-model"
+recursive = true
+requires = ["component-model"]
+covers = ["component-validation"]
+```
+
+By default, a rule selects only files directly inside the folder.
+Set `recursive = true` to walk its subdirectories.
+Add more `[[gather]]` entries for separate folders.
+`requires` and `covers` are optional and apply to every test discovered by that rule.
+As with explicit tests, declare requirements deliberately; syntax analysis does not
+establish what an engine needs to execute a test.
+
+Paths follow the shared path rules above.
+`file:///` selects the repository root; `file://` selects the manifest's directory.
+For example, `path = "file:///"` with `recursive = true` selects WAST files
+throughout the repository.
+Receiving destinations and `corpus/wast/` are automatically excluded.
+Non-WAST files are ignored; symlinks and submodules are never followed,
+and selecting a non-regular `.wast` entry is an error.
+A missing folder, failed listing, or truncated GitHub response fails acquisition,
+rather than treating the source as empty.
+An existing folder with no matching files is a valid empty selection.
+
+Discovery reads the same immutable commit as the manifest, both locally and on GitHub.
+New committed WAST files are picked up on the next gather; untracked, staged,
+and uncommitted changes have no effect.
+The manifest must include a gather rule to enable discovery; adding only
+`schema = 1` does not export files automatically.
+
+Discovered names are repository-relative paths with the final `.wast` removed:
+`tests/component-model/resources/borrow.wast` becomes
+`tests/component-model/resources/borrow`.
+Names therefore remain distinct across folders and stable when the selected
+folder or recursion setting changes.
+Moving a file changes its automatic identity.
+Use an explicit `[[test]]` to retain a stable name when moving it.
+
+An explicit `[[test]]` for a discovered path replaces that file's automatic entry
+entirely, including its metadata, and can supply a name, summary, revision, or hash pin.
+This also supports filenames that cannot form portable ASCII test names.
+Discovered files without such an override must follow the test-name rules below.
+Overlapping gather rules and duplicate names are errors, so no test silently
+overwrites another.
+
 ### Committed sources and stable identities
 
 Commit the manifest and every listed WAST file before requesting an import.

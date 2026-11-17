@@ -1,5 +1,6 @@
 //! Acquire validated WAST snapshots from immutable repository revisions.
 
+mod discovery;
 mod repository;
 mod snapshot;
 
@@ -37,7 +38,7 @@ pub fn acquire(
     // Resolve provenance before collecting files; partial acquisition is never returned.
     let mut tests = BTreeMap::new();
     let mut files = BTreeMap::new();
-    for spec in manifest.test {
+    for (spec, path) in discovery::expand(repo, &revision, manifest_path, &manifest)? {
         let pinned = spec.revision.unwrap_or_else(|| revision.clone());
         validate_revision(&pinned)?;
         // Resolve the override as a commit too; reject tags, blobs, or missing object IDs.
@@ -45,7 +46,6 @@ pub fn acquire(
             repo.resolve(&pinned)? == pinned,
             "per-test revision did not resolve to its exact commit"
         );
-        let path = resolve_path(manifest_path, &spec.path)?;
         ensure!(
             !path.starts_with("corpus/wast/"),
             "received central copies cannot be exported as authoritative tests"

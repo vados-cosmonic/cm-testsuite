@@ -60,7 +60,7 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
             .context("every example needs a manifest")?;
         let manifest = Manifest::parse(std::str::from_utf8(manifest)?, ".cm-testsuite.toml")?;
         ensure!(
-            !manifest.test.is_empty() && manifest.receive.enabled,
+            (!manifest.test.is_empty() || !manifest.gather.is_empty()) && manifest.receive.enabled,
             "example {name} must contribute and receive tests"
         );
         if !project.exists() {

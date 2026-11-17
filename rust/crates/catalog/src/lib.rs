@@ -305,7 +305,9 @@ pub struct Test {
     pub name: String,
     pub revision: String,
     pub source_path: String,
-    pub manifest_revision: String,
+    /// Upstream manifest commit; absent when configuration came from the catalog checkout.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub manifest_revision: Option<String>,
     pub sha256: String,
     pub destination: String,
     pub summary: String,
@@ -322,8 +324,13 @@ impl Test {
 #[serde(deny_unknown_fields)]
 pub struct SourceSnapshot {
     pub revision: String,
+    /// Upstream manifest address, also the base for resolving fallback file:// paths.
     pub manifest_path: String,
+    /// Digest of the exact configuration used, whether upstream or fallback.
     pub manifest_sha256: String,
+    /// Actual manifest path in the catalog checkout when upstream had no manifest.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fallback_manifest: Option<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -358,6 +365,9 @@ impl Catalog {
             validate_revision(&s.revision)?;
             validate_path(&s.manifest_path)?;
             validate_sha(&s.manifest_sha256)?;
+            if let Some(path) = &s.fallback_manifest {
+                validate_path(path)?;
+            }
         }
         for (id, t) in &self.tests {
             validate_id(id)?;
@@ -367,7 +377,11 @@ impl Catalog {
                 .get(&t.source)
                 .context("test source not in inventory")?;
             ensure!(
-                source.revision == t.manifest_revision,
+                t.manifest_revision.as_ref()
+                    == source
+                        .fallback_manifest
+                        .is_none()
+                        .then_some(&source.revision),
                 "manifest revision mismatch"
             );
             validate_revision(&t.revision)?;

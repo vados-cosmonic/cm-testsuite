@@ -15,6 +15,12 @@ Repeat `--snapshot` to combine sources in one plan. A source snapshot is complet
 
 For local fixtures, add `--local /path/to/source/git/repo` to acquisition. `--manifest config/custom.toml` selects a nondefault manifest. Local Git reads committed blobs only. Neither backend invokes a producer's build process.
 
+To acquire from a repository without an upstream manifest, add
+`--fallback-manifest registry/manifests/source.toml`.
+This path is relative to the catalog checkout selected by `--root`.
+The fallback is read only when the upstream manifest is absent;
+see [centrally maintained fallback manifests](#centrally-maintained-fallback-manifests).
+
 Source removals create explicit catalog retirement records. They do not automatically delete received files. Changes to a test's declared name are treated as a new identity: do not rename identities until the exclusion/migration implications have been reviewed.
 
 ## Receive
@@ -74,6 +80,8 @@ maintainers = ["LOGIN"]         # optional; mentioned when this repository fails
 
 Enrollment only makes the exchange look at a repository.
 Its own manifest decides whether it shares tests, receives them, or both.
+An optional `fallback_manifest` lets the catalog gather from a source that has
+not added its own configuration; it never authorizes receiving.
 
 ```sh
 dotslash bins/just gather                 # report what the catalog would import
@@ -145,6 +153,77 @@ Manually dispatched runs take `only` and `except` inputs,
 each a comma-separated list of `OWNER/REPO` names,
 publish only when their `publish` input is enabled,
 and fail instead of filing an issue.
+
+### Centrally maintained fallback manifests
+
+A source can be gathered without modifying its repository.
+Commit a fallback manifest in the catalog repository and reference it from its
+participant entry:
+
+```toml
+[[participant]]
+repository = "github:WebAssembly/component-model"
+fallback_manifest = "registry/manifests/component-model.toml"
+```
+
+The referenced file uses the same format as an upstream `.cm-testsuite.toml`:
+
+```toml
+schema = 1
+
+[[gather]]
+path = "file:///test"
+recursive = true
+```
+
+This selects committed `.wast` files throughout the source's `test/` directory.
+The entry above is an enrollment example, not an automatically enrolled source.
+Add `requires` and `covers` declarations as appropriate for the selected tests;
+an empty declaration does not establish that every recipient can run them.
+Explicit `[[test]]` overrides, immutable revision/hash pins, and directory discovery
+work exactly as they do with an upstream manifest.
+
+The fallback path is relative to the catalog checkout root, even when the registry
+is in a subdirectory or selected with `--registry`.
+It must name a regular file inside that checkout; traversal and symlinks are rejected.
+Paths *inside* the fallback address the upstream repository:
+`file:///` starts at its root, and `file://` is relative to the upstream `manifest`
+address (by default `.cm-testsuite.toml`), not the central fallback's directory.
+
+Gather resolves the requested source reference once and checks for the upstream
+manifest at that immutable commit.
+Only a confirmed missing path enables fallback.
+An invalid upstream manifest, non-regular file, unreadable Git object, truncated
+listing, or network/permission failure remains an acquisition error.
+A valid upstream manifest that exports no tests takes precedence too, and can
+propose retiring previously imported tests.
+When upstream configuration exists, the fallback file is not read and may be removed.
+
+Snapshots and catalogs distinguish the configuration from the test bytes:
+
+- `revision` records the upstream snapshot commit; each test retains its own file commit and hash.
+- `manifest_path` records the upstream address used to check for configuration and resolve relative paths.
+- `manifest_sha256` hashes the exact configuration bytes used.
+- `fallback_manifest`, when present, records the actual manifest path in the catalog checkout.
+  Tests acquired this way omit `manifest_revision`, since that configuration was not in an upstream commit.
+  Native manifests continue to record their upstream commit there.
+
+Import plans identify fallback configuration in their warnings and guard its digest.
+Changing or removing the fallback after acquisition requires reacquiring and replanning;
+changing it after planning blocks application and publication.
+Commit the referenced configuration before publishing an import proposal.
+
+The source identity remains `github:WebAssembly/component-model` throughout.
+If upstream later commits the same gather rules at its configured manifest address,
+the next gather uses them, records the native configuration provenance, and retains
+the existing test identities and destinations.
+Remove the registry's `fallback_manifest` field and the central file after adoption.
+Different test names or selections remain ordinary additions and retirements to review.
+
+Fallback configuration is only for gathering.
+`distribute` skips a fallback participant whose upstream manifest is absent,
+even if the central file enables receiving.
+Once upstream adds a manifest, only its receiving policy can opt that repository in.
 
 ## Credentials in GitHub Actions
 

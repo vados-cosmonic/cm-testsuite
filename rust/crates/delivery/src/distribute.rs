@@ -57,9 +57,13 @@ pub fn distribute(
         revision: resolve(api, repository, &default_branch(api, repository)?)?,
         cache: RefCell::default(),
     };
-    let raw = tree
-        .read(&participant.manifest)?
-        .with_context(|| format!("missing manifest {}", participant.manifest))?;
+    let raw = tree.read(&participant.manifest)?;
+    // Central fallback configuration can gather tests, but cannot opt upstream
+    // into receiving. Still propagate transport errors and invalid upstream files.
+    if raw.is_none() && participant.fallback_manifest.is_some() {
+        return Ok(Delivery::NotReceiving);
+    }
+    let raw = raw.with_context(|| format!("missing manifest {}", participant.manifest))?;
     let manifest = Manifest::parse(std::str::from_utf8(&raw)?, &participant.manifest)?;
     if !manifest.receive.enabled {
         return Ok(Delivery::NotReceiving);

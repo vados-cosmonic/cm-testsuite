@@ -4,6 +4,11 @@
 runs look at, and the maintainers to mention when one of them fails.
 Enrollment is approved during review.
 Each repository's own manifest decides whether it shares tests, receives them, or both.
+For a source without upstream integration, `fallback_manifest` can name a
+centrally maintained manifest relative to this checkout's root.
+It enables gathering only, and upstream configuration takes precedence when present.
+See [fallback manifests](../docs/src/workflow.md#centrally-maintained-fallback-manifests)
+for configuration, provenance, and migration to upstream ownership.
 See the [workflow guide](../docs/src/workflow.md#gather-and-distribute) for the format and commands.
 A repository that receives tests must also commit the
 [Octo STS trust policy](../docs/src/workflow.md#credentials-in-github-actions)

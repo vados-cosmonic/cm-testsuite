@@ -97,7 +97,7 @@ fn commit_tags_and_per_file_pins_are_immutable() {
     let snapshot = f.snapshot();
     let test = snapshot.tests.values().next().unwrap();
     assert_eq!(test.revision, old);
-    assert_eq!(test.manifest_revision, current);
+    assert_eq!(test.manifest_revision, Some(current));
     assert_eq!(snapshot.files.values().next().unwrap(), WAST);
 }
 
@@ -134,7 +134,7 @@ fn missing_reference_or_manifest_does_not_create_a_snapshot() {
     );
     failure(
         f.acquire("main", "missing.toml"),
-        "non-regular tracked file",
+        "missing tracked source manifest",
     );
     assert!(!f.artifact("snapshot.toml").exists());
 }

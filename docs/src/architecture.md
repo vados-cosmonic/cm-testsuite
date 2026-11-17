@@ -21,6 +21,12 @@ An acquisition snapshot contains exact source bytes plus provenance. It is not a
 
 A source/name identity is independent of its Git revision. The catalog holds the file SHA-256, source file and commit, and the manifest commit/hash. Source-path moves preserve a declared name. Identity-name changes need manual treatment; alias migrations are not implemented.
 
+An enrolled source may use a manifest maintained in the catalog checkout when its
+own manifest is absent. The snapshot records that fallback's central path and digest
+separately from upstream test commits; it does not attribute the configuration to an
+upstream commit. Import plans guard the fallback bytes, and native configuration
+takes precedence when the source adopts it. Fallbacks never authorize receiving.
+
 Received identities and file locations are stored in `.cm-testsuite-lock.toml`. Exclusion stops future additions/updates and leaves an existing file intact. Source retirement triggers receiving deletion only when enabled. Every removal or move checks the managed baseline.
 
 The transport uses Octocrab for GitHub and the existing Git executable to read local committed object databases. No upstream build scripts or generated WAST are invoked. Filesystem symlinks and Git symlink/submodule entries are rejected.

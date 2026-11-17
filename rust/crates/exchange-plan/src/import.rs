@@ -36,8 +36,22 @@ pub fn import(root: &Path, snapshots: &[Snapshot]) -> Result<Plan> {
 
     // A complete snapshot retires only identities owned by that source.
     let mut sources = BTreeSet::new();
+    let mut fallbacks = BTreeMap::new();
     for snapshot in snapshots {
         snapshot.validate()?;
+        if let Some(path) = &snapshot.metadata.fallback_manifest {
+            let sha = &snapshot.metadata.manifest_sha256;
+            plan.warnings.push(format!(
+                "{}: configuration supplied by catalog fallback {path} (SHA-256 {sha})",
+                snapshot.source
+            ));
+            if let Some(previous) = fallbacks.insert(path.clone(), sha.clone()) {
+                ensure!(
+                    previous == *sha,
+                    "conflicting fallback manifest digests: {path}"
+                );
+            }
+        }
         ensure!(
             sources.insert(&snapshot.source),
             "duplicate source snapshot"
@@ -83,6 +97,16 @@ pub fn import(root: &Path, snapshots: &[Snapshot]) -> Result<Plan> {
 
     // Keep metadata comments and deterministic ordering in the final review plan.
     next.validate()?;
+    for (path, sha) in fallbacks {
+        ensure!(
+            hash_at(root, &path)?.as_ref() == Some(&sha),
+            "fallback manifest changed since acquisition: {path}"
+        );
+        plan.guards.push(Guard {
+            path,
+            sha256: Some(sha),
+        });
+    }
     if let Some(e) = metadata_edit(&tree, CATALOG_PATH, records::encode(&next)?)? {
         plan.edits.push(e);
     }

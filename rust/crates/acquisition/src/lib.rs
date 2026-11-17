@@ -1,13 +1,15 @@
 //! Acquire validated WAST snapshots from immutable repository revisions.
 
 mod discovery;
+mod fallback;
 mod repository;
 mod snapshot;
 
+pub use fallback::FallbackManifest;
 pub use repository::{GitHub, LocalGit, Repository};
 pub use snapshot::{Snapshot, load_catalog_files, load_snapshot};
 
-use anyhow::{Context, Result, ensure};
+use anyhow::{Context, Result, bail, ensure};
 use cm_catalog::*;
 use std::collections::BTreeMap;
 
@@ -23,16 +25,46 @@ pub fn acquire(
     reference: &str,
     manifest_path: &str,
 ) -> Result<Snapshot> {
+    acquire_with_fallback(repo, source, reference, manifest_path, || {
+        bail!("missing tracked source manifest: {manifest_path}")
+    })
+}
+
+/// Acquire using upstream configuration first, loading a fallback only on confirmed absence.
+/// Read and parse errors never trigger fallback. Paths in the fallback are interpreted
+/// as though it occupied `manifest_path` in the upstream repository.
+pub fn acquire_with_fallback(
+    repo: &dyn Repository,
+    source: &str,
+    reference: &str,
+    manifest_path: &str,
+    fallback: impl FnOnce() -> Result<FallbackManifest>,
+) -> Result<Snapshot> {
     validate_source(source)?;
     validate_path(manifest_path)?;
     let revision = repo.resolve(reference)?;
     validate_revision(&revision)?;
-    let raw = repo.read(&revision, manifest_path)?;
-    let manifest = Manifest::parse(std::str::from_utf8(&raw)?, manifest_path)?;
+    let (raw, fallback_manifest) = match repo.read_optional(&revision, manifest_path)? {
+        Some(raw) => (raw, None),
+        None => {
+            let fallback = fallback()?;
+            validate_path(&fallback.path)?;
+            (fallback.bytes, Some(fallback.path))
+        }
+    };
+    let manifest =
+        Manifest::parse(std::str::from_utf8(&raw)?, manifest_path).with_context(|| {
+            format!(
+                "source configuration {}",
+                fallback_manifest.as_deref().unwrap_or(manifest_path)
+            )
+        })?;
+    let manifest_revision = fallback_manifest.is_none().then(|| revision.clone());
     let metadata = SourceSnapshot {
         revision: revision.clone(),
         manifest_path: manifest_path.into(),
         manifest_sha256: sha256(&raw),
+        fallback_manifest,
     };
 
     // Resolve provenance before collecting files; partial acquisition is never returned.
@@ -72,7 +104,7 @@ pub fn acquire(
             source: source.into(),
             name: spec.name,
             revision: pinned,
-            manifest_revision: revision.clone(),
+            manifest_revision: manifest_revision.clone(),
             source_path: path,
             sha256: sha,
             destination: destination.clone(),

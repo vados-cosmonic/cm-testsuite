@@ -297,7 +297,7 @@ mod tests {
             name: name.into(),
             revision: "a".repeat(40),
             source_path: format!("tests/{name}.wast"),
-            manifest_revision: "a".repeat(40),
+            manifest_revision: Some("a".repeat(40)),
             sha256: "b".repeat(64),
             destination: format!("corpus/wast/example/source/{name}.wast"),
             summary: summary.into(),

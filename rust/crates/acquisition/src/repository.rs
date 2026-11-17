@@ -13,6 +13,12 @@ pub trait Repository {
     /// Read exact bytes from a regular tracked file at the supplied commit.
     fn read(&self, revision: &str, path: &str) -> Result<Vec<u8>>;
 
+    /// Return None only for a path proven absent from an immutable tree.
+    /// Implementations without absence detection conservatively propagate read errors.
+    fn read_optional(&self, revision: &str, path: &str) -> Result<Option<Vec<u8>>> {
+        self.read(revision, path).map(Some)
+    }
+
     /// List committed WAST paths in a directory (empty for root), without following links.
     fn list_wast(
         &self,
@@ -37,6 +43,10 @@ impl Repository for GitHub<'_> {
     fn read(&self, r: &str, p: &str) -> Result<Vec<u8>> {
         cm_github::read_file(self.api, self.source, r, p)?
             .with_context(|| format!("missing tracked source file {p} at {r}"))
+    }
+
+    fn read_optional(&self, r: &str, p: &str) -> Result<Option<Vec<u8>>> {
+        cm_github::read_file(self.api, self.source, r, p)
     }
 
     fn list_wast(&self, r: &str, directory: &str, recursive: bool) -> Result<Vec<String>> {
@@ -133,15 +143,40 @@ impl Repository for LocalGit {
     }
 
     fn read(&self, r: &str, p: &str) -> Result<Vec<u8>> {
+        self.read_optional(r, p)?
+            .with_context(|| format!("missing, symlink, or non-regular tracked file: {p}"))
+    }
+
+    fn read_optional(&self, r: &str, p: &str) -> Result<Option<Vec<u8>>> {
         validate_revision(r)?;
         validate_path(p)?;
-        let entry = self.git(&["ls-tree", "-z", r, "--", p])?;
-        ensure!(
-            entry.starts_with(b"100644 blob ") || entry.starts_with(b"100755 blob "),
-            "missing, symlink, or non-regular tracked file: {p}"
-        );
+        // Inspect every ancestor: a symlink or submodule must not masquerade as
+        // an absent nested manifest and enable the fallback.
+        let mut path = String::new();
+        let parts: Vec<_> = p.split('/').collect();
+        for (i, part) in parts.iter().enumerate() {
+            if !path.is_empty() {
+                path.push('/');
+            }
+            path.push_str(part);
+            let entry = self.git(&["ls-tree", "-z", r, "--", &path])?;
+            if entry.is_empty() {
+                return Ok(None);
+            }
+            if i + 1 < parts.len() {
+                ensure!(
+                    entry.starts_with(b"040000 tree "),
+                    "non-directory in source path: {p}"
+                );
+            } else {
+                ensure!(
+                    entry.starts_with(b"100644 blob ") || entry.starts_with(b"100755 blob "),
+                    "symlink or non-regular tracked file: {p}"
+                );
+            }
+        }
         let b = self.git(&["show", &format!("{r}:{p}")])?;
         ensure!(b.len() <= 8 * 1024 * 1024, "file exceeds 8 MiB limit");
-        Ok(b)
+        Ok(Some(b))
     }
 }

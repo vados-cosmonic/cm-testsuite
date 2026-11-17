@@ -5,6 +5,9 @@ mod common;
 #[path = "scenarios/acquisition.rs"]
 mod acquisition;
 
+#[path = "scenarios/fallback.rs"]
+mod fallback;
+
 #[path = "scenarios/exchange.rs"]
 mod exchange;
 

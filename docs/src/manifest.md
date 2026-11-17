@@ -1,6 +1,9 @@
 # Participant manifest
 
 The default location is `.cm-testsuite.toml` at the source repository root.
+Sources without an upstream manifest can use a
+[centrally maintained fallback](workflow.md#centrally-maintained-fallback-manifests)
+with the same format for gathering.
 Unknown fields and unsupported schema versions are errors.
 A repository can share its own tests, receive tests from other repositories,
 or do both.

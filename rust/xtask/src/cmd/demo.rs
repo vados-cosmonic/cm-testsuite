@@ -81,6 +81,7 @@ pub fn run(root: &Path, args: Args) -> Result<()> {
                 source: format!("github:example/{name}"),
                 reference: "main".into(),
                 manifest: ".cm-testsuite.toml".into(),
+                fallback_manifest: None,
                 local: Some(project),
                 out: snapshot.clone(),
             },

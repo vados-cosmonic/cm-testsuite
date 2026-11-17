@@ -7,8 +7,8 @@ use std::{collections::BTreeSet, fs, path::Path};
 
 pub const PARTICIPANTS_PATH: &str = "registry/participants.toml";
 
-/// One enrolled repository. Its own manifest decides whether it shares tests,
-/// receives them, or both; enrollment only makes the exchange look at it.
+/// One enrolled repository. Upstream configuration controls receiving and takes
+/// precedence over an optional catalog-maintained manifest for gathering.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Participant {
@@ -17,6 +17,9 @@ pub struct Participant {
     /// Tracked manifest path inside the repository.
     #[serde(default = "default_manifest")]
     pub manifest: String,
+    /// Manifest in the catalog checkout, used only when the upstream manifest is absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fallback_manifest: Option<String>,
     /// Branch, tag, or commit to gather from; the default branch when absent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reference: Option<String>,
@@ -67,6 +70,9 @@ impl Participants {
         for participant in &registry.participant {
             validate_source(&participant.repository)?;
             validate_path(&participant.manifest)?;
+            if let Some(path) = &participant.fallback_manifest {
+                validate_path(path)?;
+            }
             if let Some(reference) = &participant.reference {
                 ensure!(!reference.trim().is_empty(), "empty participant reference");
             }
@@ -100,6 +106,7 @@ mod tests {
         let one = "schema = 1\n[[participant]]\nrepository = 'github:example/a'\n";
         let parsed = Participants::parse(one.as_bytes()).unwrap().participant;
         assert_eq!(parsed[0].manifest, ".cm-testsuite.toml");
+        assert_eq!(parsed[0].fallback_manifest, None);
         assert_eq!(parsed[0].reference, None);
         let empty = Participants::parse(b"schema = 1\n").unwrap();
         assert!(empty.participant.is_empty() && empty.maintainers.is_empty());
@@ -118,6 +125,9 @@ mod tests {
             "schema = 1\n[[participant]]\nrepository = 'example/a'\n",
             "schema = 1\n[[participant]]\nrepository = 'github:example/a'\nmanifst = 'x'\n",
             "schema = 1\n[[participant]]\nrepository = 'github:example/a'\nmanifest = '../x'\n",
+            "schema = 1\n[[participant]]\nrepository = 'github:example/a'\nfallback_manifest = '../x'\n",
+            "schema = 1\n[[participant]]\nrepository = 'github:example/a'\nfallback_manifest = '/tmp/x'\n",
+            "schema = 1\n[[participant]]\nrepository = 'github:example/a'\nfallback_manifest = '.git/config'\n",
             "schema = 1\n[[participant]]\nrepository = 'github:example/a'\nmaintainers = ['x/y']\n",
         ] {
             assert!(Participants::parse(bad.as_bytes()).is_err(), "{bad}");

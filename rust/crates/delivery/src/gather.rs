@@ -1,7 +1,7 @@
 //! Collect updates from every enrolled repository into one import plan.
 
 use anyhow::{Context, Result};
-use cm_acquisition::{GitHub, Snapshot, acquire};
+use cm_acquisition::{FallbackManifest, GitHub, Snapshot, acquire, acquire_with_fallback};
 use cm_catalog::{Catalog, Participant};
 use cm_exchange_plan::{Plan, import};
 use cm_github::{Api, repo_path, required};
@@ -52,15 +52,20 @@ pub fn gather(api: &dyn Api, root: &Path, participants: &[Participant]) -> Resul
             .clone()
             .map_or_else(|| default_branch(api, repository), Ok)
             .and_then(|reference| {
-                acquire(
-                    &GitHub {
-                        api,
-                        source: repository,
-                    },
-                    repository,
-                    &reference,
-                    &participant.manifest,
-                )
+                let repo = GitHub {
+                    api,
+                    source: repository,
+                };
+                match &participant.fallback_manifest {
+                    Some(path) => acquire_with_fallback(
+                        &repo,
+                        repository,
+                        &reference,
+                        &participant.manifest,
+                        || FallbackManifest::load(root, path),
+                    ),
+                    None => acquire(&repo, repository, &reference, &participant.manifest),
+                }
             });
         let source = match acquired {
             Err(error) => Source::Failed(error),
@@ -112,6 +117,7 @@ fn current(catalog: &Catalog, snapshot: &Snapshot) -> bool {
     };
     recorded.manifest_path == snapshot.metadata.manifest_path
         && recorded.manifest_sha256 == snapshot.metadata.manifest_sha256
+        && recorded.fallback_manifest == snapshot.metadata.fallback_manifest
         && held().count() == snapshot.tests.len()
         && held().all(|(id, old)| {
             snapshot.tests.get(id).is_some_and(|new| {

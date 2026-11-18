@@ -20,10 +20,7 @@ exclude = []
 [[receive.route]]
 name = "resources"
 destination = "file:///tests/shared/resources"
-supports = ["component-model", "resources"]
-covers_any = ["resource-lifetime"]
 exclude = []
-allow_unknown = false
 
 [[test]]
 name = "resources/borrow-after-drop"
@@ -66,15 +63,67 @@ Repository renames and test-name aliases are not handled automatically.
 
 ### Requirements, coverage, and intent
 
-List the capabilities needed by a test in `requires` and its coverage categories
-in `covers`; receiving repositories use these declarations to select tests.
-Do not infer execution requirements solely from syntax in assertions that expect
-rejection of invalid or malformed inputs.
+WAST files can declare structured metadata before the first directive:
 
-Add a meaningful intent comment at the top of each WAST file and explain subtle
-assertions nearby.
-The analyzer can flag missing explanatory comments, but authors must check that
-the explanations accurately describe the test.
+```wat
+(@cm-testsuite
+  (schema 1)
+  (intent "Verify that a borrowed resource cannot outlive its owner.")
+  (requires "component-model" "resources")
+  (covers "resource-lifetime"))
+```
+
+This header describes the entire file, including scripts with several modules or
+components. License notices and other comments may precede it.
+Annotations use the [WebAssembly annotation syntax](https://webassembly.github.io/spec/core/text/lexical.html#annotations).
+Tools that do not recognize `@cm-testsuite` can ignore it.
+
+The contract is:
+
+- At most one header, before any WAST directive; a header inside a module or
+  component is an error. A header does not replace the test's directives.
+- `schema` is required and must be `1`.
+- `intent` is required and contains one nonblank UTF-8 string.
+  Describe the behavior established by the assertions, rather than just the filename.
+- `requires` and `covers` are optional lists of nonblank UTF-8 strings.
+  Unknown labels are accepted, duplicates are normalized, and empty lists are valid.
+  These are author-supplied descriptions, not verified feature requirements.
+- Duplicate fields, unknown fields, malformed values, and unsupported schemas
+  are errors. Field order is unrestricted.
+- Optional `(extensions (@vendor.example ...))` holds other tools' annotations.
+  Extension payloads are retained in the original file but are not interpreted
+  or copied into structured metadata. Other annotation IDs elsewhere are ignored
+  for metadata and syntax evidence.
+
+WAT string escaping and nested comments work normally.
+Annotation-looking text in comments, strings, or an unrelated annotation is not
+interpreted as a header. This includes quoted malformed-module payloads.
+
+Acquisition uses the header's intent as the catalog's existing `summary` field.
+A present `requires` or `covers` field replaces the corresponding manifest value,
+including when the header explicitly supplies an empty list.
+An omitted field keeps the manifest value.
+The extracted declarations also appear under `analysis.metadata`, preserving the
+named `intent` and the distinction between absent and empty label lists.
+Snapshots and catalog validation check that these declarations match the WAST bytes
+and resolved catalog fields.
+
+Unannotated files remain valid and use manifest metadata.
+The analyzer warns about the missing header and retains its guidance about intent
+comments and subtle assertions. Human review must still check whether the intent
+accurately describes the test.
+
+`requires` and `covers` never gate acquisition or delivery, configure an engine,
+or make feature inference complete. Component Model and engine capabilities do
+not have a shared exhaustive vocabulary. Core Wasm feature names may be useful
+labels, but this schema does not interpret them as enable/disable instructions.
+In particular, syntax in negative assertions does not establish execution requirements.
+
+Inspect a file's metadata, syntax evidence, and warnings with:
+
+```sh
+dotslash bins/just xtask analyze path/to/test.wast
+```
 
 Export original tests from their authoritative locations.
 Tests inside receiving destinations cannot be exported as new originals.
@@ -84,11 +133,21 @@ Tests inside receiving destinations cannot be exported as new originals.
 ### Capabilities and routing
 
 Set `[receive].enabled = true` to opt in and define `[[receive.route]]` entries
-for the destinations and test categories you want.
-Each route must list every author-declared `requires` capability in `supports`.
-An empty `covers_any` accepts any coverage category.
+for the destinations you want.
+`supports` and `covers_any` remain accepted as advisory fields: a mismatch produces
+a plan warning, but does not exclude a test. `allow_unknown` remains accepted for
+compatibility and has no effect on selection.
 
-A test must match at most one route; multiple matching routes are an error.
+A test must match at most one route after explicit exclusions;
+multiple matching routes are an error.
+
+> [!IMPORTANT]
+> Feature labels and inferred completeness no longer filter receiving routes.
+> Existing configurations that partitioned tests using `supports` or `covers_any`
+> must use a single destination or explicit route exclusions to avoid ambiguity.
+> Review receiving plans before applying them; tests previously withheld by feature
+> filters may now be proposed.
+
 Destinations include the source owner, repository, and test name to avoid basename
 collisions.
 Delivery cannot overwrite a path declared as an authoritative test in your manifest.
@@ -113,9 +172,10 @@ If that is ambiguous, an exclusion on any route conservatively prevents retireme
 ### Incomplete feature analysis
 
 The analyzer reports syntax evidence and **always marks inference incomplete**.
-Default routes therefore withhold tests whose requirements may be incomplete.
-Set `allow_unknown = true` only when you intend to review those tests despite
-that uncertainty; the plan will include warnings.
+Incomplete inference produces plan warnings and never withholds tests.
+Author-declared metadata does not change inference completeness.
+Receiving a test does not establish that your engine supports or passes it.
 
-Routing selects tests using metadata.
-It does not establish that your engine supports or passes the selected tests.
+When upgrading from an older analyzer, reacquire sources and apply new import plans
+to refresh recorded analysis before validation or distribution.
+Use the recorded source revisions to refresh analysis without advancing test content.

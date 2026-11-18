@@ -26,7 +26,7 @@ There is also an integration issue specific to our changing selections: adding a
 
 [Josh](https://github.com/josh-project/josh) is Rust and its reversible Git filtering worked. We demonstrated filtered views, two-source aggregation, per-file pinning, conflict detection, and a correction returned to its source using an explicit unfiltered base.
 
-The exchange needs curated file snapshots more than transformed repository histories. Josh does not supply stable test identity, the provenance catalog, feature routing, receiving exclusions, or approval policy. Expressing independent file pins through revision-dependent filters adds machinery without removing those responsibilities. Its client-side filtering also downloads the full upstream object database; it is not a substitute for targeted acquisition.
+The exchange needs curated file snapshots more than transformed repository histories. Josh does not supply stable test identity, the provenance catalog, receiving destinations and exclusions, or approval policy. Expressing independent file pins through revision-dependent filters adds machinery without removing those responsibilities. Its client-side filtering also downloads the full upstream object database; it is not a substitute for targeted acquisition.
 
 We therefore do not plan to depend on Josh for file exchange. It could become useful later if consumers need a tests-only mirror or reversible synchronization of a coherent directory. That would be a new requirement to evaluate, not a reason to carry the dependency now.
 

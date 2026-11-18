@@ -7,8 +7,9 @@ submit a pull request that explains the problem and resulting behavior.
 ## Contributing tests
 
 Keep authoritative WAST tests in your own project and enroll them through a
-tracked `.cm-testsuite.toml`. Describe their purpose, required features, and
-coverage so receiving projects can make informed routing decisions. The
+tracked `.cm-testsuite.toml`. Describe their intent and advisory requirement and coverage labels with a
+`@cm-testsuite` header so receiving projects can review them.
+These labels do not gate delivery. The
 [manifest guide](docs/src/manifest.md) documents the schema, while the
 [example projects](examples/README.md) demonstrate contributing and receiving
 within the same repository. Check that you have permission to redistribute the

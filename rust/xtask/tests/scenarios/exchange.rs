@@ -178,17 +178,19 @@ fn manual_additions_and_updates_are_left_untouched() {
 }
 
 #[test]
-fn routes_filter_features_categories_and_unknown_analysis() {
+fn feature_labels_categories_and_unknown_analysis_do_not_gate_routes() {
     let f = Exchange::new();
     f.import();
-    for rejected in [
+    for advisory in [
         policy("").replace("supports = ['component-model']", "supports = []"),
         policy("") + "covers_any = ['unrelated']\n",
         policy("").replace("allow_unknown = true", "allow_unknown = false"),
     ] {
-        write(&f.recipient, ".cm-testsuite.toml", rejected);
+        write(&f.recipient, ".cm-testsuite.toml", advisory);
         success(f.plan_receive());
-        assert!(f.plan("receive.toml").edits.is_empty());
+        let plan = f.plan("receive.toml");
+        assert!(plan.edits.iter().any(|e| e.path == DELIVERED));
+        assert!(!plan.warnings.is_empty());
     }
     write(
         &f.recipient,
@@ -197,6 +199,57 @@ fn routes_filter_features_categories_and_unknown_analysis() {
     );
     f.receive();
     assert!(f.recipient.join(DELIVERED).exists());
+}
+
+#[test]
+fn annotated_metadata_survives_exchange_without_changing_source_bytes() {
+    let f = Exchange::new();
+    let text = concat!(
+        ";; License: café\r\n",
+        "(@cm-testsuite (schema 1)\r\n",
+        "  (intent \"Exercise annotated component tests.\")\r\n",
+        "  (requires \"experimental:unregistered\") (covers))\r\n",
+        "(component)\r\n",
+    );
+    write(&f.source, "tests/input.wast", text);
+    let revision = commit(&f.source);
+    f.import();
+    let snapshot = f.snapshot();
+    let test = snapshot.tests.values().next().unwrap();
+    assert_eq!(test.summary, "Exercise annotated component tests.");
+    assert_eq!(test.requires, ["experimental:unregistered".into()].into());
+    assert!(test.covers.is_empty());
+    assert_eq!(test.revision, revision);
+    assert_eq!(test.sha256, cm_catalog::sha256(text.as_bytes()));
+    assert!(!test.analysis.complete);
+    assert_eq!(snapshot.files[&test.destination], text);
+    write(
+        &f.recipient,
+        ".cm-testsuite.toml",
+        "schema=1\n[receive]\nenabled=true\n[[receive.route]]\nname='shared'\ndestination='file:///tests/shared'\n",
+    );
+    f.receive();
+    assert_eq!(
+        fs::read(f.recipient.join(DELIVERED)).unwrap(),
+        text.as_bytes()
+    );
+    assert_eq!(
+        fs::read(f.source.join("tests/input.wast")).unwrap(),
+        text.as_bytes()
+    );
+    f.import();
+    assert!(f.plan("import.toml").edits.is_empty());
+    success(f.plan_receive());
+    assert!(f.plan("receive.toml").edits.is_empty());
+
+    let mut tampered = snapshot.clone();
+    tampered.tests.values_mut().next().unwrap().requires.clear();
+    assert!(tampered.validate().is_err());
+    let mut tampered = snapshot.clone();
+    let test = tampered.tests.values_mut().next().unwrap();
+    test.summary = "Forged intent".into();
+    test.analysis.metadata.as_mut().unwrap().intent = test.summary.clone();
+    assert!(tampered.validate().is_err());
 }
 
 #[test]

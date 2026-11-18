@@ -161,18 +161,20 @@ pub fn receive_from(
         }
         let mut routes = vec![];
         for route in &manifest.receive.route {
-            if route.exclude.contains(id)
-                || (!route.covers_any.is_empty() && route.covers_any.is_disjoint(&test.covers))
-                || !test.requires.is_subset(&route.supports)
-            {
+            if route.exclude.contains(id) {
                 continue;
             }
-            if !test.analysis.complete && !route.allow_unknown {
+            if !test.requires.is_subset(&route.supports) {
                 plan.warnings.push(format!(
-                    "{id}: route {} needs explicit allow_unknown for incomplete feature inference",
+                    "{id}: declared requires exceed route {} supports; labels are advisory",
                     route.name
                 ));
-                continue;
+            }
+            if !route.covers_any.is_empty() && route.covers_any.is_disjoint(&test.covers) {
+                plan.warnings.push(format!(
+                    "{id}: declared covers do not overlap route {} covers_any; labels are advisory",
+                    route.name
+                ));
             }
             routes.push(route);
         }
@@ -241,7 +243,7 @@ pub fn receive_from(
         next.tests.insert(id.clone(), delivered);
         if !test.analysis.complete {
             plan.warnings.push(format!(
-                "{id}: accepted incomplete feature inference via route {}",
+                "{id}: feature inference is incomplete; route {} does not gate on inferred features",
                 route.name
             ));
         }

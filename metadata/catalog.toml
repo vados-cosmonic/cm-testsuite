@@ -18,9 +18,12 @@ requires = ["component-model"]
 covers = ["values"]
 
 [tests."github:vados-cosmonic/cm-testsuite-test-source/values/u32-add".analysis]
-analyzer = "cm-wast-analysis/0.1+wast-263.0.0"
+analyzer = "cm-wast-analysis/0.2+wast-263.0.0"
 complete = false
-warnings = ["Feature inference is incomplete; syntax evidence is not a complete execution requirement set."]
+warnings = [
+    "Feature inference is incomplete; syntax evidence is not a complete execution requirement set.",
+    "Add an @cm-testsuite header with structured test metadata.",
+]
 
 [[tests."github:vados-cosmonic/cm-testsuite-test-source/values/u32-add".analysis.syntax]]
 feature = "component-model"

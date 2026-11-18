@@ -37,7 +37,7 @@ pub fn acquire(
     // Resolve provenance before collecting files; partial acquisition is never returned.
     let mut tests = BTreeMap::new();
     let mut files = BTreeMap::new();
-    for spec in manifest.test {
+    for mut spec in manifest.test {
         let pinned = spec.revision.unwrap_or_else(|| revision.clone());
         validate_revision(&pinned)?;
         // Resolve the override as a commit too; reject tags, blobs, or missing object IDs.
@@ -67,6 +67,17 @@ pub fn acquire(
         let text = String::from_utf8(bytes).context("WAST must be UTF-8")?;
         let analysis = cm_wast_analysis::analyze(&text)
             .with_context(|| format!("invalid WAST {}", spec.name))?;
+        // File declarations override manifest defaults, including explicitly empty
+        // label sets. Omitted fields keep the manifest's advisory metadata.
+        if let Some(metadata) = &analysis.metadata {
+            spec.summary = metadata.intent.clone();
+            if let Some(requires) = &metadata.requires {
+                spec.requires = requires.clone();
+            }
+            if let Some(covers) = &metadata.covers {
+                spec.covers = covers.clone();
+            }
+        }
         let destination = corpus_path(source, &spec.name)?;
         let test = Test {
             source: source.into(),

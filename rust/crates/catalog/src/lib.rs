@@ -221,12 +221,15 @@ pub struct Route {
     pub name: String,
     pub destination: String,
     #[serde(default)]
+    /// Advisory coverage preferences; mismatches produce warnings, not exclusions.
     pub covers_any: BTreeSet<String>,
     #[serde(default)]
+    /// Advisory capability labels; mismatches produce warnings, not exclusions.
     pub supports: BTreeSet<String>,
     #[serde(default)]
     pub exclude: BTreeSet<String>,
     #[serde(default)]
+    /// Retained for manifest compatibility; incomplete inference never gates delivery.
     pub allow_unknown: bool,
 }
 impl Manifest {
@@ -290,6 +293,20 @@ pub struct Analysis {
     pub complete: bool,
     pub syntax: Vec<Evidence>,
     pub warnings: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<WastMetadata>,
+}
+
+/// Author-declared file metadata; labels do not establish execution requirements.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct WastMetadata {
+    pub schema: u32,
+    pub intent: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requires: Option<BTreeSet<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub covers: Option<BTreeSet<String>>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -355,6 +372,25 @@ impl Catalog {
         for (id, t) in &self.tests {
             validate_id(id)?;
             ensure!(*id == t.id(), "test identity mismatch");
+            if let Some(metadata) = &t.analysis.metadata {
+                ensure!(metadata.schema == 1, "unsupported WAST metadata schema");
+                ensure!(
+                    t.summary == metadata.intent,
+                    "catalog intent differs from WAST metadata"
+                );
+                if let Some(requires) = &metadata.requires {
+                    ensure!(
+                        &t.requires == requires,
+                        "catalog requires differs from WAST metadata"
+                    );
+                }
+                if let Some(covers) = &metadata.covers {
+                    ensure!(
+                        &t.covers == covers,
+                        "catalog covers differs from WAST metadata"
+                    );
+                }
+            }
             let source = self
                 .sources
                 .get(&t.source)

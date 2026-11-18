@@ -1,12 +1,11 @@
 //! Conservative syntax hints and comment guidance; never execution requirements.
 
 use crate::ANALYZER;
-use anyhow::Result;
-use cm_catalog::{Analysis, Evidence};
-use wast::lexer::{Lexer, TokenKind};
+use cm_catalog::{Analysis, Evidence, WastMetadata};
+use wast::lexer::{Token, TokenKind};
 
 /// Inspect tokens without mistaking string/comment contents for feature usage.
-pub(crate) fn collect(text: &str) -> Result<Analysis> {
+pub(crate) fn collect(text: &str, tokens: &[Token], metadata: Option<WastMetadata>) -> Analysis {
     // Syntax hints are conservative: unknown requirements must stay visible.
     let mut out = Analysis {
         analyzer: ANALYZER.into(),
@@ -15,15 +14,15 @@ pub(crate) fn collect(text: &str) -> Result<Analysis> {
         warnings: vec![
             "Feature inference is incomplete; syntax evidence is not a complete execution requirement set.".into(),
         ],
+        metadata,
     };
     let mut first = true;
-    let mut has_intent = false;
+    let mut has_intent = out.metadata.is_some();
     let mut assertions = false;
     let mut comments = 0;
 
     // The lexer distinguishes actual keywords from comments and quoted strings.
-    for token in Lexer::new(text).iter(0) {
-        let token = token?;
+    for token in tokens {
         let value = &text[token.offset..token.offset + token.len as usize];
         match token.kind {
             TokenKind::Whitespace => {}
@@ -61,6 +60,10 @@ pub(crate) fn collect(text: &str) -> Result<Analysis> {
     }
 
     // Editorial warnings help authors explain intent without rejecting valid WAST.
+    if out.metadata.is_none() {
+        out.warnings
+            .push("Add an @cm-testsuite header with structured test metadata.".into());
+    }
     if !has_intent {
         out.warnings
             .push("Add a top-of-file comment explaining this test's intent.".into());
@@ -69,5 +72,5 @@ pub(crate) fn collect(text: &str) -> Result<Analysis> {
         out.warnings
             .push("Review whether subtle assertions need nearby explanatory comments.".into());
     }
-    Ok(out)
+    out
 }

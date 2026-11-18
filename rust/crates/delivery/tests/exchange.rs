@@ -182,7 +182,9 @@ fn ambiguous_routes_and_incomplete_inference_are_explicit() {
         text.replace("allow_unknown=true", "allow_unknown=false"),
     )
     .unwrap();
-    assert!(received(target.path(), hub.path()).edits.is_empty());
+    let plan = received(target.path(), hub.path());
+    assert!(!plan.edits.is_empty());
+    assert!(plan.warnings.iter().any(|w| w.contains("incomplete")));
     fs::write(&path,text+"\n[[receive.route]]\nname='duplicate'\ndestination='file:///tests/other'\nsupports=['component-model']\nallow_unknown=true\n").unwrap();
     assert!(
         receive(

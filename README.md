@@ -79,6 +79,22 @@ dotslash bins/just xtask validate
 - Fix a test in your repository and re-import.
   Snapshots here are not edited.
 
+Tests can keep their intent and advisory labels in a WAST header:
+
+```wat
+(@cm-testsuite
+  (schema 1)
+  (intent "Verify that a borrowed resource cannot outlive its owner.")
+  (requires "component-model" "resources")
+  (covers "resource-lifetime"))
+```
+
+The header applies to the whole file and precedes its directives.
+It supplies catalog metadata while preserving the original file bytes.
+Unannotated files continue to use manifest metadata.
+See the [metadata contract](docs/src/manifest.md#requirements-coverage-and-intent)
+for field precedence, extensions, and validation.
+
 ### Receive tests
 
 Opt in and describe where tests go:
@@ -96,9 +112,6 @@ exclude = []               # identities to decline permanently
 [[receive.route]]
 name = "resources"
 destination = "file:///tests/shared/resources"
-supports = ["component-model", "resources"] # must include every `requires` of a test
-covers_any = ["resource-lifetime"]          # empty accepts any coverage
-allow_unknown = true                        # see below
 ```
 
 Plan from a cm-testsuite checkout against a checkout of your default branch,
@@ -117,12 +130,12 @@ Enrolled repositories need none of this:
 the scheduled `distribute` run opens and updates the draft pull request for them.
 Maintainers can also run the flow for one repository through the `propose-receiving-update` workflow.
 
-- A test is delivered when exactly one route supports its `requires` and matches its coverage.
+- A test is delivered when exactly one route remains after explicit exclusions.
   Matching several routes is an error.
-- Feature inference is always marked incomplete,
-  so a route receives tests only with `allow_unknown = true`.
-  Selection uses metadata;
-  it does not show your engine passes.
+- `requires`, `covers`, and incomplete feature inference are informational.
+  They never gate delivery or configure the receiving engine.
+  Legacy `supports` and `covers_any` fields produce warnings on mismatches;
+  `allow_unknown` no longer affects selection.
 - Files land at `<destination>/OWNER/REPO/NAME.wast`.
   `.cm-testsuite-lock.toml` records what the tool manages.
 - Plans are TOML, guarded by file digests.

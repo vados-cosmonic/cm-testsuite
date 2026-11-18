@@ -1,4 +1,4 @@
-//! Parse a WAT/WAST file and show conservative syntax evidence and warnings.
+//! Parse a WAT/WAST file and show annotation metadata, syntax evidence, and warnings.
 use anyhow::Result;
 use cm_catalog::records::encode;
 use std::{
@@ -11,7 +11,7 @@ pub struct Args {
     pub(crate) file: PathBuf,
 }
 
-/// Parse a WAT/WAST file and show conservative syntax evidence and warnings.
+/// Parse a WAT/WAST file and show annotation metadata, syntax evidence, and warnings.
 pub fn run(_root: &Path, args: Args) -> Result<()> {
     let Args { file } = args;
 

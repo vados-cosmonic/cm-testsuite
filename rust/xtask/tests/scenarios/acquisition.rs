@@ -5,6 +5,38 @@ use cm_acquisition::{LocalGit, Repository};
 use std::fs;
 
 #[test]
+fn omitted_annotation_labels_keep_manifest_defaults() {
+    let f = Exchange::new();
+    write(
+        &f.source,
+        "tests/input.wast",
+        "(@cm-testsuite (schema 1) (intent \"File intent\"))\n(module)\n",
+    );
+    commit(&f.source);
+    success(f.acquire("main", ".cm-testsuite.toml"));
+    let snapshot = f.snapshot();
+    let test = snapshot.tests.values().next().unwrap();
+    assert_eq!(test.summary, "File intent");
+    assert_eq!(test.requires, ["component-model".into()].into());
+    assert_eq!(test.covers, ["arithmetic".into()].into());
+}
+
+#[test]
+fn malformed_annotations_fail_acquisition_without_replacing_snapshot() {
+    let f = Exchange::new();
+    success(f.acquire("main", ".cm-testsuite.toml"));
+    let before = fs::read(f.artifact("snapshot.toml")).unwrap();
+    write(
+        &f.source,
+        "tests/input.wast",
+        "(@cm-testsuite (schema 1) (intent \"\")) (module)",
+    );
+    commit(&f.source);
+    failure(f.acquire("main", ".cm-testsuite.toml"), "must not be blank");
+    assert_eq!(fs::read(f.artifact("snapshot.toml")).unwrap(), before);
+}
+
+#[test]
 fn ignores_dirty_staged_and_untracked_worktree_files() {
     let f = Exchange::new();
     let revision = git(&f.source, &["rev-parse", "HEAD"]).trim().to_owned();

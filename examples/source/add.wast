@@ -1,4 +1,8 @@
-;; Intent: integer addition returns the expected value for two small operands.
+(@cm-testsuite
+  (schema 1)
+  (intent "Integer addition returns the expected value for two small operands.")
+  (requires)
+  (covers "arithmetic"))
 (module
   (func (export "add") (param i32 i32) (result i32)
     local.get 0

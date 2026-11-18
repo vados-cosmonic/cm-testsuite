@@ -2,6 +2,8 @@
 
 This project contributes an integer addition test through `.cm-testsuite.toml`
 and receives arithmetic tests from other projects under `tests/shared/`.
+Its WAST header supplies intent and advisory coverage metadata.
+The manifest supplies the stable name and path.
 Its own test remains authoritative and is never replaced by received files.
 
 Run `dotslash bins/just demo` from the cm-testsuite checkout to copy this project

@@ -43,7 +43,7 @@ enum Task {
     /// Verify catalog digests and structurally parse every WAST; never execute it.
     Validate(cmd::validate::Args),
 
-    /// Parse a WAT/WAST file and show conservative syntax evidence and warnings.
+    /// Parse a WAT/WAST file and show annotation metadata, syntax evidence, and warnings.
     Analyze(cmd::analyze::Args),
 
     /// Plan delivery using the recipient manifest in --root and a curated catalog.

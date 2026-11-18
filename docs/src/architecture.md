@@ -6,7 +6,7 @@ The workspace lives under `rust/`. Library boundaries follow responsibilities in
 | --- | --- |
 | `cm-catalog` | Manifest/schema validation, repository paths, identity, hashes, source snapshots, catalog and retirements, participant registry |
 | `cm-github` | Caller-token REST transport and regular-file reads through Git trees |
-| `cm-wast-analysis` | WAST parsing, syntax evidence, intent-comment warnings, explicit analysis incompleteness |
+| `cm-wast-analysis` | WAST parsing, annotation metadata, syntax evidence, editorial warnings, explicit analysis incompleteness |
 | `cm-acquisition` | Immutable GitHub/local-Git acquisition and complete source snapshots |
 | `cm-exchange-plan` | Read-only import/receive plans, routes, exclusions, baseline checks, and delivery receipts |
 | `cm-delivery` | Guarded local application, explicit GitHub pull-request reconciliation, gathering from and distributing to enrolled repositories, and failure reports |
